@@ -5,6 +5,7 @@
 ## 相关项目
 
 - [mcpdb](https://github.com/Dofes/mcpdb) - Minecraft Python 调试器核心
+- [mcdk](https://github.com/GitHub-Zero123/MCDevTool) - Minecraft ModPC 前端启动器
 
 ## 功能
 
@@ -13,8 +14,15 @@
 - 自动检测管理员进程并提示
 - 自动分配可用端口
 - 一键启动 `mcdbg.exe` 进行附加 Python 调试器核心
+- 一键启动 `mcdk.exe` 启动游戏开发测试
 
-## 使用方法
+## 游戏启动测试
+1. 按 `Ctrl+F5` 自动启动**ModPC**开发测试
+2. 插件会自动：
+   - 搜索系统环境中的**ModPC**包
+   - 启动 `mcdk.exe` 进行开发测试
+
+## 调试器使用方法
 
 1. 按 `F5` 选择 "Minecraft ModPC Debug" 调试器
 2. 插件会自动：
@@ -32,11 +40,13 @@
 | `minecraft-modpc-debug.port`      | 5678   | 调试端口号                         |
 | `minecraft-modpc-debug.timeout`   | 30000  | 等待超时时间（毫秒）               |
 | `minecraft-modpc-debug.mcdbgPath` | (内置) | mcdbg.exe 路径（留空使用插件内置） |
+| `minecraft-modpc-debug.mcdkPath` | (内置) | mcdk.exe 路径（留空使用插件内置） |
 
 ## 前置要求
 
 - 安装 [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) 扩展
 - mcdbg.exe（插件内置或从 [mcpdb](https://github.com/Dofes/mcpdb) 获取）
+- mcdk.exe（插件内置或从 [mcdk](https://github.com/GitHub-Zero123/MCDevTool) 获取）
 
 ## 开发
 
