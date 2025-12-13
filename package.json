@@ -1,0 +1,113 @@
+{
+    "name": "minecraft-modpc-debug",
+    "displayName": "Minecraft ModPC Debug",
+    "description": "VSCode 调试适配器，用于调试 Minecraft ModPC 中运行的 Python 脚本",
+    "version": "0.0.1",
+    "author": "Dofes",
+    "publisher": "dofes",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Dofes/mcpdb"
+    },
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Debuggers"
+    ],
+    "activationEvents": [
+        "onDebug",
+        "onDebugResolve:minecraft-modpc"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "minecraft-modpc-debug.startDebug",
+                "title": "Minecraft ModPC: 启动调试",
+                "icon": "$(debug-start)"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "minecraft-modpc",
+                "label": "Minecraft ModPC Debug",
+                "languages": [
+                    "python"
+                ],
+                "configurationAttributes": {
+                    "launch": {
+                        "properties": {
+                            "port": {
+                                "type": "number",
+                                "description": "调试端口号",
+                                "default": 5678
+                            },
+                            "timeout": {
+                                "type": "number",
+                                "description": "等待超时时间（毫秒）",
+                                "default": 30000
+                            },
+                            "mcdbgPath": {
+                                "type": "string",
+                                "description": "mcdbg.exe 路径（留空使用内置）",
+                                "default": ""
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "minecraft-modpc",
+                        "request": "launch",
+                        "name": "Minecraft ModPC Debug"
+                    }
+                ],
+                "configurationSnippets": [
+                    {
+                        "label": "Minecraft ModPC Debug: Launch",
+                        "description": "启动 mcdbg 并附加调试器",
+                        "body": {
+                            "type": "minecraft-modpc",
+                            "request": "launch",
+                            "name": "Minecraft ModPC Debug",
+                            "port": 5678,
+                            "timeout": 30000
+                        }
+                    }
+                ]
+            }
+        ],
+        "configuration": {
+            "title": "Minecraft ModPC Debug",
+            "properties": {
+                "minecraft-modpc-debug.port": {
+                    "type": "number",
+                    "default": 5678,
+                    "description": "调试端口号"
+                },
+                "minecraft-modpc-debug.timeout": {
+                    "type": "number",
+                    "default": 30000,
+                    "description": "等待 mcdbg 注入的超时时间（毫秒）"
+                },
+                "minecraft-modpc-debug.mcdbgPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "mcdbg.exe 的路径（留空使用插件内置，或指定相对于工作区/绝对路径）"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "lint": "eslint src --ext ts"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.85.0",
+        "@types/node": "^18.x",
+        "typescript": "^5.3.0"
+    }
+}
