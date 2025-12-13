@@ -1,6 +1,6 @@
 # Minecraft ModPC Debug
 
-一个用于 Minecraft ModPC 调试的 VS Code 插件。
+一个用于 Minecraft ModPC 一站式开发/调试的 VSCode 插件。
 
 ## 相关项目
 
