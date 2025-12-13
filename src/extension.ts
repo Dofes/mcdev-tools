@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as net from 'net';
+import * as fs from 'fs';
 
 /** 调试会话信息 */
 interface DebugSessionInfo {
@@ -14,6 +15,8 @@ interface DebugSessionInfo {
 // 跟踪所有活动的调试会话（键: 进程 PID）
 const activeDebugSessions = new Map<number, DebugSessionInfo>();
 let extensionContext: vscode.ExtensionContext;
+// 追踪通过 runGame 启动的外部进程，确保在 deactivate 时清理
+// const runProcesses = new Set<cp.ChildProcess>();
 
 /** Minecraft 进程信息 */
 interface MinecraftProcess {
@@ -36,6 +39,11 @@ export function activate(context: vscode.ExtensionContext) {
     // 注册命令
     const disposable = vscode.commands.registerCommand('minecraft-modpc-debug.startDebug', async () => {
         await startDebugSession();
+    });
+
+    // 注册运行游戏命令（Ctrl+F5）
+    const runDisposable = vscode.commands.registerCommand('minecraft-modpc-debug.runGame', async () => {
+        await runMcdk();
     });
 
     // 注册调试配置提供者
@@ -78,7 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(disposable, debugProviderDisposable, dynamicProvider, debugEndDisposable);
+    context.subscriptions.push(disposable, runDisposable, debugProviderDisposable, dynamicProvider, debugEndDisposable);
 }
 
 /**
@@ -339,6 +347,97 @@ async function startDebugSession() {
 }
 
 /**
+ * 运行 mcdk.exe（无参数）用于 Ctrl+F5 自动化启动游戏
+ */
+// async function runMcdk(): Promise<void> {
+//     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+//     const config = vscode.workspace.getConfiguration('minecraft-modpc-debug');
+//     const mcdkPathConfig = config.get<string>('mcdkPath', '');
+
+//     const mcdkPath = mcdkPathConfig
+//         ? (path.isAbsolute(mcdkPathConfig) ? mcdkPathConfig : path.join(workspaceFolder?.uri.fsPath || process.cwd(), mcdkPathConfig))
+//         : path.join(extensionContext.extensionPath, 'bin', 'mcdk.exe');
+
+//     if (!fs.existsSync(mcdkPath)) {
+//         vscode.window.showErrorMessage(`找不到 mcdk.exe: ${mcdkPath}`);
+//         return;
+//     }
+
+//     const output = vscode.window.createOutputChannel('mcdk');
+//     output.show(true);
+
+//     const proc = cp.spawn(mcdkPath, [], {
+//         cwd: workspaceFolder?.uri.fsPath,
+//         detached: false,
+//         env: {
+//             ...process.env,              // 继承当前 VSCode 环境
+//             MCDEV_OUTPUT_MODE: '1',      // 使用特殊输出模式
+//         }
+//     });
+
+//     // 追踪该进程以便在 deactivate 时清理
+//     // runProcesses.add(proc);
+
+//     proc.stdout?.on('data', (data: Buffer) => {
+//         output.append(data.toString());
+//     });
+
+//     proc.stderr?.on('data', (data: Buffer) => {
+//         output.append(`[错误] ${data.toString()}`);
+//     });
+
+//     proc.on('error', (err: Error) => {
+//         // 保持原有输出流处理不变，额外移除追踪并报告
+//         // runProcesses.delete(proc);
+//         vscode.window.showErrorMessage(`启动 mcdk 失败: ${err.message}`);
+//     });
+
+//     proc.on('exit', (code: number | null) => {
+//         if (code !== 0 && code !== null) {
+//             output.appendLine(`mcdk.exe 退出，退出码: ${code}`);
+//         } else {
+//             output.appendLine('mcdk.exe 已退出');
+//         }
+//         // 进程退出后移除追踪
+//         // runProcesses.delete(proc);
+//     });
+// }
+
+async function runMcdk(): Promise<void> {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+        vscode.window.showErrorMessage('请先打开工作区');
+        return;
+    }
+
+    const config = vscode.workspace.getConfiguration('minecraft-modpc-debug');
+    const mcdkPathConfig = config.get<string>('mcdkPath', '');
+
+    const mcdkPath = mcdkPathConfig
+        ? (path.isAbsolute(mcdkPathConfig)
+            ? mcdkPathConfig
+            : path.join(workspaceFolder.uri.fsPath, mcdkPathConfig))
+        : path.join(extensionContext.extensionPath, 'bin', 'mcdk.exe');
+
+    if (!fs.existsSync(mcdkPath)) {
+        vscode.window.showErrorMessage(`找不到 mcdk.exe: ${mcdkPath}`);
+        return;
+    }
+
+    // ⭐ 关键：创建 VS Code 终端
+    const terminal = vscode.window.createTerminal({
+        name: 'Minecraft ModPC (mcdk)',
+        cwd: workspaceFolder.uri.fsPath
+    });
+
+    terminal.show(true);
+
+    // ⭐ 关键：让终端自己执行
+    terminal.sendText(`cmd /c "${mcdkPath}"`, true);
+}
+
+
+/**
  * 启动 mcdbg 并返回 debugpy 配置（供 F5 调试使用）
  */
 async function startDebugSessionAndGetConfig(
@@ -536,4 +635,13 @@ export function deactivate() {
         }
     }
     activeDebugSessions.clear();
+    // // 清理通过 runGame 启动的进程
+    // for (const proc of runProcesses) {
+    //     try {
+    //         proc.kill();
+    //     } catch (e) {
+    //         // ignore
+    //     }
+    // }
+    // runProcesses.clear();
 }

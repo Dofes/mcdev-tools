@@ -26,6 +26,11 @@
                 "command": "minecraft-modpc-debug.startDebug",
                 "title": "Minecraft ModPC: 启动调试",
                 "icon": "$(debug-start)"
+            },
+            {
+                "command": "minecraft-modpc-debug.runGame",
+                "title": "Minecraft ModPC: 运行游戏 (mcdk.exe)",
+                "icon": "$(play)"
             }
         ],
         "debuggers": [
@@ -96,8 +101,22 @@
                     "default": "",
                     "description": "mcdbg.exe 的路径（留空使用插件内置，或指定相对于工作区/绝对路径）"
                 }
+                ,
+                "minecraft-modpc-debug.mcdkPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "可选：mcdk.exe 的路径（留空使用插件内置 bin/mcdk.exe 或相对于工作区路径）"
+                }
             }
         }
+        ,
+        "keybindings": [
+            {
+                "command": "minecraft-modpc-debug.runGame",
+                "key": "ctrl+f5",
+                "when": "editorTextFocus"
+            }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
