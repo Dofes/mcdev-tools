@@ -538,14 +538,16 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
         if (el) el.value = String(data[id] ?? (id === 'world_type' ? 1 : 1));
       });
 
-      // Checkbox fields
+      // Checkbox fields - 这些字段默认值是 true
+      const defaultTrueCheckboxes = ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory'];
       fields.checkbox.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         if (id === 'reload_key_global') {
           el.checked = !!data.debug_options?.[id];
         } else {
-          el.checked = !!data[id];
+          // 如果字段不存在（undefined），使用默认值 true
+          el.checked = data[id] === undefined ? defaultTrueCheckboxes.includes(id) : !!data[id];
         }
       });
     }
