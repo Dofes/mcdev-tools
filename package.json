@@ -32,6 +32,12 @@
                 "title": "Minecraft ModPC: 运行游戏 (mcdk.exe)",
                 "icon": "$(play)"
             }
+            ,
+            {
+                "command": "minecraft-modpc-debug.showSidebarPanel",
+                "title": "Minecraft ModPC: 打开侧边栏面板",
+                "icon": "$(window)"
+            }
         ],
         "debuggers": [
             {
@@ -122,7 +128,25 @@
                 "key": "ctrl+f5",
                 "when": "minecraft-modpc-debug:enabled && editorTextFocus"
             }
-        ]
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "minecraft-modpc",
+                    "title": "Minecraft",
+                    "icon": "./images/icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "minecraft-modpc": [
+                {
+                    "type": "webview",
+                    "id": "minecraft-modpc.sidebar",
+                    "name": "Minecraft"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
