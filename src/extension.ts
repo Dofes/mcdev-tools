@@ -539,7 +539,7 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
       });
 
       // Checkbox fields - 这些字段默认值是 true
-      const defaultTrueCheckboxes = ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory'];
+      const defaultTrueCheckboxes = ['auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory'];
       fields.checkbox.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
