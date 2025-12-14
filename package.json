@@ -17,7 +17,10 @@
     ],
     "activationEvents": [
         "onDebug",
-        "onDebugResolve:minecraft-modpc"
+        "onDebugResolve:minecraft-modpc",
+        "workspaceContains:.mcdev.json",
+        "workspaceContains:*/manifest.json",
+        "onStartupFinished"
     ],
     "main": "./out/extension.js",
     "contributes": {
@@ -143,7 +146,9 @@
                 {
                     "type": "webview",
                     "id": "minecraft-modpc.sidebar",
-                    "name": "Minecraft"
+                    "name": "Minecraft",
+                    "when": "minecraft-modpc-debug:showSidebar",
+                    "icon": "./images/icon.svg"
                 }
             ]
         }

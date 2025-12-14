@@ -159,6 +159,29 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
     .btn-add-row { display: flex; gap: 8px; margin-top: 4px; }
     .btn-add-row .btn { margin: 0; }
     .empty-hint { color: var(--vscode-descriptionForeground); font-style: italic; font-size: 12px; margin: 8px 0; }
+    
+    /* 键位绑定样式 */
+    .keybind-field { margin-bottom: 10px; }
+    .keybind-field label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 12px; }
+    .keybind-row { display: flex; align-items: center; gap: 6px; }
+    .keybind-display {
+      flex: 1; padding: 6px 10px; min-height: 28px;
+      background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); 
+      color: var(--vscode-input-foreground); border-radius: 3px; font-family: monospace; font-size: 12px;
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    }
+    .keybind-display:hover { border-color: var(--vscode-focusBorder); }
+    .keybind-display.listening {
+      border-color: var(--vscode-inputValidation-infoBorder); 
+      background: var(--vscode-inputValidation-infoBackground);
+      animation: pulse 1s infinite;
+    }
+    .keybind-display .key-name { color: var(--vscode-foreground); }
+    .keybind-display .key-code { color: var(--vscode-descriptionForeground); font-size: 11px; }
+    .keybind-display .placeholder { color: var(--vscode-descriptionForeground); font-style: italic; }
+    .keybind-display .listening-hint { color: var(--vscode-inputValidation-infoForeground, #3794ff); }
+    .btn-clear { padding: 4px 8px; font-size: 11px; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
   </style>
 </head>
 <body>
@@ -231,21 +254,33 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
   <div class="section">
     <div class="section-title collapsible" id="debugToggle">调试选项 (debug_options)</div>
     <div class="collapsible-content" id="debugContent">
-      <div class="field">
-        <label>reload_key (热更新键码)</label>
-        <input type="text" id="reload_key" placeholder="82 (R键)" />
+      <div class="keybind-field">
+        <label>reload_key (热更新键)</label>
+        <div class="keybind-row">
+          <div class="keybind-display" data-key="reload_key"><span class="placeholder">点击设置按键...</span></div>
+          <button class="btn btn-secondary btn-clear" data-key="reload_key">清除</button>
+        </div>
       </div>
-      <div class="field">
-        <label>reload_world_key (重载世界键码)</label>
-        <input type="text" id="reload_world_key" placeholder="留空禁用" />
+      <div class="keybind-field">
+        <label>reload_world_key (重载世界键)</label>
+        <div class="keybind-row">
+          <div class="keybind-display" data-key="reload_world_key"><span class="placeholder">点击设置按键...</span></div>
+          <button class="btn btn-secondary btn-clear" data-key="reload_world_key">清除</button>
+        </div>
       </div>
-      <div class="field">
-        <label>reload_addon_key (重载Addon键码)</label>
-        <input type="text" id="reload_addon_key" placeholder="留空禁用" />
+      <div class="keybind-field">
+        <label>reload_addon_key (重载Addon键)</label>
+        <div class="keybind-row">
+          <div class="keybind-display" data-key="reload_addon_key"><span class="placeholder">点击设置按键...</span></div>
+          <button class="btn btn-secondary btn-clear" data-key="reload_addon_key">清除</button>
+        </div>
       </div>
-      <div class="field">
-        <label>reload_shaders_key (重载着色器键码)</label>
-        <input type="text" id="reload_shaders_key" placeholder="留空禁用" />
+      <div class="keybind-field">
+        <label>reload_shaders_key (重载着色器键)</label>
+        <div class="keybind-row">
+          <div class="keybind-display" data-key="reload_shaders_key"><span class="placeholder">点击设置按键...</span></div>
+          <button class="btn btn-secondary btn-clear" data-key="reload_shaders_key">清除</button>
+        </div>
       </div>
       <div class="checkbox-field"><input type="checkbox" id="reload_key_global" /><label for="reload_key_global">reload_key_global (全局触发热更新)</label></div>
     </div>
@@ -255,13 +290,49 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
     const vscode = acquireVsCodeApi();
     let currentData = {};
     let modDirs = []; // MOD目录列表
+    
+    // 键位绑定数据
+    const keyBindings = {
+      reload_key: '',
+      reload_world_key: '',
+      reload_addon_key: '',
+      reload_shaders_key: ''
+    };
+    let activeKeyListener = null; // 当前正在监听的键位字段
 
-    // 字段映射
+    // 字段映射（移除了键位字段，单独处理）
     const fields = {
-      text: ['world_name', 'world_folder_name', 'world_seed', 'user_name', 'reload_key', 'reload_world_key', 'reload_addon_key', 'reload_shaders_key'],
+      text: ['world_name', 'world_folder_name', 'world_seed', 'user_name'],
       select: ['world_type', 'game_mode'],
       checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'reload_key_global']
     };
+
+    // 键码到键名的映射
+    const keyCodeMap = {
+      8: 'Backspace', 9: 'Tab', 13: 'Enter', 16: 'Shift', 17: 'Ctrl', 18: 'Alt',
+      19: 'Pause', 20: 'CapsLock', 27: 'Escape', 32: 'Space', 33: 'PageUp', 34: 'PageDown',
+      35: 'End', 36: 'Home', 37: 'Left', 38: 'Up', 39: 'Right', 40: 'Down',
+      45: 'Insert', 46: 'Delete',
+      48: '0', 49: '1', 50: '2', 51: '3', 52: '4', 53: '5', 54: '6', 55: '7', 56: '8', 57: '9',
+      65: 'A', 66: 'B', 67: 'C', 68: 'D', 69: 'E', 70: 'F', 71: 'G', 72: 'H', 73: 'I',
+      74: 'J', 75: 'K', 76: 'L', 77: 'M', 78: 'N', 79: 'O', 80: 'P', 81: 'Q', 82: 'R',
+      83: 'S', 84: 'T', 85: 'U', 86: 'V', 87: 'W', 88: 'X', 89: 'Y', 90: 'Z',
+      91: 'Win', 93: 'Menu',
+      96: 'Num0', 97: 'Num1', 98: 'Num2', 99: 'Num3', 100: 'Num4',
+      101: 'Num5', 102: 'Num6', 103: 'Num7', 104: 'Num8', 105: 'Num9',
+      106: 'Num*', 107: 'Num+', 109: 'Num-', 110: 'Num.', 111: 'Num/',
+      112: 'F1', 113: 'F2', 114: 'F3', 115: 'F4', 116: 'F5', 117: 'F6',
+      118: 'F7', 119: 'F8', 120: 'F9', 121: 'F10', 122: 'F11', 123: 'F12',
+      144: 'NumLock', 145: 'ScrollLock',
+      186: ';', 187: '=', 188: ',', 189: '-', 190: '.', 191: '/', 192: '\`',
+      219: '[', 220: '\\\\', 221: ']', 222: \"'\"
+    };
+
+    function getKeyName(code) {
+      if (!code) return '';
+      const num = parseInt(code);
+      return keyCodeMap[num] || \`Key\${num}\`;
+    }
 
     function showStatus(msg, isError) {
       const el = document.getElementById('status');
@@ -269,6 +340,89 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
       el.style.color = isError ? 'var(--vscode-errorForeground)' : 'var(--vscode-descriptionForeground)';
       setTimeout(() => el.textContent = '', 3000);
     }
+
+    // 更新键位显示
+    function updateKeyBindDisplay(key) {
+      const display = document.querySelector(\`.keybind-display[data-key=\"\${key}\"]\`);
+      if (!display) return;
+      
+      const code = keyBindings[key];
+      if (code) {
+        const name = getKeyName(code);
+        display.innerHTML = \`<span class=\"key-name\">\${name}</span><span class=\"key-code\">(\${code})</span>\`;
+      } else {
+        display.innerHTML = '<span class=\"placeholder\">点击设置按键...</span>';
+      }
+    }
+
+    // 开始监听按键
+    function startKeyListen(key) {
+      // 取消之前的监听
+      if (activeKeyListener) {
+        const prevDisplay = document.querySelector(\`.keybind-display[data-key=\"\${activeKeyListener}\"]\`);
+        if (prevDisplay) {
+          prevDisplay.classList.remove('listening');
+          updateKeyBindDisplay(activeKeyListener);
+        }
+      }
+      
+      activeKeyListener = key;
+      const display = document.querySelector(\`.keybind-display[data-key=\"\${key}\"]\`);
+      if (display) {
+        display.classList.add('listening');
+        display.innerHTML = '<span class=\"listening-hint\">按下任意键... (ESC取消)</span>';
+      }
+    }
+
+    // 停止监听
+    function stopKeyListen() {
+      if (activeKeyListener) {
+        const display = document.querySelector(\`.keybind-display[data-key=\"\${activeKeyListener}\"]\`);
+        if (display) {
+          display.classList.remove('listening');
+          updateKeyBindDisplay(activeKeyListener);
+        }
+        activeKeyListener = null;
+      }
+    }
+
+    // 全局键盘事件监听
+    document.addEventListener('keydown', (e) => {
+      if (!activeKeyListener) return;
+      
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (e.keyCode === 27) { // ESC 取消
+        stopKeyListen();
+        return;
+      }
+      
+      // 设置键位
+      keyBindings[activeKeyListener] = String(e.keyCode);
+      updateKeyBindDisplay(activeKeyListener);
+      
+      const display = document.querySelector(\`.keybind-display[data-key=\"\${activeKeyListener}\"]\`);
+      if (display) display.classList.remove('listening');
+      activeKeyListener = null;
+    });
+
+    // 绑定键位控件事件
+    document.querySelectorAll('.keybind-display').forEach(el => {
+      el.addEventListener('click', () => {
+        startKeyListen(el.dataset.key);
+      });
+    });
+
+    // 清除按钮
+    document.querySelectorAll('.btn-clear').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        keyBindings[key] = '';
+        updateKeyBindDisplay(key);
+        stopKeyListen();
+      });
+    });
 
     // 解析 included_mod_dirs 为统一格式
     // 纯字符串 => { path: str, hot_reload: true }
@@ -361,13 +515,17 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
       modDirs = parseModDirs(data.included_mod_dirs);
       renderModDirs();
       
+      // 加载键位绑定
+      Object.keys(keyBindings).forEach(key => {
+        keyBindings[key] = data.debug_options?.[key] ?? '';
+        updateKeyBindDisplay(key);
+      });
+      
       // Text fields
       fields.text.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        if (id.startsWith('reload_')) {
-          el.value = data.debug_options?.[id] ?? '';
-        } else if (id === 'world_seed') {
+        if (id === 'world_seed') {
           el.value = data[id] === null ? '' : (data[id] ?? '');
         } else {
           el.value = data[id] ?? '';
@@ -406,15 +564,18 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
         data.included_mod_dirs = modDirs.map(d => ({ path: d.path, hot_reload: d.hot_reload }));
       }
 
+      // 收集键位绑定
+      if (!data.debug_options) data.debug_options = {};
+      Object.keys(keyBindings).forEach(key => {
+        data.debug_options[key] = keyBindings[key];
+      });
+
       // Text fields
       fields.text.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         const val = el.value.trim();
-        if (id.startsWith('reload_')) {
-          if (!data.debug_options) data.debug_options = {};
-          data.debug_options[id] = val;
-        } else if (id === 'world_seed') {
+        if (id === 'world_seed') {
           data[id] = val === '' ? null : (isNaN(Number(val)) ? null : Number(val));
         } else {
           if (val) data[id] = val;
@@ -505,6 +666,12 @@ function isMinecraftAddonWorkspace(folder: vscode.WorkspaceFolder): boolean {
     try {
         const root = folder.uri.fsPath;
 
+        // 0) 根目录有 .mcdev.json 文件（MCDK 项目标志）
+        const mcdevJson = path.join(root, '.mcdev.json');
+        if (fs.existsSync(mcdevJson)) {
+            return true;
+        }
+
         // 1) 根目录本身就是包根：manifest.json 与 entities/textures 同级
         const rootManifest = path.join(root, 'manifest.json');
         if (fs.existsSync(rootManifest) && (fs.existsSync(path.join(root, 'entities')) || fs.existsSync(path.join(root, 'textures')))) {
@@ -574,21 +741,24 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Minecraft ModPC Debug 插件已激活');
     extensionContext = context;
 
-    // 注册侧边栏提供器（必须在最前面，确保侧边栏可用）
-    const sidebarProvider = new McdevSidebarProvider(context.extensionUri);
-    const sidebarDisp = vscode.window.registerWebviewViewProvider('minecraft-modpc.sidebar', sidebarProvider);
-    context.subscriptions.push(sidebarDisp);
-    console.log('McdevSidebarProvider 已注册');
-
-    // 根据用户设置或项目结构决定是否启用调试功能
+    // 根据用户设置或项目结构决定是否启用插件功能
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     const config = vscode.workspace.getConfiguration('minecraft-modpc-debug');
     const userEnabled = config.get<boolean>('enable', false);
     const isAddon = workspaceFolder ? isMinecraftAddonWorkspace(workspaceFolder) : false;
-    const debugEnabled = userEnabled || isAddon;
+    const pluginEnabled = userEnabled || isAddon;
 
-    // 设置上下文（用于 keybinding 条件）
-    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', debugEnabled);
+    // 设置上下文（用于 keybinding 和 sidebar 显示条件）
+    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', pluginEnabled);
+    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:showSidebar', pluginEnabled);
+
+    // 只有启用时才注册侧边栏提供器
+    if (pluginEnabled) {
+        const sidebarProvider = new McdevSidebarProvider(context.extensionUri);
+        const sidebarDisp = vscode.window.registerWebviewViewProvider('minecraft-modpc.sidebar', sidebarProvider);
+        context.subscriptions.push(sidebarDisp);
+        console.log('McdevSidebarProvider 已注册');
+    }
 
     // 注册命令（始终注册，避免命令未找到错误）
     const disposable = vscode.commands.registerCommand('minecraft-modpc-debug.startDebug', async () => {
@@ -1244,15 +1414,7 @@ export function deactivate() {
         }
     }
     activeDebugSessions.clear();
-    // 清除按键上下文
+    // 清除上下文
     vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', false);
-    // // 清理通过 runGame 启动的进程
-    // for (const proc of runProcesses) {
-    //     try {
-    //         proc.kill();
-    //     } catch (e) {
-    //         // ignore
-    //     }
-    // }
-    // runProcesses.clear();
+    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:showSidebar', false);
 }
