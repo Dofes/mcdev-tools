@@ -388,6 +388,14 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
 
     // 全局键盘事件监听
     document.addEventListener('keydown', (e) => {
+      // Ctrl+S 保存
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('saveBtn').click();
+        return;
+      }
+      
       if (!activeKeyListener) return;
       
       e.preventDefault();
