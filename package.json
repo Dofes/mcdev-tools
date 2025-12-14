@@ -157,6 +157,7 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
+        "build": "tsc -p tsconfig.release.json",
         "lint": "eslint src --ext ts"
     },
     "devDependencies": {
