@@ -18,6 +18,486 @@ let extensionContext: vscode.ExtensionContext;
 // 追踪通过 runGame 启动的外部进程，确保在 deactivate 时清理
 // const runProcesses = new Set<cp.ChildProcess>();
 
+/** 侧边栏 Webview 提供者，用于可视化编辑 .mcdev.json */
+class McdevSidebarProvider implements vscode.WebviewViewProvider {
+    private _view?: vscode.WebviewView;
+    constructor(private readonly _extensionUri: vscode.Uri) {}
+
+    public resolveWebviewView(webviewView: vscode.WebviewView, _context: vscode.WebviewViewResolveContext, _token: vscode.CancellationToken) {
+        try {
+            console.log('McdevSidebarProvider.resolveWebviewView called');
+            this._view = webviewView;
+            const webview = webviewView.webview;
+
+            webview.options = {
+                enableScripts: true,
+                localResourceRoots: [this._extensionUri]
+            };
+
+            webviewView.webview.html = this.getHtmlForWebview(webview);
+
+            // 立即通知前端已注册
+            try { webview.postMessage({ type: 'providerRegistered' }); } catch (e) { console.error('postMessage(providerRegistered) failed', e); }
+
+            webview.onDidReceiveMessage(async (msg) => {
+            if (msg?.type === 'ready') {
+                // 读取工作区根目录下的 .mcdev.json，如果不存在则作为 {}
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                if (!workspaceFolder) {
+                    webview.postMessage({ type: 'init', content: '{}' });
+                    return;
+                }
+
+                const mcdevPath = path.join(workspaceFolder.uri.fsPath, '.mcdev.json');
+                try {
+                    if (fs.existsSync(mcdevPath)) {
+                        const content = fs.readFileSync(mcdevPath, 'utf8');
+                        webview.postMessage({ type: 'init', content });
+                    } else {
+                        webview.postMessage({ type: 'init', content: '{}' });
+                    }
+                } catch (e) {
+                    webview.postMessage({ type: 'init', content: '{}', error: String(e) });
+                }
+            } else if (msg?.type === 'save') {
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                if (!workspaceFolder) {
+                    vscode.window.showErrorMessage('请先打开工作区以保存 .mcdev.json');
+                    return;
+                }
+                const mcdevPath = path.join(workspaceFolder.uri.fsPath, '.mcdev.json');
+                try {
+                    fs.writeFileSync(mcdevPath, msg.content, 'utf8');
+                    vscode.window.showInformationMessage('.mcdev.json 已保存');
+                } catch (e) {
+                    vscode.window.showErrorMessage(`保存 .mcdev.json 失败: ${e}`);
+                }
+            } else if (msg?.type === 'browseFolder') {
+                // 打开文件夹选择对话框
+                const result = await vscode.window.showOpenDialog({
+                    canSelectFiles: false,
+                    canSelectFolders: true,
+                    canSelectMany: false,
+                    openLabel: '选择 MOD 目录',
+                    title: '选择 MOD 目录'
+                });
+                if (result && result.length > 0) {
+                    webview.postMessage({ 
+                        type: 'folderSelected', 
+                        index: msg.index,
+                        path: result[0].fsPath 
+                    });
+                }
+            }
+            });
+        } catch (err) {
+            console.error('resolveWebviewView top-level error', err);
+        }
+    }
+
+    private getHtmlForWebview(webview: vscode.Webview): string {
+        const nonce = getNonce();
+        return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline';">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mcdev Editor</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: var(--vscode-font-family); font-size: 13px; padding: 12px; margin: 0; color: var(--vscode-foreground); background: var(--vscode-sideBar-background); }
+    h3 { margin: 0 0 12px 0; font-size: 14px; border-bottom: 1px solid var(--vscode-widget-border); padding-bottom: 8px; }
+    .section { margin-bottom: 16px; }
+    .section-title { font-weight: bold; margin-bottom: 8px; color: var(--vscode-descriptionForeground); font-size: 11px; text-transform: uppercase; }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; margin-bottom: 4px; font-weight: 500; }
+    .field input[type="text"], .field input[type="number"], .field select, .field textarea {
+      width: 100%; padding: 6px 8px; border: 1px solid var(--vscode-input-border); background: var(--vscode-input-background); color: var(--vscode-input-foreground); border-radius: 2px;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: 1px solid var(--vscode-focusBorder); }
+    .field textarea { resize: vertical; min-height: 60px; font-family: monospace; font-size: 12px; }
+    .checkbox-field { display: flex; align-items: center; margin-bottom: 8px; }
+    .checkbox-field input { margin-right: 8px; }
+    .checkbox-field label { margin: 0; font-weight: normal; }
+    .btn { padding: 6px 14px; border: none; cursor: pointer; border-radius: 2px; font-size: 13px; }
+    .btn-primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+    .btn-primary:hover { background: var(--vscode-button-hoverBackground); }
+    .btn-secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); margin-left: 8px; }
+    .toolbar { display: flex; margin-bottom: 16px; }
+    .status { margin-left: 12px; font-size: 12px; color: var(--vscode-descriptionForeground); line-height: 28px; }
+    .collapsible { cursor: pointer; user-select: none; }
+    .collapsible::before { content: '▼ '; font-size: 10px; }
+    .collapsible.collapsed::before { content: '▶ '; }
+    .collapsible-content { margin-top: 8px; }
+    .collapsible.collapsed + .collapsible-content { display: none; }
+    
+    /* MOD 目录列表样式 */
+    .mod-dirs-list { margin-bottom: 8px; }
+    .mod-dir-item { 
+      display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; 
+      padding: 10px; background: var(--vscode-editor-background); border: 1px solid var(--vscode-input-border); border-radius: 4px;
+    }
+    .mod-dir-row { display: flex; align-items: center; gap: 6px; }
+    .mod-dir-item input[type="text"] { 
+      flex: 1; margin: 0; padding: 5px 8px; font-family: var(--vscode-editor-font-family, monospace); font-size: 12px;
+      background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border); color: var(--vscode-input-foreground); border-radius: 2px;
+    }
+    .mod-dir-item input[type="text"]:focus { outline: 1px solid var(--vscode-focusBorder); }
+    .mod-dir-options { display: flex; align-items: center; justify-content: space-between; }
+    .hot-reload-wrap { display: flex; align-items: center; font-size: 12px; color: var(--vscode-descriptionForeground); }
+    .hot-reload-wrap input { margin: 0 6px 0 0; width: 14px; height: 14px; }
+    .btn-icon { 
+      width: 22px; height: 22px; padding: 0; display: flex; align-items: center; justify-content: center;
+      background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground);
+      border: none; border-radius: 3px; cursor: pointer; font-size: 12px; flex-shrink: 0;
+    }
+    .btn-icon:hover { background: var(--vscode-button-hoverBackground); color: var(--vscode-button-foreground); }
+    .btn-icon.delete { color: var(--vscode-errorForeground); }
+    .btn-icon.delete:hover { background: var(--vscode-inputValidation-errorBackground); }
+    .btn-icon.browse { font-size: 11px; width: auto; padding: 0 6px; }
+    .btn-add-row { display: flex; gap: 8px; margin-top: 4px; }
+    .btn-add-row .btn { margin: 0; }
+    .empty-hint { color: var(--vscode-descriptionForeground); font-style: italic; font-size: 12px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h3>MCDEV游戏配置</h3>
+  
+  <div class="toolbar">
+    <button class="btn btn-primary" id="saveBtn">保存</button>
+    <button class="btn btn-secondary" id="reloadBtn">重新加载</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div class="section">
+    <div class="section-title">MOD 目录</div>
+    <div class="mod-dirs-list" id="modDirsList"></div>
+    <div class="btn-add-row">
+      <button class="btn btn-secondary" id="addDirBtn">+ 手动添加</button>
+      <button class="btn btn-secondary" id="browseDirBtn">📁 浏览文件夹</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">世界设置</div>
+    <div class="field">
+      <label>world_name (世界显示名称)</label>
+      <input type="text" id="world_name" placeholder="MC_DEV_WORLD" />
+    </div>
+    <div class="field">
+      <label>world_folder_name (存档目录名)</label>
+      <input type="text" id="world_folder_name" placeholder="MC_DEV_WORLD" />
+    </div>
+    <div class="field">
+      <label>world_seed (种子，留空随机)</label>
+      <input type="text" id="world_seed" placeholder="null 或数字" />
+    </div>
+    <div class="field">
+      <label>world_type (世界类型)</label>
+      <select id="world_type">
+        <option value="0">0 - 旧版有限世界</option>
+        <option value="1">1 - 无限世界</option>
+        <option value="2">2 - 超平坦</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>game_mode (游戏模式)</label>
+      <select id="game_mode">
+        <option value="0">0 - 生存</option>
+        <option value="1">1 - 创造</option>
+        <option value="2">2 - 冒险</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">游戏选项</div>
+    <div class="checkbox-field"><input type="checkbox" id="reset_world" /><label for="reset_world">reset_world (启动时重置世界)</label></div>
+    <div class="checkbox-field"><input type="checkbox" id="auto_join_game" /><label for="auto_join_game">auto_join_game (自动进入存档)</label></div>
+    <div class="checkbox-field"><input type="checkbox" id="include_debug_mod" /><label for="include_debug_mod">include_debug_mod (附加调试MOD)</label></div>
+    <div class="checkbox-field"><input type="checkbox" id="enable_cheats" /><label for="enable_cheats">enable_cheats (启用作弊)</label></div>
+    <div class="checkbox-field"><input type="checkbox" id="keep_inventory" /><label for="keep_inventory">keep_inventory (死亡不掉落)</label></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">用户设置</div>
+    <div class="field">
+      <label>user_name (用户名)</label>
+      <input type="text" id="user_name" placeholder="developer" />
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title collapsible" id="debugToggle">调试选项 (debug_options)</div>
+    <div class="collapsible-content" id="debugContent">
+      <div class="field">
+        <label>reload_key (热更新键码)</label>
+        <input type="text" id="reload_key" placeholder="82 (R键)" />
+      </div>
+      <div class="field">
+        <label>reload_world_key (重载世界键码)</label>
+        <input type="text" id="reload_world_key" placeholder="留空禁用" />
+      </div>
+      <div class="field">
+        <label>reload_addon_key (重载Addon键码)</label>
+        <input type="text" id="reload_addon_key" placeholder="留空禁用" />
+      </div>
+      <div class="field">
+        <label>reload_shaders_key (重载着色器键码)</label>
+        <input type="text" id="reload_shaders_key" placeholder="留空禁用" />
+      </div>
+      <div class="checkbox-field"><input type="checkbox" id="reload_key_global" /><label for="reload_key_global">reload_key_global (全局触发热更新)</label></div>
+    </div>
+  </div>
+
+  <script nonce="${nonce}">
+    const vscode = acquireVsCodeApi();
+    let currentData = {};
+    let modDirs = []; // MOD目录列表
+
+    // 字段映射
+    const fields = {
+      text: ['world_name', 'world_folder_name', 'world_seed', 'user_name', 'reload_key', 'reload_world_key', 'reload_addon_key', 'reload_shaders_key'],
+      select: ['world_type', 'game_mode'],
+      checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'reload_key_global']
+    };
+
+    function showStatus(msg, isError) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.style.color = isError ? 'var(--vscode-errorForeground)' : 'var(--vscode-descriptionForeground)';
+      setTimeout(() => el.textContent = '', 3000);
+    }
+
+    // 解析 included_mod_dirs 为统一格式
+    // 纯字符串 => { path: str, hot_reload: true }
+    // 对象 => { path, hot_reload }
+    function parseModDirs(dirs) {
+      if (!dirs || !Array.isArray(dirs)) return [{ path: './', hot_reload: true }];
+      return dirs.map(item => {
+        if (typeof item === 'string') {
+          // 纯字符串默认开启热更新
+          return { path: item, hot_reload: true };
+        } else if (item && typeof item === 'object') {
+          return { path: item.path || './', hot_reload: item.hot_reload !== false };
+        }
+        return { path: './', hot_reload: true };
+      });
+    }
+
+    // 渲染 MOD 目录列表
+    function renderModDirs() {
+      const container = document.getElementById('modDirsList');
+      container.innerHTML = '';
+      
+      if (modDirs.length === 0) {
+        container.innerHTML = '<div class="empty-hint">暂无目录，点击下方按钮添加</div>';
+        return;
+      }
+
+      modDirs.forEach((dir, idx) => {
+        const item = document.createElement('div');
+        item.className = 'mod-dir-item';
+        item.dataset.idx = idx;
+        item.innerHTML = \`
+          <div class="mod-dir-row">
+            <input type="text" class="mod-path" value="\${escapeHtml(dir.path)}" placeholder="路径，如 ./ 或 D:/Mods/MyMod" />
+            <button class="btn-icon browse" title="浏览...">📁</button>
+          </div>
+          <div class="mod-dir-options">
+            <label class="hot-reload-wrap">
+              <input type="checkbox" class="mod-hotreload" \${dir.hot_reload ? 'checked' : ''} />
+              启用热更新
+            </label>
+            <button class="btn-icon delete" title="删除此目录">✕</button>
+          </div>
+        \`;
+        
+        // 路径变更
+        item.querySelector('.mod-path').addEventListener('input', (e) => {
+          modDirs[idx].path = e.target.value;
+        });
+        
+        // 单项浏览按钮
+        item.querySelector('.browse').addEventListener('click', () => {
+          vscode.postMessage({ type: 'browseFolder', index: idx });
+        });
+        
+        // 热更新变更
+        item.querySelector('.mod-hotreload').addEventListener('change', (e) => {
+          modDirs[idx].hot_reload = e.target.checked;
+        });
+        
+        // 删除按钮
+        item.querySelector('.delete').addEventListener('click', () => {
+          modDirs.splice(idx, 1);
+          renderModDirs();
+        });
+        
+        container.appendChild(item);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // 添加目录按钮
+    document.getElementById('addDirBtn').addEventListener('click', () => {
+      modDirs.push({ path: './', hot_reload: true });
+      renderModDirs();
+    });
+
+    // 浏览文件夹按钮（新增）
+    document.getElementById('browseDirBtn').addEventListener('click', () => {
+      vscode.postMessage({ type: 'browseFolder', index: -1 });
+    });
+
+    function loadData(data) {
+      currentData = data;
+      
+      // 加载 MOD 目录
+      modDirs = parseModDirs(data.included_mod_dirs);
+      renderModDirs();
+      
+      // Text fields
+      fields.text.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id.startsWith('reload_')) {
+          el.value = data.debug_options?.[id] ?? '';
+        } else if (id === 'world_seed') {
+          el.value = data[id] === null ? '' : (data[id] ?? '');
+        } else {
+          el.value = data[id] ?? '';
+        }
+      });
+
+      // Select fields
+      fields.select.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = String(data[id] ?? (id === 'world_type' ? 1 : 1));
+      });
+
+      // Checkbox fields
+      fields.checkbox.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'reload_key_global') {
+          el.checked = !!data.debug_options?.[id];
+        } else {
+          el.checked = !!data[id];
+        }
+      });
+    }
+
+    function collectData() {
+      const data = { ...currentData };
+
+      // 收集 MOD 目录
+      // 判断是否可以简化格式：
+      // - 所有都开启热更新 => 纯字符串数组 ["./", "../other"]
+      // - 有任何一个关闭热更新 => 对象数组 [{path, hot_reload}, ...]
+      const allHotReload = modDirs.every(d => d.hot_reload);
+      if (allHotReload) {
+        data.included_mod_dirs = modDirs.map(d => d.path);
+      } else {
+        data.included_mod_dirs = modDirs.map(d => ({ path: d.path, hot_reload: d.hot_reload }));
+      }
+
+      // Text fields
+      fields.text.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const val = el.value.trim();
+        if (id.startsWith('reload_')) {
+          if (!data.debug_options) data.debug_options = {};
+          data.debug_options[id] = val;
+        } else if (id === 'world_seed') {
+          data[id] = val === '' ? null : (isNaN(Number(val)) ? null : Number(val));
+        } else {
+          if (val) data[id] = val;
+        }
+      });
+
+      // Select fields
+      fields.select.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) data[id] = Number(el.value);
+      });
+
+      // Checkbox fields
+      fields.checkbox.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (id === 'reload_key_global') {
+          if (!data.debug_options) data.debug_options = {};
+          data.debug_options[id] = el.checked;
+        } else {
+          data[id] = el.checked;
+        }
+      });
+
+      return data;
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const data = collectData();
+      if (data) {
+        vscode.postMessage({ type: 'save', content: JSON.stringify(data, null, 4) });
+      }
+    });
+
+    document.getElementById('reloadBtn').addEventListener('click', () => {
+      vscode.postMessage({ type: 'ready' });
+    });
+
+    document.getElementById('debugToggle').addEventListener('click', function() {
+      this.classList.toggle('collapsed');
+    });
+
+    window.addEventListener('message', event => {
+      const msg = event.data;
+      if (msg.type === 'init') {
+        try {
+          loadData(JSON.parse(msg.content || '{}'));
+          showStatus('已加载', false);
+        } catch (e) {
+          showStatus('解析失败: ' + e, true);
+        }
+      } else if (msg.type === 'saved') {
+        showStatus('已保存', false);
+      } else if (msg.type === 'folderSelected') {
+        // 处理文件夹选择结果
+        const { index, path } = msg;
+        if (index === -1) {
+          // 新增
+          modDirs.push({ path: path, hot_reload: true });
+        } else if (index >= 0 && index < modDirs.length) {
+          // 更新现有项
+          modDirs[index].path = path;
+        }
+        renderModDirs();
+      }
+    });
+
+    vscode.postMessage({ type: 'ready' });
+  </script>
+</body>
+</html>`;
+    }
+}
+
+function getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+}
+
 /**
  * 简单检测工作区是否为 Minecraft addon/包 的常见结构
  */
@@ -94,25 +574,80 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Minecraft ModPC Debug 插件已激活');
     extensionContext = context;
 
-    // 根据用户设置或项目结构决定是否激活（避免在非 Minecraft 项目自动激活）
+    // 注册侧边栏提供器（必须在最前面，确保侧边栏可用）
+    const sidebarProvider = new McdevSidebarProvider(context.extensionUri);
+    const sidebarDisp = vscode.window.registerWebviewViewProvider('minecraft-modpc.sidebar', sidebarProvider);
+    context.subscriptions.push(sidebarDisp);
+    console.log('McdevSidebarProvider 已注册');
+
+    // 根据用户设置或项目结构决定是否启用调试功能
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     const config = vscode.workspace.getConfiguration('minecraft-modpc-debug');
     const userEnabled = config.get<boolean>('enable', false);
     const isAddon = workspaceFolder ? isMinecraftAddonWorkspace(workspaceFolder) : false;
+    const debugEnabled = userEnabled || isAddon;
 
-    if (!userEnabled && !isAddon) {
-        console.log('Minecraft ModPC Debug 未启用（未检测到 Minecraft addon 项目，且设置未开启）');
-        // 确保 keybinding 上下文为 false，避免按键触发未注册的命令
-        vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', false);
-        return; // 不注册命令与提供者，保持插件非活跃
-    }
+    // 设置上下文（用于 keybinding 条件）
+    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', debugEnabled);
 
-    // 激活时设置上下文，允许 package.json 中基于该上下文的 keybinding 生效
-    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', true);
-
-    // 注册命令
+    // 注册命令（始终注册，避免命令未找到错误）
     const disposable = vscode.commands.registerCommand('minecraft-modpc-debug.startDebug', async () => {
         await startDebugSession();
+    });
+
+    // 回退命令：将侧边栏 UI 作为独立面板打开
+    const panelCmd = vscode.commands.registerCommand('minecraft-modpc-debug.showSidebarPanel', async () => {
+        const wf = vscode.workspace.workspaceFolders?.[0];
+        const panel = vscode.window.createWebviewPanel('mcdevSidebarPanel', 'Minecraft (.mcdev.json)', vscode.ViewColumn.One, { enableScripts: true });
+        panel.webview.html = (new McdevSidebarProvider(context.extensionUri) as any).getHtmlForWebview(panel.webview);
+
+        panel.webview.onDidReceiveMessage(async (msg) => {
+            if (msg?.type === 'ready') {
+                if (!wf) {
+                    panel.webview.postMessage({ type: 'init', content: '{}' });
+                    return;
+                }
+                const mcdevPath = path.join(wf.uri.fsPath, '.mcdev.json');
+                try {
+                    if (fs.existsSync(mcdevPath)) {
+                        const content = fs.readFileSync(mcdevPath, 'utf8');
+                        panel.webview.postMessage({ type: 'init', content });
+                    } else {
+                        panel.webview.postMessage({ type: 'init', content: '{}' });
+                    }
+                } catch (e) {
+                    panel.webview.postMessage({ type: 'init', content: '{}' });
+                }
+            } else if (msg?.type === 'save') {
+                if (!wf) {
+                    vscode.window.showErrorMessage('请先打开工作区以保存 .mcdev.json');
+                    return;
+                }
+                const mcdevPath = path.join(wf.uri.fsPath, '.mcdev.json');
+                try {
+                    fs.writeFileSync(mcdevPath, msg.content, 'utf8');
+                    vscode.window.showInformationMessage('.mcdev.json 已保存');
+                } catch (e) {
+                    vscode.window.showErrorMessage(`保存 .mcdev.json 失败: ${e}`);
+                }
+            } else if (msg?.type === 'browseFolder') {
+                // 打开文件夹选择对话框
+                const result = await vscode.window.showOpenDialog({
+                    canSelectFiles: false,
+                    canSelectFolders: true,
+                    canSelectMany: false,
+                    openLabel: '选择 MOD 目录',
+                    title: '选择 MOD 目录'
+                });
+                if (result && result.length > 0) {
+                    panel.webview.postMessage({ 
+                        type: 'folderSelected', 
+                        index: msg.index,
+                        path: result[0].fsPath 
+                    });
+                }
+            }
+        }, undefined, context.subscriptions);
     });
 
     // 注册运行游戏命令（Ctrl+F5）
@@ -160,7 +695,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(disposable, runDisposable, debugProviderDisposable, dynamicProvider, debugEndDisposable);
+    context.subscriptions.push(disposable, panelCmd, runDisposable, debugProviderDisposable, dynamicProvider, debugEndDisposable);
 }
 
 /**
