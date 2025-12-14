@@ -107,6 +107,12 @@
                     "default": "",
                     "description": "可选：mcdk.exe 的路径（留空使用插件内置 bin/mcdk.exe 或相对于工作区路径）"
                 }
+                ,
+                "minecraft-modpc-debug.enable": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "是否启用 Minecraft ModPC 插件（若启用则即使未检测到项目结构也会激活）。建议只在 Minecraft addon 项目手动开启。"
+                }
             }
         }
         ,
@@ -114,7 +120,7 @@
             {
                 "command": "minecraft-modpc-debug.runGame",
                 "key": "ctrl+f5",
-                "when": "editorTextFocus"
+                "when": "minecraft-modpc-debug:enabled && editorTextFocus"
             }
         ]
     },

@@ -18,6 +18,64 @@ let extensionContext: vscode.ExtensionContext;
 // 追踪通过 runGame 启动的外部进程，确保在 deactivate 时清理
 // const runProcesses = new Set<cp.ChildProcess>();
 
+/**
+ * 简单检测工作区是否为 Minecraft addon/包 的常见结构
+ */
+function isMinecraftAddonWorkspace(folder: vscode.WorkspaceFolder): boolean {
+    try {
+        const root = folder.uri.fsPath;
+
+        // 1) 根目录本身就是包根：manifest.json 与 entities/textures 同级
+        const rootManifest = path.join(root, 'manifest.json');
+        if (fs.existsSync(rootManifest) && (fs.existsSync(path.join(root, 'entities')) || fs.existsSync(path.join(root, 'textures')))) {
+            return true;
+        }
+
+        // 2) 检查一级子目录：期望结构为 ./xxx/manifest.json 且 ./xxx/entities 或 ./xxx/textures
+        let children: fs.Dirent[];
+        try {
+            children = fs.readdirSync(root, { withFileTypes: true });
+        } catch (e) {
+            return false;
+        }
+
+        for (const child of children) {
+            if (!child.isDirectory()) continue;
+            const childPath = path.join(root, child.name);
+
+            const manifestPath = path.join(childPath, 'manifest.json');
+            const hasEntities = fs.existsSync(path.join(childPath, 'entities')) && fs.statSync(path.join(childPath, 'entities')).isDirectory();
+            const hasTextures = fs.existsSync(path.join(childPath, 'textures')) && fs.statSync(path.join(childPath, 'textures')).isDirectory();
+
+            if (fs.existsSync(manifestPath) && (hasEntities || hasTextures)) {
+                return true;
+            }
+
+            // 3) 有时子目录是容器（例如 behavior_packs 下有多个包），再检查子目录下的一层包目录
+            let subEntries: fs.Dirent[];
+            try {
+                subEntries = fs.readdirSync(childPath, { withFileTypes: true });
+            } catch (e) {
+                continue;
+            }
+
+            for (const sub of subEntries) {
+                if (!sub.isDirectory()) continue;
+                const packDir = path.join(childPath, sub.name);
+                const packManifest = path.join(packDir, 'manifest.json');
+                const packHasEntities = fs.existsSync(path.join(packDir, 'entities')) && fs.statSync(path.join(packDir, 'entities')).isDirectory();
+                const packHasTextures = fs.existsSync(path.join(packDir, 'textures')) && fs.statSync(path.join(packDir, 'textures')).isDirectory();
+                if (fs.existsSync(packManifest) && (packHasEntities || packHasTextures)) {
+                    return true;
+                }
+            }
+        }
+    } catch (e) {
+        // ignore
+    }
+    return false;
+}
+
 /** Minecraft 进程信息 */
 interface MinecraftProcess {
     pid: number;
@@ -35,6 +93,22 @@ interface McdbgListResult {
 export function activate(context: vscode.ExtensionContext) {
     console.log('Minecraft ModPC Debug 插件已激活');
     extensionContext = context;
+
+    // 根据用户设置或项目结构决定是否激活（避免在非 Minecraft 项目自动激活）
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const config = vscode.workspace.getConfiguration('minecraft-modpc-debug');
+    const userEnabled = config.get<boolean>('enable', false);
+    const isAddon = workspaceFolder ? isMinecraftAddonWorkspace(workspaceFolder) : false;
+
+    if (!userEnabled && !isAddon) {
+        console.log('Minecraft ModPC Debug 未启用（未检测到 Minecraft addon 项目，且设置未开启）');
+        // 确保 keybinding 上下文为 false，避免按键触发未注册的命令
+        vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', false);
+        return; // 不注册命令与提供者，保持插件非活跃
+    }
+
+    // 激活时设置上下文，允许 package.json 中基于该上下文的 keybinding 生效
+    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', true);
 
     // 注册命令
     const disposable = vscode.commands.registerCommand('minecraft-modpc-debug.startDebug', async () => {
@@ -635,6 +709,8 @@ export function deactivate() {
         }
     }
     activeDebugSessions.clear();
+    // 清除按键上下文
+    vscode.commands.executeCommand('setContext', 'minecraft-modpc-debug:enabled', false);
     // // 清理通过 runGame 启动的进程
     // for (const proc of runProcesses) {
     //     try {
