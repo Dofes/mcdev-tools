@@ -41,6 +41,7 @@
 | `minecraft-modpc-debug.timeout`   | 30000  | 等待超时时间（毫秒）               |
 | `minecraft-modpc-debug.mcdbgPath` | (内置) | mcdbg.exe 路径（留空使用插件内置） |
 | `minecraft-modpc-debug.mcdkPath` | (内置) | mcdk.exe 路径（留空使用插件内置） |
+| `minecraft-modpc-debug.enable` | false   |  强制启用MODPC插件（默认false自动扫描Addon结构）     |
 
 ## 前置要求
 
