@@ -551,6 +551,7 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     function collectData() {
+      // 保守合并：只更新插件管理的字段，保留其他未知字段
       const data = { ...currentData };
 
       // 收集 MOD 目录
@@ -564,11 +565,23 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
         data.included_mod_dirs = modDirs.map(d => ({ path: d.path, hot_reload: d.hot_reload }));
       }
 
-      // 收集键位绑定
-      if (!data.debug_options) data.debug_options = {};
-      Object.keys(keyBindings).forEach(key => {
-        data.debug_options[key] = keyBindings[key];
-      });
+      // 收集键位绑定（保留 debug_options 中的其他字段）
+      const reloadKeyGlobalEl = document.getElementById('reload_key_global');
+      const reloadKeyGlobalChecked = reloadKeyGlobalEl ? reloadKeyGlobalEl.checked : false;
+      
+      // 保留原有的 debug_options（包括 modpc_debugger 等）
+      if (data.debug_options || Object.keys(keyBindings).length > 0) {
+        const existingDebugOptions = data.debug_options || {};
+        data.debug_options = { ...existingDebugOptions };
+        
+        // 更新我们管理的键位字段（空字符串表示禁用，需要保留）
+        Object.keys(keyBindings).forEach(key => {
+          data.debug_options[key] = keyBindings[key]; // 空字符串也写入，表示禁用
+        });
+        
+        // reload_key_global
+        data.debug_options.reload_key_global = reloadKeyGlobalChecked;
+      }
 
       // Text fields
       fields.text.forEach(id => {
@@ -578,7 +591,12 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
         if (id === 'world_seed') {
           data[id] = val === '' ? null : (isNaN(Number(val)) ? null : Number(val));
         } else {
-          if (val) data[id] = val;
+          // 只有有值或原本存在时才写入
+          if (val) {
+            data[id] = val;
+          } else if (data[id] !== undefined) {
+            delete data[id]; // 如果用户清空了，删除该字段
+          }
         }
       });
 
@@ -588,16 +606,12 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
         if (el) data[id] = Number(el.value);
       });
 
-      // Checkbox fields
+      // Checkbox fields (排除 reload_key_global，已在上面处理)
       fields.checkbox.forEach(id => {
+        if (id === 'reload_key_global') return; // 跳过，已处理
         const el = document.getElementById(id);
         if (!el) return;
-        if (id === 'reload_key_global') {
-          if (!data.debug_options) data.debug_options = {};
-          data.debug_options[id] = el.checked;
-        } else {
-          data[id] = el.checked;
-        }
+        data[id] = el.checked;
       });
 
       return data;
