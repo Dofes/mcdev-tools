@@ -239,7 +239,7 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
     <div class="checkbox-field"><input type="checkbox" id="reset_world" /><label for="reset_world">reset_world (启动时重置世界)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="auto_join_game" /><label for="auto_join_game">auto_join_game (自动进入存档)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="include_debug_mod" /><label for="include_debug_mod">include_debug_mod (附加调试MOD)</label></div>
-    <div class="checkbox-field" style="margin-left: 20px;"><input type="checkbox" id="auto_hot_reload_mods" /><label for="auto_hot_reload_mods">auto_hot_reload_mods (自动热更新)</label></div>
+    <div class="checkbox-field"><input type="checkbox" id="auto_hot_reload_mods" /><label for="auto_hot_reload_mods">auto_hot_reload_mods (自动热更新)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="enable_cheats" /><label for="enable_cheats">enable_cheats (启用作弊)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="keep_inventory" /><label for="keep_inventory">keep_inventory (死亡不掉落)</label></div>
   </div>
