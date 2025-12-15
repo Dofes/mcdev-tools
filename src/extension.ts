@@ -239,6 +239,7 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
     <div class="checkbox-field"><input type="checkbox" id="reset_world" /><label for="reset_world">reset_world (启动时重置世界)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="auto_join_game" /><label for="auto_join_game">auto_join_game (自动进入存档)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="include_debug_mod" /><label for="include_debug_mod">include_debug_mod (附加调试MOD)</label></div>
+    <div class="checkbox-field" style="margin-left: 20px;"><input type="checkbox" id="auto_hot_reload_mods" /><label for="auto_hot_reload_mods">auto_hot_reload_mods (自动热更新)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="enable_cheats" /><label for="enable_cheats">enable_cheats (启用作弊)</label></div>
     <div class="checkbox-field"><input type="checkbox" id="keep_inventory" /><label for="keep_inventory">keep_inventory (死亡不掉落)</label></div>
   </div>
@@ -304,7 +305,7 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
     const fields = {
       text: ['world_name', 'world_folder_name', 'world_seed', 'user_name'],
       select: ['world_type', 'game_mode'],
-      checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'reload_key_global']
+      checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'auto_hot_reload_mods', 'reload_key_global']
     };
 
     // 键码到键名的映射
@@ -430,6 +431,13 @@ class McdevSidebarProvider implements vscode.WebviewViewProvider {
         updateKeyBindDisplay(key);
         stopKeyListen();
       });
+    });
+
+    // auto_hot_reload_mods 联动逻辑：勾选时自动开启 include_debug_mod
+    document.getElementById('auto_hot_reload_mods').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.getElementById('include_debug_mod').checked = true;
+      }
     });
 
     // 解析 included_mod_dirs 为统一格式
