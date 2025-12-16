@@ -2,7 +2,7 @@
     "name": "minecraft-modpc-debug",
     "displayName": "Minecraft ModPC Debug",
     "description": "VSCode 调试适配器，用于调试 Minecraft ModPC 中运行的 Python 脚本",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "author": "Dofes",
     "publisher": "dofes",
     "repository": {
