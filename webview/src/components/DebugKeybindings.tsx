@@ -1,5 +1,6 @@
 import React from 'react';
 import { I18nText } from '../i18n';
+import { useNestedDefaultValues } from '../hooks/useDefaultValues';
 
 interface DebugOptions {
   reload_key?: string;
@@ -18,7 +19,17 @@ interface Props {
   setActiveKeyListener: (key: string | null) => void;
   onDebugOptionChange: (field: string, value: any) => void;
   getKeyName: (code?: string) => string;
+  markInitialized?: (componentId: string) => void;
 }
+
+
+const DEFAULT_VALUES: DebugOptions = {
+  reload_key: '',
+  reload_world_key: '',
+  reload_addon_key: '',
+  reload_shaders_key: '',
+  reload_key_global: false,
+};
 
 export const DebugKeybindings: React.FC<Props> = ({
   t,
@@ -29,7 +40,10 @@ export const DebugKeybindings: React.FC<Props> = ({
   setActiveKeyListener,
   onDebugOptionChange,
   getKeyName,
+  markInitialized,
 }) => {
+  useNestedDefaultValues(debugOptions, DEFAULT_VALUES, onDebugOptionChange, markInitialized ? () => markInitialized('DebugKeybindings') : undefined);
+
   const renderKeybindDisplay = (key: string, label: string) => {
     const keyValue = debugOptions?.[key as keyof DebugOptions] as string | undefined;
     const isListening = activeKeyListener === key;
@@ -84,7 +98,7 @@ export const DebugKeybindings: React.FC<Props> = ({
           <input
             type="checkbox"
             id="reload_key_global"
-            checked={debugOptions?.reload_key_global || false}
+            checked={debugOptions?.reload_key_global ?? DEFAULT_VALUES.reload_key_global}
             onChange={(e) => onDebugOptionChange('reload_key_global', e.target.checked)}
           />
           <label htmlFor="reload_key_global">{t.globalReloadKey}</label>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { vscode } from './vscode';
 import { i18n, I18nText } from './i18n';
+import { logger } from './logger';
 import { ModDir, McdevData } from './types';
 import { ModDirectories } from './components/ModDirectories';
 import { WorldSettings } from './components/WorldSettings';
@@ -20,6 +21,10 @@ function App() {
   const [statusType, setStatusType] = useState<'success' | 'error' | 'info'>('info');
   const [debugExpanded, setDebugExpanded] = useState(false);
   const [activeKeyListener, setActiveKeyListener] = useState<string | null>(null);
+  const [needsAutoSave, setNeedsAutoSave] = useState(false);
+  
+  const initializedComponentsRef = useRef<Set<string>>(new Set());
+  const initTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle messages from extension
   useEffect(() => {
@@ -33,12 +38,15 @@ function App() {
             setLang(msg.language.startsWith('zh') ? 'zh' : 'en');
           }
           const parsedData = JSON.parse(msg.content || '{}');
-          loadData(parsedData);
+          
+          if (msg.needsInitialSave) {
+            setNeedsAutoSave(true);
+          } else {
+            loadData(parsedData);
+          }
+          
           showStatus(currentT.loaded, 'success');
           setHasChanges(false);
-          if (msg.needsInitialSave) {
-            setTimeout(() => handleSave(), 100);
-          }
           break;
         case 'saved':
           showStatus(currentT.savedSuccess, 'success');
@@ -89,6 +97,27 @@ function App() {
     };
   }, [data, modDirs]);
 
+  const performAutoSave = useCallback(() => {
+    const saveData = collectData();
+    vscode.postMessage({ type: 'save', content: JSON.stringify(saveData, null, 4) });
+    setNeedsAutoSave(false);
+    initializedComponentsRef.current.clear();
+  }, [collectData]);
+
+  const markInitialized = useCallback((componentId: string) => {
+    initializedComponentsRef.current.add(componentId);
+    
+    if (needsAutoSave) {
+      if (initTimerRef.current) {
+        clearTimeout(initTimerRef.current);
+      }
+      
+      initTimerRef.current = setTimeout(() => {
+        performAutoSave();
+      }, 100);
+    }
+  }, [needsAutoSave, performAutoSave]);
+
   const handleSave = useCallback(() => {
     const saveData = collectData();
     vscode.postMessage({ type: 'save', content: JSON.stringify(saveData, null, 4) });
@@ -116,6 +145,22 @@ function App() {
     setActiveKeyListener(null);
     setHasChanges(true);
   }, []);
+
+  useEffect(() => {
+    if (!needsAutoSave || initializedComponentsRef.current.size === 0) {
+      return;
+    }
+
+    initTimerRef.current = setTimeout(() => {
+      performAutoSave();
+    }, 100);
+    
+    return () => {
+      if (initTimerRef.current) {
+        clearTimeout(initTimerRef.current);
+      }
+    };
+  }, [needsAutoSave, performAutoSave]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -223,6 +268,7 @@ function App() {
         data={data}
         onDataChange={handleDataChange}
         onExperimentChange={handleExperimentChange}
+        markInitialized={markInitialized}
       />
 
       {/* Game Options */}
@@ -230,6 +276,7 @@ function App() {
         t={t}
         data={data}
         onDataChange={handleDataChange}
+        markInitialized={markInitialized}
       />
 
       {/* User Settings */}
@@ -244,6 +291,7 @@ function App() {
         t={t}
         windowStyle={data.window_style}
         onWindowStyleChange={handleWindowStyleChange}
+        markInitialized={markInitialized}
       />
 
       {/* Debug Keybindings */}
@@ -256,6 +304,7 @@ function App() {
         setActiveKeyListener={setActiveKeyListener}
         onDebugOptionChange={handleDebugOptionChange}
         getKeyName={getKeyName}
+        markInitialized={markInitialized}
       />
 
       {/* Floating Save Button */}

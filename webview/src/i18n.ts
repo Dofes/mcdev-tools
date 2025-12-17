@@ -42,8 +42,12 @@ export interface I18nText {
   titleBarColorPlaceholder: string;
   fixedSize: string;
   fixedSizePlaceholder: string;
+  width: string;
+  height: string;
   fixedPosition: string;
   fixedPositionPlaceholder: string;
+  positionX: string;
+  positionY: string;
   lockCorner: string;
   cornerNone: string;
   cornerTopLeft: string;
@@ -110,8 +114,12 @@ export const i18n: Record<string, I18nText> = {
     titleBarColorPlaceholder: 'e.g., #hex, rgb(r,g,b)',
     fixedSize: 'Fixed Size',
     fixedSizePlaceholder: 'e.g., 800,600',
+    width: 'Width',
+    height: 'Height',
     fixedPosition: 'Fixed Position',
     fixedPositionPlaceholder: 'e.g., 100,100',
+    positionX: 'X',
+    positionY: 'Y',
     lockCorner: 'Lock Corner',
     cornerNone: 'None',
     cornerTopLeft: 'Top Left',
@@ -176,8 +184,12 @@ export const i18n: Record<string, I18nText> = {
     titleBarColorPlaceholder: '例如 255,0,0 表示红色',
     fixedSize: '锁定大小 (宽 x 高)',
     fixedSizePlaceholder: '例如 1920,1080',
+    width: '宽',
+    height: '高',
     fixedPosition: '锁定位置 (X, Y)',
     fixedPositionPlaceholder: '例如 100,100',
+    positionX: 'X',
+    positionY: 'Y',
     lockCorner: '锁定到角落',
     cornerNone: '无',
     cornerTopLeft: '左上',

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { I18nText } from '../i18n';
+import { useDefaultValues } from '../hooks/useDefaultValues';
+import { useExperimentDefaults, EXPERIMENT_DEFAULT_VALUES } from '../hooks/useExperimentDefaults';
 
 interface McdevData {
   world_name?: string;
   world_folder_name?: string;
   world_seed?: number | null;
-  world_type?: number;
   game_mode?: number;
+  world_type?: number;
   experiment_options?: {
     data_driven_biomes?: boolean;
     data_driven_items?: boolean;
@@ -19,10 +21,23 @@ interface Props {
   data: McdevData;
   onDataChange: (field: string, value: any) => void;
   onExperimentChange: (field: string, checked: boolean) => void;
+  markInitialized?: (componentId: string) => void;
 }
 
-export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperimentChange }) => {
+
+const DEFAULT_VALUES: McdevData = {
+  world_name: 'MC_DEV_WORLD',
+  world_folder_name: 'MC_DEV_WORLD',
+  world_seed: null,
+  world_type: 1,
+  game_mode: 1,
+};
+
+export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperimentChange, markInitialized }) => {
   const [experimentExpanded, setExperimentExpanded] = useState(false);
+
+  useDefaultValues(data, DEFAULT_VALUES, onDataChange, markInitialized ? () => markInitialized('WorldSettings') : undefined);
+  useExperimentDefaults(data.experiment_options, onExperimentChange, markInitialized ? () => markInitialized('ExperimentOptions') : undefined);
 
   return (
     <div className="section">
@@ -38,7 +53,7 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
         <input
           type="text"
           id="world_name"
-          value={data.world_name || ''}
+          value={data.world_name ?? DEFAULT_VALUES.world_name ?? ''}
           onChange={(e) => onDataChange('world_name', e.target.value)}
           placeholder="MC_DEV_WORLD"
         />
@@ -49,7 +64,7 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
         <input
           type="text"
           id="world_folder_name"
-          value={data.world_folder_name || ''}
+          value={data.world_folder_name ?? DEFAULT_VALUES.world_folder_name ?? ''}
           onChange={(e) => onDataChange('world_folder_name', e.target.value)}
           placeholder="MC_DEV_WORLD"
         />
@@ -73,7 +88,7 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
         <label htmlFor="world_type">{t.worldType}</label>
         <select
           id="world_type"
-          value={data.world_type ?? 1}
+          value={data.world_type ?? DEFAULT_VALUES.world_type}
           onChange={(e) => onDataChange('world_type', Number(e.target.value))}
         >
           <option value="1">{t.infinity}</option>
@@ -86,7 +101,7 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
         <label htmlFor="game_mode">{t.gameMode}</label>
         <select
           id="game_mode"
-          value={data.game_mode ?? 1}
+          value={data.game_mode ?? DEFAULT_VALUES.game_mode}
           onChange={(e) => onDataChange('game_mode', Number(e.target.value))}
         >
           <option value="0">{t.survival}</option>
@@ -109,7 +124,7 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
             <input
               type="checkbox"
               id="exp_data_driven_biomes"
-              checked={data.experiment_options?.data_driven_biomes || false}
+              checked={data.experiment_options?.data_driven_biomes ?? EXPERIMENT_DEFAULT_VALUES.data_driven_biomes}
               onChange={(e) => onExperimentChange('data_driven_biomes', e.target.checked)}
             />
             <label htmlFor="exp_data_driven_biomes">{t.dataDrivenBiomes}</label>
@@ -118,7 +133,7 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
             <input
               type="checkbox"
               id="exp_data_driven_items"
-              checked={data.experiment_options?.data_driven_items || false}
+              checked={data.experiment_options?.data_driven_items ?? EXPERIMENT_DEFAULT_VALUES.data_driven_items}
               onChange={(e) => onExperimentChange('data_driven_items', e.target.checked)}
             />
             <label htmlFor="exp_data_driven_items">{t.dataDrivenItems}</label>
@@ -127,7 +142,7 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
             <input
               type="checkbox"
               id="exp_experimental_molang_features"
-              checked={data.experiment_options?.experimental_molang_features || false}
+              checked={data.experiment_options?.experimental_molang_features ?? EXPERIMENT_DEFAULT_VALUES.experimental_molang_features}
               onChange={(e) => onExperimentChange('experimental_molang_features', e.target.checked)}
             />
             <label htmlFor="exp_experimental_molang_features">{t.experimentalMolang}</label>
