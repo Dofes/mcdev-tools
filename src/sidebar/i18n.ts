@@ -36,7 +36,14 @@ export const i18n = {
         survival: "Survival",
         creative: "Creative",
         adventure: "Adventure",
-        spectator: "Spectator"
+        spectator: "Spectator",
+        doWeatherCycle: "Weather Cycle",
+        experimentOptions: "Experimental Options",
+        dataDrivenBiomes: "Data Driven Biomes",
+        dataDrivenItems: "Data Driven Items",
+        experimentalMolang: "Experimental Molang Features",
+        runGame: "Run Game",
+        runGameTooltip: "Run game without debugging (Ctrl+F5)"
     },
     zh: {
         save: "保存配置",
@@ -75,6 +82,13 @@ export const i18n = {
         survival: "生存",
         creative: "创造",
         adventure: "冒险",
-        spectator: "旁观者"
+        spectator: "旁观者",
+        doWeatherCycle: "天气循环",
+        experimentOptions: "实验性选项",
+        dataDrivenBiomes: "数据驱动生物群系",
+        dataDrivenItems: "数据驱动物品",
+        experimentalMolang: "实验性Molang特性",
+        runGame: "启动游戏",
+        runGameTooltip: "无调试运行游戏 (Ctrl+F5)"
     }
 };

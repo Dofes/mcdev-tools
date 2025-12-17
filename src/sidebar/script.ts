@@ -14,6 +14,7 @@ export const sidebarScript = `
             this.elements = {
                 saveBtn: document.getElementById('saveBtn'),
                 reloadBtn: document.getElementById('reloadBtn'),
+                runGameBtn: document.getElementById('runGameBtn'),
                 status: document.getElementById('status'),
                 modDirsList: document.getElementById('modDirsList'),
                 addDirBtn: document.getElementById('addDirBtn'),
@@ -25,7 +26,8 @@ export const sidebarScript = `
             this.fields = {
                 text: ['world_name', 'world_folder_name', 'world_seed', 'user_name'],
                 select: ['world_type', 'game_mode'],
-                checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'auto_hot_reload_mods', 'reload_key_global']
+                checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'auto_hot_reload_mods', 'do_weather_cycle', 'reload_key_global'],
+                experimentCheckbox: ['exp_data_driven_biomes', 'exp_data_driven_items', 'exp_experimental_molang_features']
             };
 
             this.keyBindFields = ['reload_key', 'reload_world_key', 'reload_addon_key', 'reload_shaders_key'];
@@ -44,6 +46,7 @@ export const sidebarScript = `
         bindEvents() {
             this.elements.saveBtn.addEventListener('click', () => this.save());
             this.elements.reloadBtn.addEventListener('click', () => vscode.postMessage({ type: 'ready' }));
+            this.elements.runGameBtn.addEventListener('click', () => vscode.postMessage({ type: 'runGame' }));
             
             this.elements.addDirBtn.addEventListener('click', () => {
                 this.state.modDirs.push({ path: './', hot_reload: true });
@@ -130,6 +133,16 @@ export const sidebarScript = `
                 }
             });
 
+            // Load experiment_options checkboxes (default false if experiment_options doesn't exist)
+            const expData = data.experiment_options || {};
+            this.fields.experimentCheckbox.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const realKey = id.replace('exp_', '');
+                // If experiment_options doesn't exist, default to false; otherwise use the value
+                el.checked = data.experiment_options === undefined ? false : !!expData[realKey];
+            });
+
             // Load keybindings
             this.keyBindFields.forEach(key => {
                 this.state.keyBindings[key] = data.debug_options?.[key] ?? '';
@@ -185,6 +198,17 @@ export const sidebarScript = `
                 });
                 data.debug_options.reload_key_global = reloadKeyGlobalChecked;
             }
+
+            // Collect experiment_options
+            const expOptions = {};
+            this.fields.experimentCheckbox.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const realKey = id.replace('exp_', '');
+                    expOptions[realKey] = el.checked;
+                }
+            });
+            data.experiment_options = expOptions;
 
             return data;
         }
