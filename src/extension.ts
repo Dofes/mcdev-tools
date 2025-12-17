@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as cp from 'child_process';
 import { isMinecraftAddonWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
 import { 
@@ -233,7 +234,7 @@ async function runMcdk(): Promise<void> {
     }
 
     // 检测是否已存在 Minecraft 进程
-    let env: { [key: string]: string } | undefined = undefined;
+    let env: NodeJS.ProcessEnv = { ...process.env };
     try {
         const mcdbgPathConfig = config.get<string>('mcdbgPath', '');
         const mcdbgPath = getMcdbgPath(workspaceFolder, mcdbgPathConfig, extensionContext.extensionPath);
@@ -243,22 +244,23 @@ async function runMcdk(): Promise<void> {
             const listResult = await listMinecraftProcesses(mcdbgPath);
             if (listResult.processes && listResult.processes.length > 0) {
                 console.log('检测到已存在的 Minecraft 进程，启用子进程模式');
-                env = { 'MCDEV_IS_SUBPROCESS_MODE': '1' };
+                env['MCDEV_IS_SUBPROCESS_MODE'] = '1';
             }
         }
     } catch (e) {
         console.error('检测 Minecraft 进程失败:', e);
     }
 
-    // 创建 VS Code 终端
+    // 使用 Terminal 直接执行 exe（支持颜色和实时输出，不用 cmd 包装）
     const terminal = vscode.window.createTerminal({
         name: 'Minecraft ModPC (mcdk)',
+        shellPath: mcdkPath,
         cwd: workspaceFolder.uri.fsPath,
         env: env
     });
 
     terminal.show(true);
-    terminal.sendText(`cmd /c "${mcdkPath}"`, true);
+    vscode.window.showInformationMessage('Minecraft ModPC 已启动');
 }
 
 export function deactivate(): void {
