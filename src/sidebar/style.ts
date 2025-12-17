@@ -255,11 +255,20 @@ button {
 }
 
 .toolbar .btn-primary {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+}
+
+.toolbar .btn-run {
+    background-color: var(--vscode-debugIcon-startForeground, #89d185);
+    color: #000;
+}
+
+.toolbar .btn-run:hover {
+    background-color: #6fbf6a;
 }
 
 .toolbar .btn-secondary {

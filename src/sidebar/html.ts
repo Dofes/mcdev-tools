@@ -25,9 +25,13 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
 <body>
     <div class="container">
         <div class="toolbar">
-            <button class="btn-primary" id="saveBtn">
+            <button class="btn-primary btn-run" id="runGameBtn" title="${t.runGameTooltip}">
+                <span class="codicon codicon-play"></span>
+                ${t.runGame}
+            </button>
+            <div style="flex: 1;"></div>
+            <button class="btn-secondary" id="saveBtn" title="${t.save}">
                 <span class="codicon codicon-save"></span>
-                ${t.save}
             </button>
             <button class="btn-secondary" id="reloadBtn" title="${t.reload}">
                 <span class="codicon codicon-refresh"></span>
@@ -121,6 +125,33 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
             <div class="checkbox-group">
                 <input type="checkbox" id="keep_inventory" />
                 <label for="keep_inventory">${t.keepInventory}</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="do_weather_cycle" />
+                <label for="do_weather_cycle">${t.doWeatherCycle}</label>
+            </div>
+        </div>
+
+        <div class="section collapsed">
+            <div class="section-header" id="experimentToggle">
+                <span class="section-title">
+                    <span class="codicon codicon-chevron-right"></span>
+                    ${t.experimentOptions}
+                </span>
+            </div>
+            <div class="collapsible-content" id="experimentContent">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="exp_data_driven_biomes" />
+                    <label for="exp_data_driven_biomes">${t.dataDrivenBiomes}</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="exp_data_driven_items" />
+                    <label for="exp_data_driven_items">${t.dataDrivenItems}</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="exp_experimental_molang_features" />
+                    <label for="exp_experimental_molang_features">${t.experimentalMolang}</label>
+                </div>
             </div>
         </div>
 

@@ -53,6 +53,8 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 await this.handleSave(msg.content);
             } else if (msg?.type === 'browseFolder') {
                 await this.handleBrowseFolder(webview, msg.index);
+            } else if (msg?.type === 'runGame') {
+                await vscode.commands.executeCommand('mcdev-tools.runGame');
             }
         });
     }
