@@ -216,6 +216,9 @@
         "build": "tsc -p tsconfig.release.json",
         "lint": "eslint src --ext ts"
     },
+    "dependencies": {
+        "jsonc-parser": "^3.2.0"
+    },
     "devDependencies": {
         "@types/vscode": "^1.85.0",
         "@types/node": "^18.x",

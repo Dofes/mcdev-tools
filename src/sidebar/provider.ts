@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as jsonc from 'jsonc-parser';
 import { getNonce } from '../utils';
 import { getSidebarHtml } from './html';
 
@@ -82,9 +83,12 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
         try {
             if (fs.existsSync(mcdevPath)) {
                 const content = fs.readFileSync(mcdevPath, 'utf8');
-                webview.postMessage({ type: 'init', content });
+                const parsed = jsonc.parse(content);
+                const jsonContent = JSON.stringify(parsed || {});
+                webview.postMessage({ type: 'init', content: jsonContent });
             } else {
-                webview.postMessage({ type: 'init', content: '{}' });
+                // 文件不存在时，发送空配置并标记需要初始化
+                webview.postMessage({ type: 'init', content: '{}', needsInitialSave: true });
             }
         } catch (e) {
             webview.postMessage({ type: 'init', content: '{}', error: String(e) });
@@ -148,7 +152,9 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             try {
                 if (fs.existsSync(mcdevPath)) {
                     const content = fs.readFileSync(mcdevPath, 'utf8');
-                    webview.postMessage({ type: 'init', content });
+                    const parsed = jsonc.parse(content);
+                    const jsonContent = JSON.stringify(parsed || {});
+                    webview.postMessage({ type: 'init', content: jsonContent });
                 }
             } catch (e) {
                 console.error('Error reading .mcdev.json after external change:', e);
@@ -160,7 +166,9 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             try {
                 if (fs.existsSync(mcdevPath)) {
                     const content = fs.readFileSync(mcdevPath, 'utf8');
-                    webview.postMessage({ type: 'init', content });
+                    const parsed = jsonc.parse(content);
+                    const jsonContent = JSON.stringify(parsed || {});
+                    webview.postMessage({ type: 'init', content: jsonContent });
                 }
             } catch (e) {
                 console.error('Error reading .mcdev.json after creation:', e);

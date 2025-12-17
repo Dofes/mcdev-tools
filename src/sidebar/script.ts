@@ -106,6 +106,9 @@ export const sidebarScript = `
                         this.showStatus(t.loaded || 'Loaded', 'success');
                         this.state.hasChanges = false;
                         this.hideFloatingSaveBtn();
+                        if (msg.needsInitialSave) {
+                            setTimeout(() => this.save(), 100);
+                        }
                         break;
                     case 'saved':
                         this.showStatus(t.savedSuccess || 'Saved successfully', 'success');
@@ -177,7 +180,7 @@ export const sidebarScript = `
             });
 
             // Load checkboxes
-            const defaultTrue = ['auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'auto_hot_reload_mods'];
+            const defaultTrue = ['auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'auto_hot_reload_mods', 'do_weather_cycle'];
             this.fields.checkbox.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;

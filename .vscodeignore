@@ -6,4 +6,5 @@ src/**
 **/*.map
 **/*.ts
 node_modules/**
+!node_modules/jsonc-parser/**
 !bin/**
