@@ -25,9 +25,9 @@ export const sidebarScript = `
             };
 
             this.fields = {
-                text: ['world_name', 'world_folder_name', 'world_seed', 'user_name'],
-                select: ['world_type', 'game_mode'],
-                checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'auto_hot_reload_mods', 'do_weather_cycle', 'reload_key_global'],
+                text: ['world_name', 'world_folder_name', 'world_seed', 'user_name', 'ws_title_bar_color', 'ws_fixed_size', 'ws_fixed_position'],
+                select: ['world_type', 'game_mode', 'ws_lock_corner'],
+                checkbox: ['reset_world', 'auto_join_game', 'include_debug_mod', 'enable_cheats', 'keep_inventory', 'auto_hot_reload_mods', 'do_weather_cycle', 'reload_key_global', 'ws_always_on_top', 'ws_hide_title_bar'],
                 experimentCheckbox: ['exp_data_driven_biomes', 'exp_data_driven_items', 'exp_experimental_molang_features']
             };
 
@@ -171,12 +171,36 @@ export const sidebarScript = `
             // Load text/select fields
             this.fields.text.forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.value = (id === 'world_seed' && data[id] === null) ? '' : (data[id] ?? '');
+                if (el) {
+                    if (id.startsWith('ws_')) {
+                        // Handle window_style fields
+                        const wsKey = id.replace('ws_', '');
+                        const wsValue = data.window_style?.[wsKey];
+                        if (wsValue !== null && wsValue !== undefined) {
+                            if (Array.isArray(wsValue)) {
+                                el.value = wsValue.join(',');
+                            } else {
+                                el.value = wsValue;
+                            }
+                        } else {
+                            el.value = '';
+                        }
+                    } else {
+                        el.value = (id === 'world_seed' && data[id] === null) ? '' : (data[id] ?? '');
+                    }
+                }
             });
 
             this.fields.select.forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.value = String(data[id] ?? (id === 'world_type' ? 1 : 1));
+                if (el) {
+                    if (id === 'ws_lock_corner') {
+                        const wsValue = data.window_style?.lock_corner;
+                        el.value = (wsValue !== null && wsValue !== undefined) ? String(wsValue) : '';
+                    } else {
+                        el.value = String(data[id] ?? (id === 'world_type' ? 1 : 1));
+                    }
+                }
             });
 
             // Load checkboxes
@@ -186,6 +210,9 @@ export const sidebarScript = `
                 if (!el) return;
                 if (id === 'reload_key_global') {
                     el.checked = !!data.debug_options?.[id];
+                } else if (id.startsWith('ws_')) {
+                    const wsKey = id.replace('ws_', '');
+                    el.checked = !!data.window_style?.[wsKey];
                 } else {
                     el.checked = data[id] === undefined ? defaultTrue.includes(id) : !!data[id];
                 }
@@ -213,12 +240,38 @@ export const sidebarScript = `
         collectData() {
             const data = { ...this.state.data };
 
+            // Initialize window_style
+            if (!data.window_style) {
+                data.window_style = {};
+            }
+
             // Collect fields
             this.fields.text.forEach(id => {
                 const el = document.getElementById(id);
                 if (!el) return;
                 const val = el.value.trim();
-                if (id === 'world_seed') {
+                
+                if (id.startsWith('ws_')) {
+                    const wsKey = id.replace('ws_', '');
+                    if (val === '') {
+                        data.window_style[wsKey] = null;
+                    } else if (wsKey === 'title_bar_color' || wsKey === 'fixed_size' || wsKey === 'fixed_position') {
+                        // Parse comma-separated values
+                        const parts = val.split(',').map(p => p.trim()).filter(p => p !== '');
+                        if (parts.length > 0) {
+                            const numbers = parts.map(p => Number(p)).filter(n => !isNaN(n));
+                            if (numbers.length === parts.length) {
+                                data.window_style[wsKey] = numbers;
+                            } else {
+                                data.window_style[wsKey] = null;
+                            }
+                        } else {
+                            data.window_style[wsKey] = null;
+                        }
+                    } else {
+                        data.window_style[wsKey] = val;
+                    }
+                } else if (id === 'world_seed') {
                     data[id] = val === '' ? null : (isNaN(Number(val)) ? null : Number(val));
                 } else {
                     if (val) data[id] = val;
@@ -228,13 +281,27 @@ export const sidebarScript = `
 
             this.fields.select.forEach(id => {
                 const el = document.getElementById(id);
-                if (el) data[id] = Number(el.value);
+                if (el) {
+                    if (id === 'ws_lock_corner') {
+                        const val = el.value;
+                        data.window_style.lock_corner = val === '' ? null : Number(val);
+                    } else {
+                        data[id] = Number(el.value);
+                    }
+                }
             });
 
             this.fields.checkbox.forEach(id => {
                 if (id === 'reload_key_global') return;
                 const el = document.getElementById(id);
-                if (el) data[id] = el.checked;
+                if (el) {
+                    if (id.startsWith('ws_')) {
+                        const wsKey = id.replace('ws_', '');
+                        data.window_style[wsKey] = el.checked;
+                    } else {
+                        data[id] = el.checked;
+                    }
+                }
             });
 
             // Collect Mod Dirs

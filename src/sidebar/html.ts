@@ -158,6 +158,45 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
             </div>
         </div>
 
+        <div class="section">
+            <div class="section-header-plain">
+                <span class="section-title">
+                    <span class="codicon codicon-window"></span>
+                    ${t.windowStyle}
+                </span>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="ws_always_on_top" />
+                <label for="ws_always_on_top">${t.alwaysOnTop}</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="ws_hide_title_bar" />
+                <label for="ws_hide_title_bar">${t.hideTitleBar}</label>
+            </div>
+            <div class="control-group">
+                <label for="ws_title_bar_color">${t.titleBarColor}</label>
+                <input type="text" id="ws_title_bar_color" placeholder="${t.titleBarColorPlaceholder}" />
+            </div>
+            <div class="control-group">
+                <label for="ws_fixed_size">${t.fixedSize}</label>
+                <input type="text" id="ws_fixed_size" placeholder="${t.fixedSizePlaceholder}" />
+            </div>
+            <div class="control-group">
+                <label for="ws_fixed_position">${t.fixedPosition}</label>
+                <input type="text" id="ws_fixed_position" placeholder="${t.fixedPositionPlaceholder}" />
+            </div>
+            <div class="control-group">
+                <label for="ws_lock_corner">${t.lockCorner}</label>
+                <select id="ws_lock_corner">
+                    <option value="">${t.cornerNone}</option>
+                    <option value="1">${t.cornerTopLeft}</option>
+                    <option value="2">${t.cornerTopRight}</option>
+                    <option value="3">${t.cornerBottomLeft}</option>
+                    <option value="4">${t.cornerBottomRight}</option>
+                </select>
+            </div>
+        </div>
+
         <div class="section collapsed">
             <div class="section-header" id="debugToggle">
                 <span class="section-title">

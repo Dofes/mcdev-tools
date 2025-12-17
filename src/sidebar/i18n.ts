@@ -45,7 +45,22 @@ export const i18n = {
         runGame: "Run Game",
         runGameTooltip: "Run game without debugging (Ctrl+F5)",
         saveChanges: "Save Changes",
-        addModDirectory: "Add Mod Directory"
+        addModDirectory: "Add Mod Directory",
+        windowStyle: "Window Style",
+        alwaysOnTop: "Always On Top",
+        hideTitleBar: "Hide Title Bar",
+        titleBarColor: "Title Bar Color (RGB)",
+        titleBarColorPlaceholder: "e.g. 255,0,0 for red",
+        fixedSize: "Fixed Size (W x H)",
+        fixedSizePlaceholder: "e.g. 1920,1080",
+        fixedPosition: "Fixed Position (X, Y)",
+        fixedPositionPlaceholder: "e.g. 100,100",
+        lockCorner: "Lock to Corner",
+        cornerNone: "None",
+        cornerTopLeft: "Top Left",
+        cornerTopRight: "Top Right",
+        cornerBottomLeft: "Bottom Left",
+        cornerBottomRight: "Bottom Right"
     },
     zh: {
         save: "保存配置",
@@ -93,6 +108,21 @@ export const i18n = {
         runGame: "启动游戏",
         runGameTooltip: "无调试运行游戏 (Ctrl+F5)",
         saveChanges: "保存更改",
-        addModDirectory: "添加模组目录"
+        addModDirectory: "添加模组目录",
+        windowStyle: "窗口样式",
+        alwaysOnTop: "悬浮置顶",
+        hideTitleBar: "隐藏标题栏",
+        titleBarColor: "标题栏颜色 (RGB)",
+        titleBarColorPlaceholder: "例如 255,0,0 表示红色",
+        fixedSize: "锁定大小 (宽 x 高)",
+        fixedSizePlaceholder: "例如 1920,1080",
+        fixedPosition: "锁定位置 (X, Y)",
+        fixedPositionPlaceholder: "例如 100,100",
+        lockCorner: "锁定到角落",
+        cornerNone: "无",
+        cornerTopLeft: "左上",
+        cornerTopRight: "右上",
+        cornerBottomLeft: "左下",
+        cornerBottomRight: "右下"
     }
 };
