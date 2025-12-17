@@ -8,16 +8,17 @@ export const sidebarScript = `
             this.state = {
                 data: {},
                 modDirs: [],
-                keyBindings: {}
+                keyBindings: {},
+                hasChanges: false,
+                originalData: null
             };
             
             this.elements = {
-                saveBtn: document.getElementById('saveBtn'),
-                reloadBtn: document.getElementById('reloadBtn'),
+                floatingSaveBtn: document.getElementById('floatingSaveBtn'),
+                floatingSaveContainer: document.getElementById('floatingSaveContainer'),
                 runGameBtn: document.getElementById('runGameBtn'),
                 status: document.getElementById('status'),
                 modDirsList: document.getElementById('modDirsList'),
-                addDirBtn: document.getElementById('addDirBtn'),
                 browseDirBtn: document.getElementById('browseDirBtn'),
                 debugToggle: document.getElementById('debugToggle'),
                 debugContent: document.getElementById('debugContent')
@@ -39,20 +40,15 @@ export const sidebarScript = `
         init() {
             this.bindEvents();
             this.setupMessageListener();
+            this.setupChangeDetection();
             // Tell extension we are ready
             vscode.postMessage({ type: 'ready' });
         }
 
         bindEvents() {
-            this.elements.saveBtn.addEventListener('click', () => this.save());
-            this.elements.reloadBtn.addEventListener('click', () => vscode.postMessage({ type: 'ready' }));
+            this.elements.floatingSaveBtn.addEventListener('click', () => this.save());
             this.elements.runGameBtn.addEventListener('click', () => vscode.postMessage({ type: 'runGame' }));
             
-            this.elements.addDirBtn.addEventListener('click', () => {
-                this.state.modDirs.push({ path: './', hot_reload: true });
-                this.renderModDirs();
-            });
-
             this.elements.browseDirBtn.addEventListener('click', () => {
                 vscode.postMessage({ type: 'browseFolder', index: -1 });
             });
@@ -76,6 +72,19 @@ export const sidebarScript = `
                 }
             });
 
+            // Collapsible subsections
+            document.querySelectorAll('.subsection-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const subsection = header.parentElement;
+                    subsection.classList.toggle('collapsed');
+                    const icon = header.querySelector('.codicon-chevron-right, .codicon-chevron-down');
+                    if (icon) {
+                        icon.classList.toggle('codicon-chevron-down');
+                        icon.classList.toggle('codicon-chevron-right');
+                    }
+                });
+            });
+
             // Auto-check dependency
             const autoHotReload = document.getElementById('auto_hot_reload_mods');
             if (autoHotReload) {
@@ -95,15 +104,61 @@ export const sidebarScript = `
                     case 'init':
                         this.loadData(JSON.parse(msg.content || '{}'));
                         this.showStatus(t.loaded || 'Loaded', 'success');
+                        this.state.hasChanges = false;
+                        this.hideFloatingSaveBtn();
                         break;
                     case 'saved':
                         this.showStatus(t.savedSuccess || 'Saved successfully', 'success');
+                        this.state.hasChanges = false;
+                        this.hideFloatingSaveBtn();
                         break;
                     case 'folderSelected':
                         this.handleFolderSelected(msg.index, msg.path);
                         break;
                 }
             });
+        }
+
+        setupChangeDetection() {
+            // Monitor input changes
+            this.fields.text.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('input', () => this.markAsChanged());
+            });
+
+            this.fields.select.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('change', () => this.markAsChanged());
+            });
+
+            this.fields.checkbox.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('change', () => this.markAsChanged());
+            });
+
+            this.fields.experimentCheckbox.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('change', () => this.markAsChanged());
+            });
+        }
+
+        markAsChanged() {
+            if (!this.state.hasChanges) {
+                this.state.hasChanges = true;
+                this.showFloatingSaveBtn();
+            }
+        }
+
+        showFloatingSaveBtn() {
+            if (this.elements.floatingSaveContainer) {
+                this.elements.floatingSaveContainer.style.display = 'flex';
+            }
+        }
+
+        hideFloatingSaveBtn() {
+            if (this.elements.floatingSaveContainer) {
+                this.elements.floatingSaveContainer.style.display = 'none';
+            }
         }
 
         loadData(data) {
@@ -259,12 +314,19 @@ export const sidebarScript = `
                     </div>
                 \`;
 
-                item.querySelector('.mod-path').addEventListener('input', (e) => this.state.modDirs[idx].path = e.target.value);
+                item.querySelector('.mod-path').addEventListener('input', (e) => {
+                    this.state.modDirs[idx].path = e.target.value;
+                    this.markAsChanged();
+                });
                 item.querySelector('.browse').addEventListener('click', () => vscode.postMessage({ type: 'browseFolder', index: idx }));
-                item.querySelector('.mod-hotreload').addEventListener('change', (e) => this.state.modDirs[idx].hot_reload = e.target.checked);
+                item.querySelector('.mod-hotreload').addEventListener('change', (e) => {
+                    this.state.modDirs[idx].hot_reload = e.target.checked;
+                    this.markAsChanged();
+                });
                 item.querySelector('.delete').addEventListener('click', () => {
                     this.state.modDirs.splice(idx, 1);
                     this.renderModDirs();
+                    this.markAsChanged();
                 });
 
                 container.appendChild(item);
@@ -278,6 +340,7 @@ export const sidebarScript = `
                 this.state.modDirs[index].path = path;
             }
             this.renderModDirs();
+            this.markAsChanged();
         }
 
         // --- Keybinding Logic ---
@@ -344,6 +407,7 @@ export const sidebarScript = `
 
             this.state.keyBindings[this.activeKeyListener] = String(e.keyCode);
             this.stopKeyListen();
+            this.markAsChanged();
         }
 
         getKeyName(code) {

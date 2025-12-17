@@ -29,13 +29,6 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
                 <span class="codicon codicon-play"></span>
                 ${t.runGame}
             </button>
-            <div style="flex: 1;"></div>
-            <button class="btn-secondary" id="saveBtn" title="${t.save}">
-                <span class="codicon codicon-save"></span>
-            </button>
-            <button class="btn-secondary" id="reloadBtn" title="${t.reload}">
-                <span class="codicon codicon-refresh"></span>
-            </button>
         </div>
         <div id="status" class="status-bar" style="margin-bottom: 12px; min-height: 16px;"></div>
 
@@ -47,12 +40,9 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
                 </span>
             </div>
             <div class="mod-list" id="modDirsList"></div>
-            <div style="margin-top: 8px; display: flex; gap: 8px;">
-                <button class="btn-secondary" id="addDirBtn">
-                    <span class="codicon codicon-add"></span> ${t.addDirectory}
-                </button>
-                <button class="btn-secondary" id="browseDirBtn">
-                    <span class="codicon codicon-folder"></span> ${t.browse}
+            <div style="margin-top: 12px;">
+                <button class="btn-primary" id="browseDirBtn" style="width: 100%;">
+                    <span class="codicon codicon-folder-opened"></span> ${t.addModDirectory}
                 </button>
             </div>
         </div>
@@ -79,9 +69,9 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
             <div class="control-group">
                 <label for="world_type">${t.worldType}</label>
                 <select id="world_type">
-                    <option value="0">${t.default}</option>
-                    <option value="1">${t.flat}</option>
-                    <option value="2">${t.old}</option>
+                    <option value="1">${t.infinity}</option>
+                    <option value="2">${t.flat}</option>
+                    <option value="0">${t.old}</option>
                 </select>
             </div>
             <div class="control-group">
@@ -92,6 +82,29 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
                     <option value="2">${t.adventure}</option>
                     <option value="3">${t.spectator}</option>
                 </select>
+            </div>
+            
+            <div class="subsection collapsed">
+                <div class="subsection-header">
+                    <span class="subsection-title">
+                        <span class="codicon codicon-chevron-right"></span>
+                        ${t.experimentOptions}
+                    </span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="exp_data_driven_biomes" />
+                        <label for="exp_data_driven_biomes">${t.dataDrivenBiomes}</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="exp_data_driven_items" />
+                        <label for="exp_data_driven_items">${t.dataDrivenItems}</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="exp_experimental_molang_features" />
+                        <label for="exp_experimental_molang_features">${t.experimentalMolang}</label>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -129,29 +142,6 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
             <div class="checkbox-group">
                 <input type="checkbox" id="do_weather_cycle" />
                 <label for="do_weather_cycle">${t.doWeatherCycle}</label>
-            </div>
-        </div>
-
-        <div class="section collapsed">
-            <div class="section-header" id="experimentToggle">
-                <span class="section-title">
-                    <span class="codicon codicon-chevron-right"></span>
-                    ${t.experimentOptions}
-                </span>
-            </div>
-            <div class="collapsible-content" id="experimentContent">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="exp_data_driven_biomes" />
-                    <label for="exp_data_driven_biomes">${t.dataDrivenBiomes}</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="exp_data_driven_items" />
-                    <label for="exp_data_driven_items">${t.dataDrivenItems}</label>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="exp_experimental_molang_features" />
-                    <label for="exp_experimental_molang_features">${t.experimentalMolang}</label>
-                </div>
             </div>
         </div>
 
@@ -197,6 +187,13 @@ export function getSidebarHtml(nonce: string, vscodeLanguage?: string): string {
                     <label for="reload_key_global">${t.globalReloadKey}</label>
                 </div>
             </div>
+        </div>
+        
+        <div class="floating-save-container" id="floatingSaveContainer" style="display: none;">
+            <button class="btn-primary" id="floatingSaveBtn">
+                <span class="codicon codicon-save"></span>
+                ${t.saveChanges}
+            </button>
         </div>
     </div>
 

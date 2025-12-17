@@ -18,6 +18,7 @@ body {
 
 .container {
     padding: var(--container-padding);
+    padding-bottom: 80px;
     max-width: 100%;
     box-sizing: border-box;
 }
@@ -68,6 +69,58 @@ h3 {
 .section-title .codicon {
     margin-right: 6px;
     font-size: 14px;
+}
+
+.subsection {
+    margin-top: 20px;
+    padding: 12px;
+    background-color: var(--vscode-sideBar-background);
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 3px;
+}
+
+.subsection-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 6px;
+    margin: -4px -6px 8px -6px;
+    border-radius: 2px;
+}
+
+.subsection-header:hover {
+    background-color: var(--vscode-list-hoverBackground);
+}
+
+.subsection-title {
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--vscode-foreground);
+    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.subsection-title .codicon {
+    margin-right: 6px;
+    font-size: 12px;
+}
+
+.subsection .collapsible-content {
+    padding-left: 4px;
+    padding-top: 4px;
+}
+
+.subsection.collapsed {
+    padding: 12px;
+}
+
+.subsection.collapsed .subsection-header {
+    margin-bottom: 0;
 }
 
 .control-group {
@@ -255,22 +308,26 @@ button {
 }
 
 .toolbar .btn-primary {
-    flex: 0 0 auto;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .toolbar .btn-run {
-    background-color: var(--vscode-debugIcon-startForeground, #89d185);
-    color: #000;
+    /* Use standard button colors for better readability */
+    background-color: var(--vscode-button-background) !important;
+    color: var(--vscode-button-foreground) !important;
 }
 
 .toolbar .btn-run:hover {
-    background-color: #6fbf6a;
+    background-color: var(--vscode-button-hoverBackground) !important;
 }
-
+    
 .toolbar .btn-secondary {
     padding: 6px 10px;
 }
@@ -353,5 +410,40 @@ button {
 }
 .collapsed .codicon-chevron-right {
     transform: rotate(-90deg);
+}
+
+/* Floating Save Button */
+.floating-save-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    background: linear-gradient(to top, var(--vscode-sideBar-background) 80%, transparent);
+    z-index: 100;
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.floating-save-container .btn-primary {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 `;

@@ -30,7 +30,7 @@ export const i18n = {
         gameOptions: "Game Options",
         userSettings: "User Settings",
         debugKeybindings: "Debug Keybindings",
-        default: "Infinite World",
+        infinity: "Infinite World",
         flat: "Flat World",
         old: "Legacy World",
         survival: "Survival",
@@ -43,7 +43,9 @@ export const i18n = {
         dataDrivenItems: "Data Driven Items",
         experimentalMolang: "Experimental Molang Features",
         runGame: "Run Game",
-        runGameTooltip: "Run game without debugging (Ctrl+F5)"
+        runGameTooltip: "Run game without debugging (Ctrl+F5)",
+        saveChanges: "Save Changes",
+        addModDirectory: "Add Mod Directory"
     },
     zh: {
         save: "保存配置",
@@ -76,7 +78,7 @@ export const i18n = {
         gameOptions: "游戏选项",
         userSettings: "用户设置",
         debugKeybindings: "调试按键绑定",
-        default: "无限世界",
+        infinity: "无限世界",
         flat: "超平坦世界",
         old: "有限世界",
         survival: "生存",
@@ -89,6 +91,8 @@ export const i18n = {
         dataDrivenItems: "数据驱动物品",
         experimentalMolang: "实验性Molang特性",
         runGame: "启动游戏",
-        runGameTooltip: "无调试运行游戏 (Ctrl+F5)"
+        runGameTooltip: "无调试运行游戏 (Ctrl+F5)",
+        saveChanges: "保存更改",
+        addModDirectory: "添加模组目录"
     }
 };

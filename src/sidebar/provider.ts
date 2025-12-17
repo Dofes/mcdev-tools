@@ -9,6 +9,7 @@ import { getSidebarHtml } from './html';
  */
 export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
+    private _fileWatcher?: vscode.FileSystemWatcher;
     
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -37,6 +38,14 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             }
 
             this.setupMessageHandler(webview);
+            this.setupFileWatcher(webview);
+
+            // Clean up watcher when view is disposed
+            webviewView.onDidDispose(() => {
+                if (this._fileWatcher) {
+                    this._fileWatcher.dispose();
+                }
+            });
         } catch (err) {
             console.error('resolveWebviewView top-level error', err);
         }
@@ -118,6 +127,50 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 path: result[0].fsPath 
             });
         }
+    }
+
+    /**
+     * 设置文件监听器，当 .mcdev.json 被外部修改时自动重载
+     */
+    private setupFileWatcher(webview: vscode.Webview): void {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            return;
+        }
+
+        const mcdevPath = path.join(workspaceFolder.uri.fsPath, '.mcdev.json');
+        const pattern = new vscode.RelativePattern(workspaceFolder, '.mcdev.json');
+        
+        this._fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+
+        // 监听文件变化
+        this._fileWatcher.onDidChange(async () => {
+            try {
+                if (fs.existsSync(mcdevPath)) {
+                    const content = fs.readFileSync(mcdevPath, 'utf8');
+                    webview.postMessage({ type: 'init', content });
+                }
+            } catch (e) {
+                console.error('Error reading .mcdev.json after external change:', e);
+            }
+        });
+
+        // 监听文件创建
+        this._fileWatcher.onDidCreate(async () => {
+            try {
+                if (fs.existsSync(mcdevPath)) {
+                    const content = fs.readFileSync(mcdevPath, 'utf8');
+                    webview.postMessage({ type: 'init', content });
+                }
+            } catch (e) {
+                console.error('Error reading .mcdev.json after creation:', e);
+            }
+        });
+
+        // 监听文件删除
+        this._fileWatcher.onDidDelete(() => {
+            webview.postMessage({ type: 'init', content: '{}' });
+        });
     }
 
     /**
