@@ -1,7 +1,7 @@
 {
     "name": "mcdev-tools",
     "displayName": "MC Dev Tools",
-    "description": "MC 开发工具集，集成 mcpdb 调试器和 mcdk 启动器",
+    "description": "一个用于我的世界中国版模组开发的调试工具插件。",
     "version": "0.0.7",
     "author": "Dofes",
     "publisher": "dofes",
