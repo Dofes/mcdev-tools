@@ -19,72 +19,73 @@ interface Props {
 
 export const GameOptions: React.FC<Props> = ({ t, data, onDataChange }) => {
   return (
-    <div className="section">
-      <div className="section-header-plain">
-        <span className="section-title">
-          <span className="codicon codicon-debug-alt"></span>
-          {t.startupOptions}
-        </span>
+    <>
+      <div className="section">
+        <div className="section-header-plain">
+          <span className="section-title">
+            <span className="codicon codicon-debug-alt"></span>
+            {t.startupOptions}
+          </span>
+        </div>
+
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="reset_world"
+            checked={data.reset_world || false}
+            onChange={(e) => onDataChange('reset_world', e.target.checked)}
+          />
+          <label htmlFor="reset_world">{t.resetWorld}</label>
+        </div>
+
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="auto_join_game"
+            checked={data.auto_join_game ?? true}
+            onChange={(e) => onDataChange('auto_join_game', e.target.checked)}
+          />
+          <label htmlFor="auto_join_game">{t.autoJoin}</label>
+        </div>
+
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="include_debug_mod"
+            checked={data.include_debug_mod ?? true}
+            onChange={(e) => onDataChange('include_debug_mod', e.target.checked)}
+          />
+          <label htmlFor="include_debug_mod">{t.includeDebug}</label>
+        </div>
+
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="auto_hot_reload_mods"
+            checked={data.auto_hot_reload_mods ?? true}
+            onChange={(e) => onDataChange('auto_hot_reload_mods', e.target.checked)}
+          />
+          <label htmlFor="auto_hot_reload_mods">{t.autoHotReload}</label>
+        </div>
       </div>
 
-      <div className="checkbox-group">
-        <input
-          type="checkbox"
-          id="reset_world"
-          checked={data.reset_world || false}
-          onChange={(e) => onDataChange('reset_world', e.target.checked)}
-        />
-        <label htmlFor="reset_world">{t.resetWorld}</label>
-      </div>
+      <div className="section">
+        <div className="section-header-plain">
+          <span className="section-title">
+            <span className="codicon codicon-law"></span>
+            {t.gameRules}
+          </span>
+        </div>
 
-      <div className="checkbox-group">
-        <input
-          type="checkbox"
-          id="auto_join_game"
-          checked={data.auto_join_game ?? true}
-          onChange={(e) => onDataChange('auto_join_game', e.target.checked)}
-        />
-        <label htmlFor="auto_join_game">{t.autoJoin}</label>
-      </div>
-
-      <div className="checkbox-group">
-        <input
-          type="checkbox"
-          id="include_debug_mod"
-          checked={data.include_debug_mod ?? true}
-          onChange={(e) => onDataChange('include_debug_mod', e.target.checked)}
-        />
-        <label htmlFor="include_debug_mod">{t.includeDebug}</label>
-      </div>
-
-      <div className="checkbox-group">
-        <input
-          type="checkbox"
-          id="auto_hot_reload_mods"
-          checked={data.auto_hot_reload_mods ?? true}
-          onChange={(e) => onDataChange('auto_hot_reload_mods', e.target.checked)}
-        />
-        <label htmlFor="auto_hot_reload_mods">{t.autoHotReload}</label>
-      </div>
-
-      <div className="section-divider"></div>
-
-      <div className="section-header-plain">
-        <span className="section-title">
-          <span className="codicon codicon-law"></span>
-          {t.gameRules}
-        </span>
-      </div>
-
-      <div className="checkbox-group">
-        <input
-          type="checkbox"
-          id="enable_cheats"
-          checked={data.enable_cheats ?? true}
-          onChange={(e) => onDataChange('enable_cheats', e.target.checked)}
-        />
-        <label htmlFor="enable_cheats">{t.enableCheats}</label>
-      </div>
+        <div className="checkbox-group">
+          <input
+            type="checkbox"
+            id="enable_cheats"
+            checked={data.enable_cheats ?? true}
+            onChange={(e) => onDataChange('enable_cheats', e.target.checked)}
+          />
+          <label htmlFor="enable_cheats">{t.enableCheats}</label>
+        </div>
 
       <div className="checkbox-group">
         <input
@@ -106,5 +107,6 @@ export const GameOptions: React.FC<Props> = ({ t, data, onDataChange }) => {
         <label htmlFor="do_weather_cycle">{t.doWeatherCycle}</label>
       </div>
     </div>
+    </>
   );
 };
