@@ -4,6 +4,7 @@ dist/
 
 # 依赖
 node_modules/
+webview/node_modules/
 
 # 日志
 *.log

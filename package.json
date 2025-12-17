@@ -210,10 +210,12 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "vscode:prepublish": "npm run compile && npm run compile:webview",
         "compile": "tsc -p ./",
+        "compile:webview": "cd webview && npm run build",
         "watch": "tsc -watch -p ./",
-        "build": "tsc -p tsconfig.release.json",
+        "watch:webview": "cd webview && npm run dev",
+        "build": "npm run compile && npm run compile:webview",
         "lint": "eslint src --ext ts"
     },
     "dependencies": {
@@ -222,6 +224,7 @@
     "devDependencies": {
         "@types/vscode": "^1.85.0",
         "@types/node": "^18.x",
+        "@vscode/codicons": "^0.0.36",
         "typescript": "^5.3.0"
     }
 }

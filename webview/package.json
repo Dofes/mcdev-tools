@@ -1,0 +1,26 @@
+{
+  "name": "mcdev-tools-webview",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@types/vscode-webview": "^1.57.5",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vscode/codicons": "^0.0.44",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0"
+  }
+}

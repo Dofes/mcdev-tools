@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as jsonc from 'jsonc-parser';
 import { getNonce } from '../utils';
-import { getSidebarHtml } from './html';
 
 /**
  * 侧边栏 Webview 提供者，用于可视化编辑 .mcdev.json
@@ -74,8 +73,10 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
      */
     private async handleReady(webview: vscode.Webview): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        const language = vscode.env.language; // 获取 VS Code 语言设置
+        
         if (!workspaceFolder) {
-            webview.postMessage({ type: 'init', content: '{}' });
+            webview.postMessage({ type: 'init', content: '{}', language });
             return;
         }
 
@@ -85,13 +86,13 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 const content = fs.readFileSync(mcdevPath, 'utf8');
                 const parsed = jsonc.parse(content);
                 const jsonContent = JSON.stringify(parsed || {});
-                webview.postMessage({ type: 'init', content: jsonContent });
+                webview.postMessage({ type: 'init', content: jsonContent, language });
             } else {
                 // 文件不存在时，发送空配置并标记需要初始化
-                webview.postMessage({ type: 'init', content: '{}', needsInitialSave: true });
+                webview.postMessage({ type: 'init', content: '{}', needsInitialSave: true, language });
             }
         } catch (e) {
-            webview.postMessage({ type: 'init', content: '{}', error: String(e) });
+            webview.postMessage({ type: 'init', content: '{}', error: String(e), language });
         }
     }
 
@@ -184,10 +185,31 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
     /**
      * 获取 Webview HTML
      */
-    public getHtmlForWebview(_webview: vscode.Webview): string {
+    public getHtmlForWebview(webview: vscode.Webview): string {
         const nonce = getNonce();
-        // Get VS Code language setting
         const vscodeLanguage = vscode.env.language;
-        return getSidebarHtml(nonce, vscodeLanguage);
+        const lang = (vscodeLanguage && vscodeLanguage.startsWith('zh')) ? 'zh' : 'en';
+
+        // Get URIs for built webview assets
+        const webviewPath = vscode.Uri.joinPath(this._extensionUri, 'out', 'webview');
+        const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'sidebar.js'));
+        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'sidebar.css'));
+        const codiconsUri = webview.asWebviewUri(vscode.Uri.joinPath(webviewPath, 'codicons', 'codicon.css'));
+
+        return `<!doctype html>
+<html lang="${lang}">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource};">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC Dev Tools</title>
+    <link href="${codiconsUri}" rel="stylesheet" />
+    <link href="${styleUri}" rel="stylesheet" />
+</head>
+<body>
+    <div id="root"></div>
+    <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
+</body>
+</html>`;
     }
 }

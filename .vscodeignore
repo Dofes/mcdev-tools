@@ -7,4 +7,9 @@ src/**
 **/*.ts
 node_modules/**
 !node_modules/jsonc-parser/**
+!node_modules/@vscode/**
 !bin/**
+webview/**
+!out/webview/**
+docs/**
+WEBVIEW_REFACTOR.md
