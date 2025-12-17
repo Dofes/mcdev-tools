@@ -1,7 +1,7 @@
 {
-    "name": "minecraft-modpc-debug",
-    "displayName": "Minecraft ModPC Debug",
-    "description": "VSCode 调试适配器，用于调试 Minecraft ModPC 中运行的 Python 脚本",
+    "name": "mcdev-tools",
+    "displayName": "MC Dev Tools",
+    "description": "MC 开发工具集，集成 mcpdb 调试器和 mcdk 启动器",
     "version": "0.0.2",
     "author": "Dofes",
     "publisher": "dofes",
@@ -17,7 +17,7 @@
     ],
     "activationEvents": [
         "onDebug",
-        "onDebugResolve:minecraft-modpc",
+        "onDebugResolve:mcdev-tools",
         "workspaceContains:.mcdev.json",
         "workspaceContains:*/manifest.json",
         "onStartupFinished"
@@ -26,26 +26,25 @@
     "contributes": {
         "commands": [
             {
-                "command": "minecraft-modpc-debug.startDebug",
-                "title": "Minecraft ModPC: 启动调试",
+                "command": "mcdev-tools.startDebug",
+                "title": "MC Dev Tools: 启动调试",
                 "icon": "$(debug-start)"
             },
             {
-                "command": "minecraft-modpc-debug.runGame",
-                "title": "Minecraft ModPC: 运行游戏 (mcdk.exe)",
+                "command": "mcdev-tools.runGame",
+                "title": "MC Dev Tools: 运行游戏 (mcdk.exe)",
                 "icon": "$(play)"
-            }
-            ,
+            },
             {
-                "command": "minecraft-modpc-debug.showSidebarPanel",
-                "title": "Minecraft ModPC: 打开侧边栏面板",
+                "command": "mcdev-tools.showSidebarPanel",
+                "title": "MC Dev Tools: 打开侧边栏面板",
                 "icon": "$(window)"
             }
         ],
         "debuggers": [
             {
-                "type": "minecraft-modpc",
-                "label": "Minecraft ModPC Debug",
+                "type": "mcdev-tools",
+                "label": "MC Dev Tools Debug",
                 "languages": [
                     "python"
                 ],
@@ -66,88 +65,128 @@
                                 "type": "string",
                                 "description": "mcdbg.exe 路径（留空使用内置）",
                                 "default": ""
+                            },
+                            "dapConfig": {
+                                "type": "object",
+                                "description": "传递给 debugpy 的 DAP 配置",
+                                "properties": {
+                                    "justMyCode": {
+                                        "type": "boolean",
+                                        "description": "是否仅调试用户代码",
+                                        "default": false
+                                    },
+                                    "pathMappings": {
+                                        "type": "array",
+                                        "description": "路径映射配置",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "localRoot": {
+                                                    "type": "string",
+                                                    "description": "本地路径"
+                                                },
+                                                "remoteRoot": {
+                                                    "type": "string",
+                                                    "description": "远程路径"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "subProcess": {
+                                        "type": "boolean",
+                                        "description": "是否调试子进程"
+                                    },
+                                    "redirectOutput": {
+                                        "type": "boolean",
+                                        "description": "是否重定向输出"
+                                    }
+                                },
+                                "additionalProperties": true
                             }
                         }
                     }
                 },
                 "initialConfigurations": [
                     {
-                        "type": "minecraft-modpc",
+                        "type": "mcdev-tools",
                         "request": "launch",
-                        "name": "Minecraft ModPC Debug"
+                        "name": "MC Dev Tools Debug",
+                        "dapConfig": {
+                            "justMyCode": false
+                        }
                     }
                 ],
                 "configurationSnippets": [
                     {
-                        "label": "Minecraft ModPC Debug: Launch",
+                        "label": "MC Dev Tools Debug: Launch",
                         "description": "启动 mcdbg 并附加调试器",
                         "body": {
-                            "type": "minecraft-modpc",
+                            "type": "mcdev-tools",
                             "request": "launch",
-                            "name": "Minecraft ModPC Debug",
+                            "name": "MC Dev Tools Debug",
                             "port": 5678,
-                            "timeout": 30000
+                            "timeout": 30000,
+                            "dapConfig": {
+                                "justMyCode": false
+                            }
                         }
                     }
                 ]
             }
         ],
         "configuration": {
-            "title": "Minecraft ModPC Debug",
+            "title": "MC Dev Tools",
             "properties": {
-                "minecraft-modpc-debug.port": {
+                "mcdev-tools.port": {
                     "type": "number",
                     "default": 5678,
                     "description": "调试端口号"
                 },
-                "minecraft-modpc-debug.timeout": {
+                "mcdev-tools.timeout": {
                     "type": "number",
                     "default": 30000,
                     "description": "等待 mcdbg 注入的超时时间（毫秒）"
                 },
-                "minecraft-modpc-debug.mcdbgPath": {
+                "mcdev-tools.mcdbgPath": {
                     "type": "string",
                     "default": "",
                     "description": "mcdbg.exe 的路径（留空使用插件内置，或指定相对于工作区/绝对路径）"
-                }
-                ,
-                "minecraft-modpc-debug.mcdkPath": {
+                },
+                "mcdev-tools.mcdkPath": {
                     "type": "string",
                     "default": "",
                     "description": "可选：mcdk.exe 的路径（留空使用插件内置 bin/mcdk.exe 或相对于工作区路径）"
-                }
-                ,
-                "minecraft-modpc-debug.enable": {
+                },
+                "mcdev-tools.enable": {
                     "type": "boolean",
                     "default": false,
-                    "description": "是否启用 Minecraft ModPC 插件（若启用则即使未检测到项目结构也会激活）。建议只在 Minecraft addon 项目手动开启。"
+                    "description": "是否启用 MC Dev Tools 插件（若启用则即使未检测到项目结构也会激活）。建议只在 MC addon 项目手动开启。"
                 }
             }
-        }
-        ,
+        },
         "keybindings": [
             {
-                "command": "minecraft-modpc-debug.runGame",
+                "command": "mcdev-tools.runGame",
                 "key": "ctrl+f5",
-                "when": "minecraft-modpc-debug:enabled && editorTextFocus"
+                "when": "mcdev-tools:enabled && editorTextFocus"
             }
         ],
         "viewsContainers": {
             "activitybar": [
                 {
-                    "id": "minecraft-modpc",
-                    "title": "Minecraft",
+                    "id": "mcdev-tools",
+                    "title": "MC Dev Tools Config",
                     "icon": "./images/icon.svg"
                 }
             ]
         },
         "views": {
-            "minecraft-modpc": [
+            "mcdev-tools": [
                 {
                     "type": "webview",
-                    "id": "minecraft-modpc.sidebar",
-                    "name": "Minecraft",
-                    "when": "minecraft-modpc-debug:showSidebar",
+                    "id": "mcdev-tools.sidebar",
+                    "name": "MC Dev Tools Config",
+                    "when": "mcdev-tools:showSidebar",
                     "icon": "./images/icon.svg"
                 }
             ]
