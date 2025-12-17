@@ -141,6 +141,13 @@ body {
   letter-spacing: 0.5px;
 }
 
+.section-divider {
+  height: 1px;
+  background-color: var(--vscode-widget-border);
+  margin: 24px 0;
+  opacity: 0.5;
+}
+
 .codicon-chevron-right {
   transition: transform 0.2s;
 }

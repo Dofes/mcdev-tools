@@ -23,6 +23,8 @@ export interface I18nText {
   dataDrivenBiomes: string;
   dataDrivenItems: string;
   experimentalMolang: string;
+  startupOptions: string;
+  gameRules: string;
   gameOptions: string;
   resetWorld: string;
   autoJoin: string;
@@ -89,6 +91,8 @@ export const i18n: Record<string, I18nText> = {
     dataDrivenBiomes: 'Data Driven Biomes',
     dataDrivenItems: 'Data Driven Items',
     experimentalMolang: 'Experimental Molang Features',
+    startupOptions: 'Startup Options',
+    gameRules: 'Game Rules',
     gameOptions: 'Game Options',
     resetWorld: 'Reset World',
     autoJoin: 'Auto Join Game',
@@ -153,6 +157,8 @@ export const i18n: Record<string, I18nText> = {
     dataDrivenBiomes: '数据驱动生物群系',
     dataDrivenItems: '数据驱动物品',
     experimentalMolang: '实验性Molang特性',
+    startupOptions: '启动选项',
+    gameRules: '游戏规则',
     gameOptions: '游戏选项',
     resetWorld: '重置世界',
     autoJoin: '自动加入游戏',

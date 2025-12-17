@@ -22,8 +22,8 @@ export const GameOptions: React.FC<Props> = ({ t, data, onDataChange }) => {
     <div className="section">
       <div className="section-header-plain">
         <span className="section-title">
-          <span className="codicon codicon-settings-gear"></span>
-          {t.gameOptions}
+          <span className="codicon codicon-debug-alt"></span>
+          {t.startupOptions}
         </span>
       </div>
 
@@ -65,6 +65,15 @@ export const GameOptions: React.FC<Props> = ({ t, data, onDataChange }) => {
           onChange={(e) => onDataChange('auto_hot_reload_mods', e.target.checked)}
         />
         <label htmlFor="auto_hot_reload_mods">{t.autoHotReload}</label>
+      </div>
+
+      <div className="section-divider"></div>
+
+      <div className="section-header-plain">
+        <span className="section-title">
+          <span className="codicon codicon-law"></span>
+          {t.gameRules}
+        </span>
       </div>
 
       <div className="checkbox-group">
