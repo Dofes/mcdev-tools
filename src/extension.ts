@@ -6,7 +6,9 @@ import { McDevToolsSidebarProvider } from './sidebar';
 import { 
     McDevToolsDebugConfigurationProvider, 
     getActiveDebugSessions, 
-    cleanupAllSessions
+    cleanupAllSessions,
+    getMcdbgPath,
+    listMinecraftProcesses
 } from './debugger';
 
 let extensionContext: vscode.ExtensionContext;
@@ -230,10 +232,29 @@ async function runMcdk(): Promise<void> {
         return;
     }
 
+    // 检测是否已存在 Minecraft 进程
+    let env: { [key: string]: string } | undefined = undefined;
+    try {
+        const mcdbgPathConfig = config.get<string>('mcdbgPath', '');
+        const mcdbgPath = getMcdbgPath(workspaceFolder, mcdbgPathConfig, extensionContext.extensionPath);
+        
+        // 只有当 mcdbg 存在时才尝试检测
+        if (fs.existsSync(mcdbgPath)) {
+            const listResult = await listMinecraftProcesses(mcdbgPath);
+            if (listResult.processes && listResult.processes.length > 0) {
+                console.log('检测到已存在的 Minecraft 进程，启用子进程模式');
+                env = { 'MCDEV_IS_SUBPROCESS_MODE': '1' };
+            }
+        }
+    } catch (e) {
+        console.error('检测 Minecraft 进程失败:', e);
+    }
+
     // 创建 VS Code 终端
     const terminal = vscode.window.createTerminal({
         name: 'Minecraft ModPC (mcdk)',
-        cwd: workspaceFolder.uri.fsPath
+        cwd: workspaceFolder.uri.fsPath,
+        env: env
     });
 
     terminal.show(true);
