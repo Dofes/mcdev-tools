@@ -2,7 +2,7 @@
     "name": "mcdev-tools",
     "displayName": "MC Dev Tools",
     "description": "MC 开发工具集，集成 mcpdb 调试器和 mcdk 启动器",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "author": "Dofes",
     "publisher": "dofes",
     "repository": {
