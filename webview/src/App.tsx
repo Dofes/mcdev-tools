@@ -125,11 +125,16 @@ function App() {
 
   const handleFolderSelected = (index: number, path: string) => {
     if (index === -1) {
-      setModDirs([...modDirs, { path, hot_reload: true }]);
-    } else if (index >= 0 && index < modDirs.length) {
-      const newDirs = [...modDirs];
-      newDirs[index].path = path;
-      setModDirs(newDirs);
+      setModDirs(prev => [...prev, { path, hot_reload: true }]);
+    } else if (index >= 0) {
+      setModDirs(prev => {
+        if (index < prev.length) {
+          const newDirs = [...prev];
+          newDirs[index].path = path;
+          return newDirs;
+        }
+        return prev;
+      });
     }
     setHasChanges(true);
   };
