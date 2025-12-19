@@ -50,17 +50,9 @@
 - mcdbg.exe（插件内置或从 [mcpdb](https://github.com/Dofes/mcpdb) 获取）
 - mcdk.exe（插件内置或从 [mcdk](https://github.com/GitHub-Zero123/MCDevTool) 获取）
 
-## 开发
+## 贡献者
 
-```bash
-# 安装依赖
-npm install
+感谢所有为本项目做出贡献的开发者！
 
-# 编译
-npm run compile
-
-# 监听模式
-npm run watch
-```
-
-按 F5 启动调试模式测试插件。
+- **[Dofes](https://github.com/Dofes)**
+- **[Zero123](https://github.com/GitHub-Zero123)**
