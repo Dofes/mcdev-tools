@@ -233,8 +233,11 @@ async function runMcdk(): Promise<void> {
         return;
     }
 
-    // 检测是否已存在 Minecraft 进程
+
     let env: NodeJS.ProcessEnv = { ...process.env };
+    env['MCDEV_IS_PLUGIN_ENV'] = '1';
+
+    // 检测是否已存在 Minecraft 进程 
     try {
         const mcdbgPathConfig = config.get<string>('mcdbgPath', '');
         const mcdbgPath = getMcdbgPath(workspaceFolder, mcdbgPathConfig, extensionContext.extensionPath);
