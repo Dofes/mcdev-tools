@@ -8,6 +8,7 @@ import { WorldSettings } from './components/WorldSettings';
 import { GameOptions } from './components/GameOptions';
 import { UserSettings } from './components/UserSettings';
 import { WindowStyle } from './components/WindowStyle';
+import { SkinOptions } from './components/SkinOptions';
 import { DebugKeybindings } from './components/DebugKeybindings';
 import './App.css';
 
@@ -22,6 +23,7 @@ function App() {
   const [debugExpanded, setDebugExpanded] = useState(false);
   const [activeKeyListener, setActiveKeyListener] = useState<string | null>(null);
   const [needsAutoSave, setNeedsAutoSave] = useState(false);
+  const [skinPreviewUrl, setSkinPreviewUrl] = useState<string | null>(null);
   
   const initializedComponentsRef = useRef<Set<string>>(new Set());
   const initTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -42,7 +44,7 @@ function App() {
           if (msg.needsInitialSave) {
             setNeedsAutoSave(true);
           } else {
-            loadData(parsedData);
+            loadData(parsedData, msg.skinPreviewUri);
           }
           
           showStatus(currentT.loaded, 'success');
@@ -54,6 +56,20 @@ function App() {
           break;
         case 'folderSelected':
           handleFolderSelected(msg.index, msg.path);
+          break;
+        case 'skinSelected':
+          setData(prev => ({
+            ...prev,
+            skin_info: {
+              slim: prev.skin_info?.slim ?? false,
+              skin: msg.path,
+            },
+          }));
+          setSkinPreviewUrl(msg.previewUri || null);
+          setHasChanges(true);
+          break;
+        case 'skinPreview':
+          setSkinPreviewUrl(msg.previewUri || null);
           break;
       }
     };
@@ -70,10 +86,11 @@ function App() {
     setTimeout(() => setStatusMsg(''), 3000);
   };
 
-  const loadData = (newData: McdevData) => {
+  const loadData = (newData: McdevData, skinPreviewUri?: string) => {
     setData(newData);
     const dirs = parseModDirs(newData.included_mod_dirs);
     setModDirs(dirs);
+    setSkinPreviewUrl(skinPreviewUri || null);
   };
 
   const parseModDirs = (dirs?: (string | ModDir)[]): ModDir[] => {
@@ -222,6 +239,26 @@ function App() {
     setHasChanges(true);
   };
 
+  const handleSkinInfoChange = (field: string, value: any) => {
+    setData(prev => ({
+      ...prev,
+      skin_info: {
+        slim: prev.skin_info?.slim ?? false,
+        skin: prev.skin_info?.skin ?? '',
+        [field]: value,
+      },
+    }));
+    if (field === 'skin') {
+      const text = (value || '').trim();
+      if (!text) {
+        setSkinPreviewUrl(null);
+      } else {
+        vscode.postMessage({ type: 'updateSkinPreview', path: value });
+      }
+    }
+    setHasChanges(true);
+  };
+
   const handleExperimentChange = (field: string, checked: boolean) => {
     setData(prev => ({
       ...prev,
@@ -296,6 +333,15 @@ function App() {
         t={t}
         windowStyle={data.window_style}
         onWindowStyleChange={handleWindowStyleChange}
+        markInitialized={markInitialized}
+      />
+
+      {/* Skin Options */}
+      <SkinOptions
+        t={t}
+        skinInfo={data.skin_info}
+        previewUrl={skinPreviewUrl}
+        onSkinInfoChange={handleSkinInfoChange}
         markInitialized={markInitialized}
       />
 

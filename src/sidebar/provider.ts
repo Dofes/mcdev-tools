@@ -23,9 +23,25 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             this._view = webviewView;
             const webview = webviewView.webview;
 
+            const roots: vscode.Uri[] = [this._extensionUri];
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (workspaceFolder) {
+                roots.push(workspaceFolder.uri);
+
+                // 允许预览与工作区同一磁盘根目录下的本地图片
+                try {
+                    const parsed = path.parse(workspaceFolder.uri.fsPath);
+                    if (parsed.root) {
+                        roots.push(vscode.Uri.file(parsed.root));
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
             webview.options = {
                 enableScripts: true,
-                localResourceRoots: [this._extensionUri]
+                localResourceRoots: roots
             };
 
             webviewView.webview.html = this.getHtmlForWebview(webview);
@@ -62,6 +78,10 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 await this.handleSave(msg.content);
             } else if (msg?.type === 'browseFolder') {
                 await this.handleBrowseFolder(webview, msg.index);
+            } else if (msg?.type === 'browseSkin') {
+                await this.handleBrowseSkin(webview);
+            } else if (msg?.type === 'updateSkinPreview') {
+                await this.handleUpdateSkinPreview(webview, msg.path);
             } else if (msg?.type === 'runGame') {
                 await vscode.commands.executeCommand('mcdev-tools.runGame');
             } else if (msg?.type === 'log') {
@@ -93,9 +113,21 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
         try {
             if (fs.existsSync(mcdevPath)) {
                 const content = fs.readFileSync(mcdevPath, 'utf8');
-                const parsed = jsonc.parse(content);
-                const jsonContent = JSON.stringify(parsed || {});
-                webview.postMessage({ type: 'init', content: jsonContent, language });
+                const parsed = jsonc.parse(content) || {};
+                const jsonContent = JSON.stringify(parsed);
+
+                let skinPreviewUri: string | undefined;
+                const skinPath = parsed?.skin_info?.skin as string | undefined;
+                if (skinPath && skinPath.trim()) {
+                    let filePath = skinPath;
+                    if (!path.isAbsolute(filePath)) {
+                        filePath = path.join(workspaceFolder.uri.fsPath, filePath);
+                    }
+                    const fileUri = vscode.Uri.file(filePath);
+                    skinPreviewUri = webview.asWebviewUri(fileUri).toString();
+                }
+
+                webview.postMessage({ type: 'init', content: jsonContent, language, skinPreviewUri });
             } else {
                 // 文件不存在时，发送空配置并标记需要初始化
                 webview.postMessage({ type: 'init', content: '{}', needsInitialSave: true, language });
@@ -144,6 +176,62 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     /**
+     * 处理皮肤文件选择
+     */
+    private async handleBrowseSkin(webview: vscode.Webview): Promise<void> {
+        const result = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            canSelectMany: false,
+            openLabel: '选择皮肤 PNG 文件',
+            title: '选择皮肤 PNG 文件',
+            filters: {
+                'PNG Images': ['png'],
+                'All Files': ['*']
+            }
+        });
+
+        if (result && result.length > 0) {
+            const fileUri = result[0];
+            const webviewUri = webview.asWebviewUri(fileUri);
+
+            webview.postMessage({
+                type: 'skinSelected',
+                path: fileUri.fsPath,
+                previewUri: webviewUri.toString()
+            });
+        }
+    }
+
+    /**
+     * 根据给定路径更新皮肤预览（不修改配置文件）
+     */
+    private async handleUpdateSkinPreview(webview: vscode.Webview, skinPath: string | undefined): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            return;
+        }
+
+        if (!skinPath || !skinPath.trim()) {
+            webview.postMessage({ type: 'skinPreview', previewUri: undefined });
+            return;
+        }
+
+        try {
+            let filePath = skinPath;
+            if (!path.isAbsolute(filePath)) {
+                filePath = path.join(workspaceFolder.uri.fsPath, filePath);
+            }
+            const fileUri = vscode.Uri.file(filePath);
+            const webviewUri = webview.asWebviewUri(fileUri);
+            webview.postMessage({ type: 'skinPreview', previewUri: webviewUri.toString() });
+        } catch (e) {
+            console.error('Failed to build skin preview URI:', e);
+            webview.postMessage({ type: 'skinPreview', previewUri: undefined });
+        }
+    }
+
+    /**
      * 设置文件监听器，当 .mcdev.json 被外部修改时自动重载
      */
     private setupFileWatcher(webview: vscode.Webview): void {
@@ -162,9 +250,21 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             try {
                 if (fs.existsSync(mcdevPath)) {
                     const content = fs.readFileSync(mcdevPath, 'utf8');
-                    const parsed = jsonc.parse(content);
-                    const jsonContent = JSON.stringify(parsed || {});
-                    webview.postMessage({ type: 'init', content: jsonContent });
+                    const parsed = jsonc.parse(content) || {};
+                    const jsonContent = JSON.stringify(parsed);
+
+                    let skinPreviewUri: string | undefined;
+                    const skinPath = parsed?.skin_info?.skin as string | undefined;
+                    if (skinPath && skinPath.trim()) {
+                        let filePath = skinPath;
+                        if (!path.isAbsolute(filePath)) {
+                            filePath = path.join(workspaceFolder.uri.fsPath, filePath);
+                        }
+                        const fileUri = vscode.Uri.file(filePath);
+                        skinPreviewUri = webview.asWebviewUri(fileUri).toString();
+                    }
+
+                    webview.postMessage({ type: 'init', content: jsonContent, skinPreviewUri });
                 }
             } catch (e) {
                 console.error('Error reading .mcdev.json after external change:', e);
@@ -176,9 +276,21 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             try {
                 if (fs.existsSync(mcdevPath)) {
                     const content = fs.readFileSync(mcdevPath, 'utf8');
-                    const parsed = jsonc.parse(content);
-                    const jsonContent = JSON.stringify(parsed || {});
-                    webview.postMessage({ type: 'init', content: jsonContent });
+                    const parsed = jsonc.parse(content) || {};
+                    const jsonContent = JSON.stringify(parsed);
+
+                    let skinPreviewUri: string | undefined;
+                    const skinPath = parsed?.skin_info?.skin as string | undefined;
+                    if (skinPath && skinPath.trim()) {
+                        let filePath = skinPath;
+                        if (!path.isAbsolute(filePath)) {
+                            filePath = path.join(workspaceFolder.uri.fsPath, filePath);
+                        }
+                        const fileUri = vscode.Uri.file(filePath);
+                        skinPreviewUri = webview.asWebviewUri(fileUri).toString();
+                    }
+
+                    webview.postMessage({ type: 'init', content: jsonContent, skinPreviewUri });
                 }
             } catch (e) {
                 console.error('Error reading .mcdev.json after creation:', e);
@@ -209,7 +321,7 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
 <html lang="${lang}">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource};">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; img-src ${webview.cspSource} data:;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MC Dev Tools</title>
     <link href="${codiconsUri}" rel="stylesheet" />

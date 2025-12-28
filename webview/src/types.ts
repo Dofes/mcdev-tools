@@ -18,6 +18,10 @@ export interface McdevData {
   do_daylight_cycle?: boolean;
   do_weather_cycle?: boolean;
   user_name?: string;
+  skin_info?: {
+    slim: boolean;
+    skin: string;
+  };
   included_mod_dirs?: (string | ModDir)[];
   window_style?: {
     always_on_top?: boolean;

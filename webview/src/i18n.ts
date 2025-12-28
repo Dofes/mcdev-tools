@@ -34,6 +34,11 @@ export interface I18nText {
   keepInventory: string;
   doDaylightCycle: string;
   doWeatherCycle: string;
+  skinOptions: string;
+  skinSlim: string;
+  skinPath: string;
+  browseSkin: string;
+  currentSkin: string;
   userSettings: string;
   userName: string;
   windowStyle: string;
@@ -107,6 +112,11 @@ export const i18n: Record<string, I18nText> = {
     keepInventory: 'Keep Inventory',
     doDaylightCycle: 'Daylight Cycle',
     doWeatherCycle: 'Do Weather Cycle',
+    skinOptions: 'Skin Options',
+    skinSlim: 'Slim Model (Alex)',
+    skinPath: 'Skin Texture File',
+    browseSkin: 'Browse Skin PNG',
+    currentSkin: 'Current Skin',
     userSettings: 'User Settings',
     userName: 'User Name',
     windowStyle: 'Window Style',
@@ -178,6 +188,11 @@ export const i18n: Record<string, I18nText> = {
     keepInventory: '保持物品栏',
     doDaylightCycle: '昼夜更替',
     doWeatherCycle: '天气循环',
+    skinOptions: '皮肤设置',
+    skinSlim: '纤细皮肤 (Slim)',
+    skinPath: '皮肤贴图文件',
+    browseSkin: '选择皮肤 PNG 文件',
+    currentSkin: '当前皮肤',
     userSettings: '用户设置',
     userName: '用户名',
     windowStyle: '窗口样式',

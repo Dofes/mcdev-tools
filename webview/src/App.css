@@ -522,3 +522,23 @@ body {
   font-size: 16px;
   line-height: 1;
 }
+
+.skin-preview-container {
+  margin-top: 4px;
+  padding: 6px;
+  border-radius: 3px;
+  border: 1px solid var(--vscode-input-border);
+  background-color: var(--vscode-input-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skin-preview {
+  max-width: 100%;
+  max-height: 160px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  object-fit: contain;
+}
