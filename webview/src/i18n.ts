@@ -32,6 +32,7 @@ export interface I18nText {
   autoHotReload: string;
   enableCheats: string;
   keepInventory: string;
+  doDaylightCycle: string;
   doWeatherCycle: string;
   userSettings: string;
   userName: string;
@@ -104,6 +105,7 @@ export const i18n: Record<string, I18nText> = {
     autoHotReload: 'Auto Hot Reload Mods',
     enableCheats: 'Enable Cheats',
     keepInventory: 'Keep Inventory',
+    doDaylightCycle: 'Daylight Cycle',
     doWeatherCycle: 'Do Weather Cycle',
     userSettings: 'User Settings',
     userName: 'User Name',
@@ -174,6 +176,7 @@ export const i18n: Record<string, I18nText> = {
     autoHotReload: '自动热重载',
     enableCheats: '开启作弊',
     keepInventory: '保持物品栏',
+    doDaylightCycle: '昼夜更替',
     doWeatherCycle: '天气循环',
     userSettings: '用户设置',
     userName: '用户名',

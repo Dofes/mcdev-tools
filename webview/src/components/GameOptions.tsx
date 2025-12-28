@@ -9,6 +9,7 @@ interface McdevData {
   auto_hot_reload_mods?: boolean;
   enable_cheats?: boolean;
   keep_inventory?: boolean;
+  do_daylight_cycle?: boolean;
   do_weather_cycle?: boolean;
 }
 
@@ -27,6 +28,7 @@ const DEFAULT_VALUES: McdevData = {
   auto_hot_reload_mods: true,
   enable_cheats: true,
   keep_inventory: true,
+  do_daylight_cycle: true,
   do_weather_cycle: true,
 };
 
@@ -110,6 +112,16 @@ export const GameOptions: React.FC<Props> = ({ t, data, onDataChange, markInitia
           onChange={(e) => onDataChange('keep_inventory', e.target.checked)}
         />
         <label htmlFor="keep_inventory">{t.keepInventory}</label>
+      </div>
+
+      <div className="checkbox-group">
+        <input
+          type="checkbox"
+          id="do_daylight_cycle"
+          checked={data.do_daylight_cycle ?? DEFAULT_VALUES.do_daylight_cycle}
+          onChange={(e) => onDataChange('do_daylight_cycle', e.target.checked)}
+        />
+        <label htmlFor="do_daylight_cycle">{t.doDaylightCycle}</label>
       </div>
 
       <div className="checkbox-group">
