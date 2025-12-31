@@ -2,7 +2,7 @@
     "name": "mcdev-tools",
     "displayName": "MC Dev Tools",
     "description": "一个用于我的世界中国版模组开发的调试工具插件。",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "author": "Dofes",
     "publisher": "dofes",
     "repository": {
