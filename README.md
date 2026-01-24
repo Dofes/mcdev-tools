@@ -1,10 +1,14 @@
 # MC Dev Tools
 
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue?logo=visualstudiocode)](https://marketplace.visualstudio.com/items?itemName=dofes.mcdev-tools)
+
 一个用于 MC 开发的一站式 VSCode 工具插件，集成 mcpdb 调试器和 mcdk 启动器。
 
 ## 相关项目
 
 - [mcpdb](https://github.com/Dofes/mcpdb) - Minecraft Python 调试器核心
+  > mcpdb 正在准备弃用，将更换为更可维护的调试方案以提供更加全面的调试体验。
+  
 - [mcdk](https://github.com/GitHub-Zero123/MCDevTool) - Modpc 开发测试启动器
 
 ## 功能
