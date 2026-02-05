@@ -1,6 +1,8 @@
 export interface I18nText {
   runGame: string;
   runGameTooltip: string;
+  startDebug: string;
+  startDebugTooltip: string;
   modDirectories: string;
   addModDirectory: string;
   browse: string;
@@ -73,12 +75,17 @@ export interface I18nText {
   pressAnyKey: string;
   remove: string;
   clear: string;
+  launcherSettings: string;
+  launcherPath: string;
+  launcherPathPlaceholder: string;
 }
 
 export const i18n: Record<string, I18nText> = {
   en: {
     runGame: 'Run Game',
     runGameTooltip: 'Start Minecraft with mcdk',
+    startDebug: 'Start Debug',
+    startDebugTooltip: 'Start Minecraft with Python debugger attached',
     modDirectories: 'Mod Directories',
     addModDirectory: 'Add Mod Directory',
     browse: 'Browse...',
@@ -151,10 +158,16 @@ export const i18n: Record<string, I18nText> = {
     pressAnyKey: 'Press any key... (ESC to cancel)',
     remove: 'Remove',
     clear: 'Clear',
+    launcherSettings: 'Launcher Settings',
+    launcherPath: 'Game Launcher Path',
+    launcherPathPlaceholder: 'Auto detect (default)',
+
   },
   zh: {
     runGame: '运行游戏',
     runGameTooltip: '使用 mcdk 启动 Minecraft',
+    startDebug: '启动调试',
+    startDebugTooltip: '启动 Minecraft 并附加 Python 调试器',
     modDirectories: 'Mod 目录',
     addModDirectory: '添加 Mod 目录',
     browse: '浏览...',
@@ -227,5 +240,8 @@ export const i18n: Record<string, I18nText> = {
     pressAnyKey: '按下任意键... (ESC 取消)',
     remove: '移除',
     clear: '清除',
+    launcherSettings: '启动器设置',
+    launcherPath: '游戏启动路径',
+    launcherPathPlaceholder: '自动检测（默认）',
   },
 };

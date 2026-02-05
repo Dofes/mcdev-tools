@@ -1,15 +1,12 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as cp from 'child_process';
 import { isMinecraftAddonWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
 import { 
-    McDevToolsDebugConfigurationProvider, 
-    getActiveDebugSessions, 
-    cleanupAllSessions,
-    getMcdbgPath,
-    listMinecraftProcesses
+    McDevToolsDebugConfigurationProvider,
+    McdbgDebugConfigurationProvider,
+    ptvsd
 } from './debugger';
 
 let extensionContext: vscode.ExtensionContext;
@@ -17,6 +14,9 @@ let extensionContext: vscode.ExtensionContext;
 export function activate(context: vscode.ExtensionContext): void {
     console.log('Minecraft ModPC Debug 插件已激活');
     extensionContext = context;
+
+    // 初始化 ptvsd 持久化存储
+    ptvsd.initStorage(context);
 
     // 根据用户设置或项目结构决定是否启用插件功能
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -73,14 +73,21 @@ function registerCommands(context: vscode.ExtensionContext): void {
  * 注册调试配置提供者
  */
 function registerDebugProviders(context: vscode.ExtensionContext): void {
-    const debugProvider = new McDevToolsDebugConfigurationProvider(context.extensionPath);
-    
-    const debugProviderDisposable = vscode.debug.registerDebugConfigurationProvider(
+    // ptvsd 模式 provider（推荐）
+    const ptvsdProvider = new McDevToolsDebugConfigurationProvider(context.extensionPath);
+    const ptvsdProviderDisposable = vscode.debug.registerDebugConfigurationProvider(
         'mcdev-tools',
-        debugProvider
+        ptvsdProvider
     );
 
-    // 注册动态调试配置提供者（用于 F5 无配置启动）
+    // mcdbg 注入模式 provider
+    const mcdbgProvider = new McdbgDebugConfigurationProvider(context.extensionPath);
+    const mcdbgProviderDisposable = vscode.debug.registerDebugConfigurationProvider(
+        'mcdev-tools-inject',
+        mcdbgProvider
+    );
+
+    // 注册动态调试配置提供者（用于 F5 无配置启动，默认使用 ptvsd）
     const dynamicProvider = vscode.debug.registerDebugConfigurationProvider(
         'mcdev-tools',
         {
@@ -89,7 +96,7 @@ function registerDebugProviders(context: vscode.ExtensionContext): void {
                     {
                         type: 'mcdev-tools',
                         request: 'launch',
-                        name: 'MC Dev Tools Debug',
+                        name: 'Minecraft Python Debug',
                         dapConfig: {
                             justMyCode: false
                         }
@@ -100,49 +107,37 @@ function registerDebugProviders(context: vscode.ExtensionContext): void {
         vscode.DebugConfigurationProviderTriggerKind.Dynamic
     );
 
-    context.subscriptions.push(debugProviderDisposable, dynamicProvider);
+    context.subscriptions.push(ptvsdProviderDisposable, mcdbgProviderDisposable, dynamicProvider);
 }
 
 /**
  * 注册调试会话监听器
  */
 function registerDebugSessionListener(context: vscode.ExtensionContext): void {
+    // 监听调试会话结束，清理 ptvsd 会话
     const debugEndDisposable = vscode.debug.onDidTerminateDebugSession((session) => {
-        const activeDebugSessions = getActiveDebugSessions();
-        for (const [pid, info] of activeDebugSessions.entries()) {
-            if (session.name === info.sessionName) {
-                if (info.mcdbgProcess) {
-                    info.mcdbgProcess.kill();
-                }
-                activeDebugSessions.delete(pid);
-                vscode.window.showInformationMessage(`调试会话已结束 (PID: ${pid})`);
-                break;
-            }
-        }
+        // ptvsd 会话会在进程退出时自动清理
+        console.log(`调试会话结束: ${session.name}`);
     });
 
     context.subscriptions.push(debugEndDisposable);
 }
 
 /**
- * 启动调试会话
+ * 启动调试会话（从 GUI 按钮调用）
+ * 总是启动新实例，不检查重新附加
  */
 async function startDebugSession(): Promise<void> {
-    const config = vscode.workspace.getConfiguration('mcdev-tools');
-    const debugConfig: vscode.DebugConfiguration = {
-        type: 'mcdev-tools',
-        request: 'launch',
-        name: 'MC Dev Tools Debug',
-        port: config.get<number>('port', 5678),
-        timeout: config.get<number>('timeout', 30000),
-        mcdbgPath: config.get<string>('mcdbgPath', '')
-    };
-    
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    if (workspaceFolder) {
-        await vscode.debug.startDebugging(workspaceFolder, debugConfig);
-    } else {
+    if (!workspaceFolder) {
         vscode.window.showErrorMessage('请先打开工作区');
+        return;
+    }
+
+    // 使用 launchNewInstance 直接启动，不走 provider 的重新附加逻辑
+    const config = await ptvsd.launchNewInstance(extensionContext.extensionPath);
+    if (config) {
+        await vscode.debug.startDebugging(workspaceFolder, config);
     }
 }
 
@@ -210,7 +205,7 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
 }
 
 /**
- * 运行 mcdk.exe（无调试模式）
+ * 运行 mcdk.exe（无调试模式，Ctrl+F5）
  */
 async function runMcdk(): Promise<void> {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
@@ -233,28 +228,23 @@ async function runMcdk(): Promise<void> {
         return;
     }
 
+    // 检查是否已有 Minecraft 进程在运行（sub 模式）
+    const mcRunning = await ptvsd.isMinecraftRunning();
 
-    let env: NodeJS.ProcessEnv = { ...process.env };
-    env['MCDEV_IS_PLUGIN_ENV'] = '1';
+    // 不设置 ptvsd 环境变量，正常启动（无调试）
+    const env: NodeJS.ProcessEnv = { 
+        ...process.env,
+        MCDEV_IS_PLUGIN_ENV: '1',
+        MCDEV_OUTPUT_MODE: '1'
+    };
 
-    // 检测是否已存在 Minecraft 进程 
-    try {
-        const mcdbgPathConfig = config.get<string>('mcdbgPath', '');
-        const mcdbgPath = getMcdbgPath(workspaceFolder, mcdbgPathConfig, extensionContext.extensionPath);
-        
-        // 只有当 mcdbg 存在时才尝试检测
-        if (fs.existsSync(mcdbgPath)) {
-            const listResult = await listMinecraftProcesses(mcdbgPath);
-            if (listResult.processes && listResult.processes.length > 0) {
-                console.log('检测到已存在的 Minecraft 进程，启用子进程模式');
-                env['MCDEV_IS_SUBPROCESS_MODE'] = '1';
-            }
-        }
-    } catch (e) {
-        console.error('检测 Minecraft 进程失败:', e);
+    // 如果已有 Minecraft 进程，启用子进程模式
+    if (mcRunning) {
+        console.log('检测到已存在的 Minecraft 进程，启用子进程模式');
+        env['MCDEV_IS_SUBPROCESS_MODE'] = '1';
     }
 
-    // 使用 Terminal 直接执行 exe（支持颜色和实时输出，不用 cmd 包装）
+    // 使用 Terminal 直接执行 exe（支持颜色和实时输出）
     const terminal = vscode.window.createTerminal({
         name: 'Minecraft ModPC (mcdk)',
         shellPath: mcdkPath,
@@ -263,11 +253,11 @@ async function runMcdk(): Promise<void> {
     });
 
     terminal.show(true);
-    vscode.window.showInformationMessage('Minecraft ModPC 已启动');
+    vscode.window.showInformationMessage('Minecraft ModPC 已启动（无调试）');
 }
 
 export function deactivate(): void {
-    cleanupAllSessions();
+    ptvsd.cleanupAllSessions();
     vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', false);
     vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', false);
 }

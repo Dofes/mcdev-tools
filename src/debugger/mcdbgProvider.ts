@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import { launchPtvsdDebugSession } from './ptvsd';
+import { startDebugSessionAndGetConfig } from './session';
 
 /**
- * 调试配置提供者 - 处理 F5 启动
- * 使用 ptvsd 模式（官方调试器接口）
+ * mcdbg 调试配置提供者 - 处理 mcdev-tools-inject 类型
+ * 使用 mcdbg 注入模式
  */
-export class McDevToolsDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
+export class McdbgDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
     
     constructor(private readonly extensionPath: string) {}
     
@@ -15,12 +15,13 @@ export class McDevToolsDebugConfigurationProvider implements vscode.DebugConfigu
         _token?: vscode.CancellationToken
     ): Promise<vscode.DebugConfiguration | null | undefined> {
         
-        // 如果是空配置（用户直接按 F5 没有 launch.json）
+        // 如果是空配置，返回默认配置
         if (!config.type && !config.request && !config.name) {
             return {
-                type: 'mcdev-tools',
+                type: 'mcdev-tools-inject',
                 request: 'launch',
-                name: 'MC Dev Tools Debug',
+                name: 'Minecraft Debug (Inject)',
+                port: 5678,
                 dapConfig: {
                     justMyCode: false
                 }
@@ -28,11 +29,10 @@ export class McDevToolsDebugConfigurationProvider implements vscode.DebugConfigu
         }
         
         // 不是我们的类型，交给其他处理
-        if (config.type !== 'mcdev-tools') {
+        if (config.type !== 'mcdev-tools-inject') {
             return config;
         }
 
-        // 是我们的类型，在下一阶段处理
         return config;
     }
 
@@ -43,14 +43,16 @@ export class McDevToolsDebugConfigurationProvider implements vscode.DebugConfigu
     ): Promise<vscode.DebugConfiguration | null | undefined> {
         
         // 只处理我们的类型
-        if (config.type !== 'mcdev-tools') {
+        if (config.type !== 'mcdev-tools-inject') {
             return config;
         }
 
-        // 使用 ptvsd 模式启动调试
-        const result = await launchPtvsdDebugSession(config, this.extensionPath);
+        // 使用 mcdbg 注入模式启动调试
+        const result = await startDebugSessionAndGetConfig(
+            config,
+            this.extensionPath
+        );
         
-        // 返回 null 表示用户取消，VS Code 不会显示错误
         if (result === undefined) {
             return null;
         }

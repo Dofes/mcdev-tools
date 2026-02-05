@@ -84,6 +84,10 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 await this.handleUpdateSkinPreview(webview, msg.path);
             } else if (msg?.type === 'runGame') {
                 await vscode.commands.executeCommand('mcdev-tools.runGame');
+            } else if (msg?.type === 'startDebug') {
+                await vscode.commands.executeCommand('mcdev-tools.startDebug');
+            } else if (msg?.type === 'browseGameExecutable') {
+                await this.handleBrowseGameExecutable(webview);
             } else if (msg?.type === 'log') {
                 const prefix = `[Webview ${msg.level || 'log'}]`;
                 if (msg.level === 'error') {
@@ -228,6 +232,30 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
         } catch (e) {
             console.error('Failed to build skin preview URI:', e);
             webview.postMessage({ type: 'skinPreview', previewUri: undefined });
+        }
+    }
+
+    /**
+     * 处理浏览游戏可执行文件路径
+     */
+    private async handleBrowseGameExecutable(webview: vscode.Webview): Promise<void> {
+        const result = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            canSelectMany: false,
+            openLabel: '选择 Minecraft 可执行文件',
+            title: '选择 Minecraft.Windows.exe',
+            filters: {
+                'Executable': ['exe'],
+                'All Files': ['*']
+            }
+        });
+
+        if (result && result.length > 0) {
+            webview.postMessage({
+                type: 'gameExecutableSelected',
+                path: result[0].fsPath
+            });
         }
     }
 

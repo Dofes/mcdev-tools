@@ -10,6 +10,7 @@ import { UserSettings } from './components/UserSettings';
 import { WindowStyle } from './components/WindowStyle';
 import { SkinOptions } from './components/SkinOptions';
 import { DebugKeybindings } from './components/DebugKeybindings';
+import { LauncherSettings } from './components/LauncherSettings';
 import './App.css';
 
 function App() {
@@ -70,6 +71,13 @@ function App() {
           break;
         case 'skinPreview':
           setSkinPreviewUrl(msg.previewUri || null);
+          break;
+        case 'gameExecutableSelected':
+          setData(prev => ({
+            ...prev,
+            game_executable_path: msg.path
+          }));
+          setHasChanges(true);
           break;
       }
     };
@@ -285,7 +293,19 @@ function App() {
     <div className="container">
       {/* Toolbar */}
       <div className="toolbar">
-        <button className="btn-primary btn-run" onClick={() => vscode.postMessage({ type: 'runGame' })}>
+        <button 
+          className="btn-primary btn-debug" 
+          onClick={() => vscode.postMessage({ type: 'startDebug' })}
+          title={t.startDebugTooltip}
+        >
+          <span className="codicon codicon-debug-alt"></span>
+          {t.startDebug}
+        </button>
+        <button 
+          className="btn-secondary btn-run" 
+          onClick={() => vscode.postMessage({ type: 'runGame' })}
+          title={t.runGameTooltip}
+        >
           <span className="codicon codicon-play"></span>
           {t.runGame}
         </button>
@@ -326,6 +346,19 @@ function App() {
         t={t}
         data={data}
         onDataChange={handleDataChange}
+      />
+
+      {/* Launcher Settings */}
+      <LauncherSettings
+        t={t}
+        gameExecutablePath={data.game_executable_path || ''}
+        onGameExecutablePathChange={(path) => {
+          setData(prev => ({
+            ...prev,
+            game_executable_path: path || undefined
+          }));
+          setHasChanges(true);
+        }}
       />
 
       {/* Window Style */}
