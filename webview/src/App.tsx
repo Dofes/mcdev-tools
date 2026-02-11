@@ -312,7 +312,6 @@ function App() {
           title={t.startDebugTooltip}
         >
           <span className="codicon codicon-debug-alt"></span>
-          {t.startDebug}
         </button>
       </div>
 

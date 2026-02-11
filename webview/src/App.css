@@ -85,7 +85,7 @@ body {
 }
 
 .btn-run {
-  flex: 1;
+  flex: 3;
   justify-content: center;
   font-weight: 500;
 }
@@ -94,13 +94,11 @@ body {
   flex: 1;
   justify-content: center;
   font-weight: 500;
-  background-color: var(--vscode-debugIcon-startForeground);
-  color: var(--vscode-button-foreground);
+  padding: 8px 12px;
 }
 
 .btn-debug:hover {
-  background-color: var(--vscode-debugIcon-startForeground);
-  filter: brightness(0.85);
+  background-color: var(--vscode-button-hoverBackground);
 }
 
 .btn-debug:active {
