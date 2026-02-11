@@ -10,7 +10,7 @@ interface Props {
 
 export const LauncherSettings: React.FC<Props> = ({ t, gameExecutablePath, onGameExecutablePathChange }) => {
   const handleBrowse = () => {
-    vscode.postMessage({ type: 'browseGameExecutable' });
+    vscode.postMessage({ type: 'browseGameExecutable', currentPath: gameExecutablePath });
   };
 
   return (

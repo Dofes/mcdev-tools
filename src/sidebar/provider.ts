@@ -87,7 +87,7 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             } else if (msg?.type === 'startDebug') {
                 await vscode.commands.executeCommand('mcdev-tools.startDebug');
             } else if (msg?.type === 'browseGameExecutable') {
-                await this.handleBrowseGameExecutable(webview);
+                await this.handleBrowseGameExecutable(webview, msg.currentPath);
             } else if (msg?.type === 'log') {
                 const prefix = `[Webview ${msg.level || 'log'}]`;
                 if (msg.level === 'error') {
@@ -238,11 +238,24 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
     /**
      * 处理浏览游戏可执行文件路径
      */
-    private async handleBrowseGameExecutable(webview: vscode.Webview): Promise<void> {
+    private async handleBrowseGameExecutable(webview: vscode.Webview, currentPath?: string): Promise<void> {
+        let defaultUri: vscode.Uri | undefined;
+        if (currentPath && currentPath.trim()) {
+            try {
+                const parentDir = path.dirname(currentPath.trim());
+                if (parentDir && fs.existsSync(parentDir)) {
+                    defaultUri = vscode.Uri.file(parentDir);
+                }
+            } catch {
+                // ignore invalid path
+            }
+        }
+
         const result = await vscode.window.showOpenDialog({
             canSelectFiles: true,
             canSelectFolders: false,
             canSelectMany: false,
+            defaultUri,
             openLabel: '选择 Minecraft 可执行文件',
             title: '选择 Minecraft.Windows.exe',
             filters: {
