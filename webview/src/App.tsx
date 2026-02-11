@@ -294,20 +294,20 @@ function App() {
       {/* Toolbar */}
       <div className="toolbar">
         <button 
+          className="btn-primary btn-run" 
+          onClick={() => vscode.postMessage({ type: 'runGame' })}
+          title={t.runGameTooltip}
+        >
+          <span className="codicon codicon-play"></span>
+          {t.runGame}
+        </button>
+        <button 
           className="btn-primary btn-debug" 
           onClick={() => vscode.postMessage({ type: 'startDebug' })}
           title={t.startDebugTooltip}
         >
           <span className="codicon codicon-debug-alt"></span>
           {t.startDebug}
-        </button>
-        <button 
-          className="btn-secondary btn-run" 
-          onClick={() => vscode.postMessage({ type: 'runGame' })}
-          title={t.runGameTooltip}
-        >
-          <span className="codicon codicon-play"></span>
-          {t.runGame}
         </button>
       </div>
 

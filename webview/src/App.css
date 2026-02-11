@@ -94,6 +94,12 @@ body {
   flex: 1;
   justify-content: center;
   font-weight: 500;
+  background-color: var(--vscode-editorWarning-foreground);
+  color: var(--vscode-editor-foreground);
+}
+
+.btn-debug:hover {
+  filter: brightness(1.1);
 }
 
 .status-bar {
