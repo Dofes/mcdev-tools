@@ -1,6 +1,7 @@
 export interface ModDir {
   path: string;
   hot_reload: boolean;
+  enabled: boolean;
 }
 
 export interface McdevData {

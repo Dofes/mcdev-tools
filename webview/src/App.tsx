@@ -17,7 +17,7 @@ function App() {
   const [lang, setLang] = useState<string>('en');
   const t = i18n[lang] || i18n.en;
   const [data, setData] = useState<McdevData>({});
-  const [modDirs, setModDirs] = useState<ModDir[]>([{ path: './', hot_reload: true }]);
+  const [modDirs, setModDirs] = useState<ModDir[]>([{ path: './', hot_reload: true, enabled: true }]);
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
   const [statusType, setStatusType] = useState<'success' | 'error' | 'info'>('info');
@@ -102,19 +102,24 @@ function App() {
   };
 
   const parseModDirs = (dirs?: (string | ModDir)[]): ModDir[] => {
-    if (!dirs || !Array.isArray(dirs)) return [{ path: './', hot_reload: true }];
+    if (!dirs || !Array.isArray(dirs)) return [{ path: './', hot_reload: true, enabled: true }];
     return dirs.map(item => {
-      if (typeof item === 'string') return { path: item, hot_reload: true };
-      if (item && typeof item === 'object') return { path: item.path || './', hot_reload: item.hot_reload !== false };
-      return { path: './', hot_reload: true };
+      if (typeof item === 'string') return { path: item, hot_reload: true, enabled: true };
+      if (item && typeof item === 'object') return { path: item.path || './', hot_reload: item.hot_reload !== false, enabled: item.enabled !== false };
+      return { path: './', hot_reload: true, enabled: true };
     });
   };
 
   const collectData = useCallback((): McdevData => {
-    const allHotReload = modDirs.every(d => d.hot_reload);
-    const includedModDirs = allHotReload
+    const allDefault = modDirs.every(d => d.hot_reload && d.enabled);
+    const includedModDirs = allDefault
       ? modDirs.map(d => d.path)
-      : modDirs.map(d => ({ path: d.path, hot_reload: d.hot_reload }));
+      : modDirs.map(d => {
+          const obj: any = { path: d.path };
+          if (!d.hot_reload) obj.hot_reload = false;
+          if (!d.enabled) obj.enabled = false;
+          return Object.keys(obj).length === 1 ? d.path : obj;
+        });
 
     return {
       ...data,
@@ -150,7 +155,7 @@ function App() {
 
   const handleFolderSelected = (index: number, path: string) => {
     if (index === -1) {
-      setModDirs(prev => [...prev, { path, hot_reload: true }]);
+      setModDirs(prev => [...prev, { path, hot_reload: true, enabled: true }]);
     } else if (index >= 0) {
       setModDirs(prev => {
         if (index < prev.length) {

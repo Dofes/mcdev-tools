@@ -7,6 +7,7 @@ export interface I18nText {
   addModDirectory: string;
   browse: string;
   hotReload: string;
+  enabled: string;
   noModDirs: string;
   worldSettings: string;
   worldName: string;
@@ -90,6 +91,7 @@ export const i18n: Record<string, I18nText> = {
     addModDirectory: 'Add Mod Directory',
     browse: 'Browse...',
     hotReload: 'Hot Reload',
+    enabled: 'Enabled',
     noModDirs: 'No mod directories configured.',
     worldSettings: 'World Settings',
     worldName: 'World Name',
@@ -172,6 +174,7 @@ export const i18n: Record<string, I18nText> = {
     addModDirectory: '添加 Mod 目录',
     browse: '浏览...',
     hotReload: '热重载',
+    enabled: '启用',
     noModDirs: '未配置模组目录。',
     worldSettings: '世界设置',
     worldName: '世界名称',

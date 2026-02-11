@@ -5,6 +5,7 @@ import { I18nText } from '../i18n';
 interface ModDir {
   path: string;
   hot_reload: boolean;
+  enabled: boolean;
 }
 
 interface Props {
@@ -30,6 +31,13 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
   const toggleHotReload = (index: number) => {
     const newDirs = [...modDirs];
     newDirs[index].hot_reload = !newDirs[index].hot_reload;
+    setModDirs(newDirs);
+    setHasChanges(true);
+  };
+
+  const toggleEnabled = (index: number) => {
+    const newDirs = [...modDirs];
+    newDirs[index].enabled = !newDirs[index].enabled;
     setModDirs(newDirs);
     setHasChanges(true);
   };
@@ -67,6 +75,15 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
                 </button>
               </div>
               <div className="mod-options">
+                <label className="checkbox-group" style={{ margin: 0 }}>
+                  <input
+                    type="checkbox"
+                    className="mod-enabled"
+                    checked={dir.enabled}
+                    onChange={() => toggleEnabled(idx)}
+                  />
+                  <span>{t.enabled}</span>
+                </label>
                 <label className="checkbox-group" style={{ margin: 0 }}>
                   <input
                     type="checkbox"
