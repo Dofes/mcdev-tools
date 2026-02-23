@@ -404,6 +404,26 @@ body {
   background-color: var(--vscode-list-hoverBackground);
 }
 
+.mod-folder-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.mod-folder-name .codicon {
+  font-size: 14px;
+  flex-shrink: 0;
+  color: var(--vscode-symbolIcon-folderForeground, var(--vscode-icon-foreground));
+}
+
 .mod-row {
   display: flex;
   gap: 6px;

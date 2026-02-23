@@ -56,8 +56,18 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
             {t.noModDirs}
           </div>
         ) : (
-          modDirs.map((dir, idx) => (
+          modDirs.map((dir, idx) => {
+            const folderName = dir.path
+              ? dir.path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || dir.path
+              : '';
+            return (
             <div key={idx} className="mod-item">
+              {folderName && (
+                <div className="mod-folder-name" title={dir.path}>
+                  <span className="codicon codicon-symbol-folder"></span>
+                  {folderName}
+                </div>
+              )}
               <div className="mod-row">
                 <input
                   type="text"
@@ -102,7 +112,8 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
                 </button>
               </div>
             </div>
-          ))
+          );
+          })
         )}
       </div>
       <div style={{ marginTop: '12px' }}>
