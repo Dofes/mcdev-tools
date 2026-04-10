@@ -24,3 +24,6 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# cursor配置
+.cursor/
