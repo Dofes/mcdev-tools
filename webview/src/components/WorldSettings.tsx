@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
-import { I18nText } from '../i18n';
-import { useDefaultValues } from '../hooks/useDefaultValues';
-import { useExperimentDefaults, EXPERIMENT_DEFAULT_VALUES } from '../hooks/useExperimentDefaults';
+import React, { useState } from "react";
+import { I18nText } from "../i18n";
+import { useDefaultValues } from "../hooks/useDefaultValues";
+import {
+  useExperimentDefaults,
+  EXPERIMENT_DEFAULT_VALUES,
+} from "../hooks/useExperimentDefaults";
+import { WorldManager } from "./WorldManager";
 
 interface McdevData {
   world_name?: string;
@@ -22,22 +26,43 @@ interface Props {
   onDataChange: (field: string, value: any) => void;
   onExperimentChange: (field: string, checked: boolean) => void;
   markInitialized?: (componentId: string) => void;
+  currentWorldFolder?: string;
+  onSwitchWorld: (folderName: string, displayName: string) => void;
 }
 
+type Tab = "select" | "create";
 
 const DEFAULT_VALUES: McdevData = {
-  world_name: 'MC_DEV_WORLD',
-  world_folder_name: 'MC_DEV_WORLD',
+  world_name: "MC_DEV_WORLD",
+  world_folder_name: "MC_DEV_WORLD",
   world_seed: null,
   world_type: 1,
   game_mode: 1,
 };
 
-export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperimentChange, markInitialized }) => {
+export const WorldSettings: React.FC<Props> = ({
+  t,
+  data,
+  onDataChange,
+  onExperimentChange,
+  markInitialized,
+  currentWorldFolder,
+  onSwitchWorld,
+}) => {
+  const [tab, setTab] = useState<Tab>("select");
   const [experimentExpanded, setExperimentExpanded] = useState(false);
 
-  useDefaultValues(data, DEFAULT_VALUES, onDataChange, markInitialized ? () => markInitialized('WorldSettings') : undefined);
-  useExperimentDefaults(data.experiment_options, onExperimentChange, markInitialized ? () => markInitialized('ExperimentOptions') : undefined);
+  useDefaultValues(
+    data,
+    DEFAULT_VALUES,
+    onDataChange,
+    markInitialized ? () => markInitialized("WorldSettings") : undefined,
+  );
+  useExperimentDefaults(
+    data.experiment_options,
+    onExperimentChange,
+    markInitialized ? () => markInitialized("ExperimentOptions") : undefined,
+  );
 
   return (
     <div className="section">
@@ -47,108 +72,177 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
           {t.worldSettings}
         </span>
       </div>
-      
-      <div className="control-group">
-        <label htmlFor="world_name">{t.worldName}</label>
-        <input
-          type="text"
-          id="world_name"
-          value={data.world_name ?? DEFAULT_VALUES.world_name ?? ''}
-          onChange={(e) => onDataChange('world_name', e.target.value)}
-          placeholder="MC_DEV_WORLD"
-        />
-      </div>
 
-      <div className="control-group">
-        <label htmlFor="world_folder_name">{t.worldFolder}</label>
-        <input
-          type="text"
-          id="world_folder_name"
-          value={data.world_folder_name ?? DEFAULT_VALUES.world_folder_name ?? ''}
-          onChange={(e) => onDataChange('world_folder_name', e.target.value)}
-          placeholder="MC_DEV_WORLD"
-        />
-      </div>
-
-      <div className="control-group">
-        <label htmlFor="world_seed">{t.worldSeed}</label>
-        <input
-          type="text"
-          id="world_seed"
-          value={data.world_seed === null || data.world_seed === undefined ? '' : String(data.world_seed)}
-          onChange={(e) => {
-            const val = e.target.value.trim();
-            onDataChange('world_seed', val === '' ? null : Number(val));
-          }}
-          placeholder={t.worldSeed}
-        />
-      </div>
-
-      <div className="control-group">
-        <label htmlFor="world_type">{t.worldType}</label>
-        <select
-          id="world_type"
-          value={data.world_type ?? DEFAULT_VALUES.world_type}
-          onChange={(e) => onDataChange('world_type', Number(e.target.value))}
+      <div className="ws-tabs">
+        <button
+          className={"ws-tab" + (tab === "select" ? " active" : "")}
+          onClick={() => setTab("select")}
         >
-          <option value="1">{t.infinity}</option>
-          <option value="2">{t.flat}</option>
-          <option value="0">{t.old}</option>
-        </select>
-      </div>
-
-      <div className="control-group">
-        <label htmlFor="game_mode">{t.gameMode}</label>
-        <select
-          id="game_mode"
-          value={data.game_mode ?? DEFAULT_VALUES.game_mode}
-          onChange={(e) => onDataChange('game_mode', Number(e.target.value))}
+          <span className="codicon codicon-folder-opened"></span>
+          {t.worldTabSelect}
+        </button>
+        <button
+          className={"ws-tab" + (tab === "create" ? " active" : "")}
+          onClick={() => setTab("create")}
         >
-          <option value="0">{t.survival}</option>
-          <option value="1">{t.creative}</option>
-          <option value="2">{t.adventure}</option>
-          <option value="3">{t.spectator}</option>
-        </select>
+          <span className="codicon codicon-add"></span>
+          {t.worldTabCreate}
+        </button>
       </div>
 
-      {/* Experimental Options Subsection */}
-      <div className={`subsection ${experimentExpanded ? '' : 'collapsed'}`}>
-        <div className="subsection-header" onClick={() => setExperimentExpanded(!experimentExpanded)}>
-          <span className="subsection-title">
-            <span className="codicon codicon-chevron-right"></span>
-            {t.experimentOptions}
-          </span>
-        </div>
-        <div className="collapsible-content">
-          <div className="checkbox-group">
+      {tab === "select" ? (
+        <WorldManager
+          t={t}
+          currentWorldFolder={currentWorldFolder}
+          onSwitchWorld={onSwitchWorld}
+          embedded
+        />
+      ) : (
+        <>
+          <div className="control-group">
+            <label htmlFor="world_name">{t.worldName}</label>
             <input
-              type="checkbox"
-              id="exp_data_driven_biomes"
-              checked={data.experiment_options?.data_driven_biomes ?? EXPERIMENT_DEFAULT_VALUES.data_driven_biomes}
-              onChange={(e) => onExperimentChange('data_driven_biomes', e.target.checked)}
+              type="text"
+              id="world_name"
+              value={data.world_name ?? DEFAULT_VALUES.world_name ?? ""}
+              onChange={(e) => onDataChange("world_name", e.target.value)}
+              placeholder="MC_DEV_WORLD"
             />
-            <label htmlFor="exp_data_driven_biomes">{t.dataDrivenBiomes}</label>
           </div>
-          <div className="checkbox-group">
+
+          <div className="control-group">
+            <label htmlFor="world_folder_name">{t.worldFolder}</label>
             <input
-              type="checkbox"
-              id="exp_data_driven_items"
-              checked={data.experiment_options?.data_driven_items ?? EXPERIMENT_DEFAULT_VALUES.data_driven_items}
-              onChange={(e) => onExperimentChange('data_driven_items', e.target.checked)}
+              type="text"
+              id="world_folder_name"
+              value={
+                data.world_folder_name ?? DEFAULT_VALUES.world_folder_name ?? ""
+              }
+              onChange={(e) =>
+                onDataChange("world_folder_name", e.target.value)
+              }
+              placeholder="MC_DEV_WORLD"
             />
-            <label htmlFor="exp_data_driven_items">{t.dataDrivenItems}</label>
           </div>
-          <div className="checkbox-group">
+
+          <div className="control-group">
+            <label htmlFor="world_seed">{t.worldSeed}</label>
             <input
-              type="checkbox"
-              id="exp_experimental_molang_features"
-              checked={data.experiment_options?.experimental_molang_features ?? EXPERIMENT_DEFAULT_VALUES.experimental_molang_features}
-              onChange={(e) => onExperimentChange('experimental_molang_features', e.target.checked)}
+              type="text"
+              id="world_seed"
+              value={
+                data.world_seed === null || data.world_seed === undefined
+                  ? ""
+                  : String(data.world_seed)
+              }
+              onChange={(e) => {
+                const val = e.target.value.trim();
+                onDataChange("world_seed", val === "" ? null : Number(val));
+              }}
+              placeholder={t.worldSeed}
             />
-            <label htmlFor="exp_experimental_molang_features">{t.experimentalMolang}</label>
           </div>
-        </div>
-      </div>
+
+          <div className="control-group">
+            <label htmlFor="world_type">{t.worldType}</label>
+            <select
+              id="world_type"
+              value={data.world_type ?? DEFAULT_VALUES.world_type}
+              onChange={(e) =>
+                onDataChange("world_type", Number(e.target.value))
+              }
+            >
+              <option value="1">{t.infinity}</option>
+              <option value="2">{t.flat}</option>
+              <option value="0">{t.old}</option>
+            </select>
+          </div>
+
+          <div className="control-group">
+            <label htmlFor="game_mode">{t.gameMode}</label>
+            <select
+              id="game_mode"
+              value={data.game_mode ?? DEFAULT_VALUES.game_mode}
+              onChange={(e) =>
+                onDataChange("game_mode", Number(e.target.value))
+              }
+            >
+              <option value="0">{t.survival}</option>
+              <option value="1">{t.creative}</option>
+              <option value="2">{t.adventure}</option>
+              <option value="3">{t.spectator}</option>
+            </select>
+          </div>
+
+          {/* Experimental Options */}
+          <div
+            className={`subsection ${experimentExpanded ? "" : "collapsed"}`}
+          >
+            <div
+              className="subsection-header"
+              onClick={() => setExperimentExpanded(!experimentExpanded)}
+            >
+              <span className="subsection-title">
+                <span className="codicon codicon-chevron-right"></span>
+                {t.experimentOptions}
+              </span>
+            </div>
+            <div className="collapsible-content">
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="exp_data_driven_biomes"
+                  checked={
+                    data.experiment_options?.data_driven_biomes ??
+                    EXPERIMENT_DEFAULT_VALUES.data_driven_biomes
+                  }
+                  onChange={(e) =>
+                    onExperimentChange("data_driven_biomes", e.target.checked)
+                  }
+                />
+                <label htmlFor="exp_data_driven_biomes">
+                  {t.dataDrivenBiomes}
+                </label>
+              </div>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="exp_data_driven_items"
+                  checked={
+                    data.experiment_options?.data_driven_items ??
+                    EXPERIMENT_DEFAULT_VALUES.data_driven_items
+                  }
+                  onChange={(e) =>
+                    onExperimentChange("data_driven_items", e.target.checked)
+                  }
+                />
+                <label htmlFor="exp_data_driven_items">
+                  {t.dataDrivenItems}
+                </label>
+              </div>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="exp_experimental_molang_features"
+                  checked={
+                    data.experiment_options?.experimental_molang_features ??
+                    EXPERIMENT_DEFAULT_VALUES.experimental_molang_features
+                  }
+                  onChange={(e) =>
+                    onExperimentChange(
+                      "experimental_molang_features",
+                      e.target.checked,
+                    )
+                  }
+                />
+                <label htmlFor="exp_experimental_molang_features">
+                  {t.experimentalMolang}
+                </label>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

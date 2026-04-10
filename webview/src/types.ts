@@ -4,6 +4,14 @@ export interface ModDir {
   enabled: boolean;
 }
 
+export interface WorldInfo {
+  folderName: string;
+  displayName: string;
+  lastModified: number;
+  size: number;
+  isCurrent: boolean;
+}
+
 export interface McdevData {
   game_executable_path?: string;
   world_name?: string;
