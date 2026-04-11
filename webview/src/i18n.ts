@@ -28,8 +28,7 @@ export interface I18nText {
   dataDrivenItems: string;
   experimentalMolang: string;
   startupOptions: string;
-  gameRules: string;
-  gameOptions: string;
+
   resetWorld: string;
   autoJoin: string;
   includeDebug: string;
@@ -38,6 +37,16 @@ export interface I18nText {
   keepInventory: string;
   doDaylightCycle: string;
   doWeatherCycle: string;
+  doMobSpawning: string;
+  doMobLoot: string;
+  mobGriefing: string;
+  bonusChest: string;
+  startTime: string;
+  startTimePlaceholder: string;
+  timeSunrise: string;
+  timeNoon: string;
+  timeSunset: string;
+  timeMidnight: string;
   skinOptions: string;
   skinSlim: string;
   skinPath: string;
@@ -100,6 +109,10 @@ export interface I18nText {
   worldManagerCopy: string;
   worldManagerLoad: string;
   worldManagerMultiSelect: string;
+  gameRulesFor: string;
+  gameRulesDefault: string;
+  unsavedChangesPrompt: string;
+
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -133,8 +146,7 @@ export const i18n: Record<string, I18nText> = {
     dataDrivenItems: "Data Driven Items",
     experimentalMolang: "Experimental Molang Features",
     startupOptions: "Startup Options",
-    gameRules: "Game Rules",
-    gameOptions: "Game Options",
+
     resetWorld: "Reset World",
     autoJoin: "Auto Join Game",
     includeDebug: "Include Debug Mod",
@@ -143,6 +155,16 @@ export const i18n: Record<string, I18nText> = {
     keepInventory: "Keep Inventory",
     doDaylightCycle: "Daylight Cycle",
     doWeatherCycle: "Weather Cycle",
+    doMobSpawning: "Mob Spawning",
+    doMobLoot: "Mob Loot Drops",
+    mobGriefing: "Mob Griefing",
+    bonusChest: "Bonus Chest",
+    startTime: "Game Time on Launch (ticks)",
+    startTimePlaceholder: "Default (not set), 6000 = noon",
+    timeSunrise: "Sunrise",
+    timeNoon: "Noon",
+    timeSunset: "Sunset",
+    timeMidnight: "Midnight",
     skinOptions: "Skin Options",
     skinSlim: "Slim Model (Alex)",
     skinPath: "Skin Texture File",
@@ -206,6 +228,10 @@ export const i18n: Record<string, I18nText> = {
     worldManagerCopy: "Duplicate",
     worldManagerLoad: "Load",
     worldManagerMultiSelect: "Multi Select",
+    gameRulesFor: "Game Rules - {0}",
+    gameRulesDefault: "Game Rules (New World Defaults)",
+    unsavedChangesPrompt: "You have unsaved changes. Save before switching?",
+
   },
   zh: {
     _locale: "zh",
@@ -237,8 +263,7 @@ export const i18n: Record<string, I18nText> = {
     dataDrivenItems: "数据驱动物品",
     experimentalMolang: "实验性Molang特性",
     startupOptions: "启动选项",
-    gameRules: "游戏规则",
-    gameOptions: "游戏选项",
+
     resetWorld: "重置世界",
     autoJoin: "自动加入游戏",
     includeDebug: "包含调试模组",
@@ -247,6 +272,16 @@ export const i18n: Record<string, I18nText> = {
     keepInventory: "保持物品栏",
     doDaylightCycle: "昼夜更替",
     doWeatherCycle: "天气循环",
+    doMobSpawning: "生物生成",
+    doMobLoot: "战利品掉落",
+    mobGriefing: "生物破坏",
+    bonusChest: "奖励箱",
+    startTime: "启动时游戏时间（刻）",
+    startTimePlaceholder: "默认不修改，6000 = 正午",
+    timeSunrise: "日出",
+    timeNoon: "中午",
+    timeSunset: "傍晚",
+    timeMidnight: "午夜",
     skinOptions: "皮肤设置",
     skinSlim: "纤细皮肤 (Slim)",
     skinPath: "皮肤贴图文件",
@@ -310,5 +345,9 @@ export const i18n: Record<string, I18nText> = {
     worldManagerCopy: "复制存档",
     worldManagerLoad: "加载",
     worldManagerMultiSelect: "多选",
+    gameRulesFor: "游戏规则 - {0}",
+    gameRulesDefault: "游戏规则（新建存档默认）",
+    unsavedChangesPrompt: "当前有未保存的更改，是否先保存？",
+
   },
 };

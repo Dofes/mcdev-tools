@@ -7,10 +7,6 @@ interface McdevData {
   auto_join_game?: boolean;
   include_debug_mod?: boolean;
   auto_hot_reload_mods?: boolean;
-  enable_cheats?: boolean;
-  keep_inventory?: boolean;
-  do_daylight_cycle?: boolean;
-  do_weather_cycle?: boolean;
 }
 
 interface Props {
@@ -25,10 +21,6 @@ const DEFAULT_VALUES: McdevData = {
   auto_join_game: true,
   include_debug_mod: true,
   auto_hot_reload_mods: true,
-  enable_cheats: true,
-  keep_inventory: true,
-  do_daylight_cycle: true,
-  do_weather_cycle: true,
 };
 
 export const GameOptions: React.FC<Props> = ({
@@ -98,57 +90,6 @@ export const GameOptions: React.FC<Props> = ({
             }
           />
           <label htmlFor="auto_hot_reload_mods">{t.autoHotReload}</label>
-        </div>
-      </div>
-
-      <div className="section">
-        <div className="section-header-plain">
-          <span className="section-title">
-            <span className="codicon codicon-law"></span>
-            {t.gameRules}
-          </span>
-        </div>
-
-        <div className="checkbox-group">
-          <input
-            type="checkbox"
-            id="enable_cheats"
-            checked={data.enable_cheats ?? DEFAULT_VALUES.enable_cheats}
-            onChange={(e) => onDataChange("enable_cheats", e.target.checked)}
-          />
-          <label htmlFor="enable_cheats">{t.enableCheats}</label>
-        </div>
-
-        <div className="checkbox-group">
-          <input
-            type="checkbox"
-            id="keep_inventory"
-            checked={data.keep_inventory ?? DEFAULT_VALUES.keep_inventory}
-            onChange={(e) => onDataChange("keep_inventory", e.target.checked)}
-          />
-          <label htmlFor="keep_inventory">{t.keepInventory}</label>
-        </div>
-
-        <div className="checkbox-group">
-          <input
-            type="checkbox"
-            id="do_daylight_cycle"
-            checked={data.do_daylight_cycle ?? DEFAULT_VALUES.do_daylight_cycle}
-            onChange={(e) =>
-              onDataChange("do_daylight_cycle", e.target.checked)
-            }
-          />
-          <label htmlFor="do_daylight_cycle">{t.doDaylightCycle}</label>
-        </div>
-
-        <div className="checkbox-group">
-          <input
-            type="checkbox"
-            id="do_weather_cycle"
-            checked={data.do_weather_cycle ?? DEFAULT_VALUES.do_weather_cycle}
-            onChange={(e) => onDataChange("do_weather_cycle", e.target.checked)}
-          />
-          <label htmlFor="do_weather_cycle">{t.doWeatherCycle}</label>
         </div>
       </div>
     </>

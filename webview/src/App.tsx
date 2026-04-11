@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { vscode } from "./vscode";
 import { i18n, I18nText } from "./i18n";
 import { logger } from "./logger";
-import { ModDir, McdevData } from "./types";
+import { ModDir, McdevData, WorldRules } from "./types";
 import { ModDirectories } from "./components/ModDirectories";
-import { WorldSettings } from "./components/WorldSettings";
+import { WorldSettings, GAME_RULE_DEFAULTS } from "./components/WorldSettings";
+import type { Tab } from "./components/WorldSettings";
 import { GameOptions } from "./components/GameOptions";
 import { UserSettings } from "./components/UserSettings";
 import { WindowStyle } from "./components/WindowStyle";
@@ -31,6 +32,9 @@ function App() {
   );
   const [needsAutoSave, setNeedsAutoSave] = useState(false);
   const [skinPreviewUrl, setSkinPreviewUrl] = useState<string | null>(null);
+  const [worldTab, setWorldTab] = useState<Tab>("select");
+  const [currentWorldRules, setCurrentWorldRules] = useState<WorldRules>({});
+  const [worldRulesChanged, setWorldRulesChanged] = useState(false);
 
   const initializedComponentsRef = useRef<Set<string>>(new Set());
   const initTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -108,6 +112,14 @@ function App() {
     const dirs = parseModDirs(newData.included_mod_dirs);
     setModDirs(dirs);
     setSkinPreviewUrl(skinPreviewUri || null);
+    // Load per-world rules for the current world
+    const folder = newData.world_folder_name;
+    if (folder && newData.world_rules?.[folder]) {
+      setCurrentWorldRules(newData.world_rules[folder]);
+    } else {
+      setCurrentWorldRules({ ...GAME_RULE_DEFAULTS });
+    }
+    setWorldRulesChanged(false);
   };
 
   const parseModDirs = (dirs?: (string | ModDir)[]): ModDir[] => {
@@ -137,11 +149,19 @@ function App() {
           return Object.keys(obj).length === 1 ? d.path : obj;
         });
 
+    // Merge current world rules into the world_rules map
+    const folder = data.world_folder_name;
+    const updatedWorldRules = { ...(data.world_rules || {}) };
+    if (folder) {
+      updatedWorldRules[folder] = { ...currentWorldRules };
+    }
+
     return {
       ...data,
       included_mod_dirs: includedModDirs,
+      world_rules: updatedWorldRules,
     };
-  }, [data, modDirs]);
+  }, [data, modDirs, currentWorldRules]);
 
   const performAutoSave = useCallback(() => {
     const saveData = collectData();
@@ -334,6 +354,57 @@ function App() {
     setHasChanges(true);
   };
 
+  const handleWorldRuleChange = (field: string, value: any) => {
+    setCurrentWorldRules((prev) => ({ ...prev, [field]: value }));
+    setWorldRulesChanged(true);
+    setHasChanges(true);
+  };
+
+  const handleWorldExperimentChange = (field: string, checked: boolean) => {
+    setCurrentWorldRules((prev) => ({
+      ...prev,
+      experiment_options: {
+        ...prev.experiment_options,
+        [field]: checked,
+      },
+    }));
+    setWorldRulesChanged(true);
+    setHasChanges(true);
+  };
+
+  const handleSwitchWorld = useCallback(
+    (folderName: string, displayName: string) => {
+      if (hasChanges || worldRulesChanged) {
+        const currentT = i18n[lang] || i18n.en;
+        const doSave = window.confirm(currentT.unsavedChangesPrompt);
+        if (doSave) {
+          handleSave();
+        }
+      }
+
+      // Save current world's rules before switching
+      const oldFolder = data.world_folder_name;
+      const updatedRules = { ...(data.world_rules || {}) };
+      if (oldFolder) {
+        updatedRules[oldFolder] = { ...currentWorldRules };
+      }
+
+      // Load new world's rules
+      const newRules = updatedRules[folderName] || { ...GAME_RULE_DEFAULTS };
+
+      setData((prev) => ({
+        ...prev,
+        world_folder_name: folderName,
+        world_name: displayName,
+        world_rules: updatedRules,
+      }));
+      setCurrentWorldRules(newRules);
+      setWorldRulesChanged(false);
+      setHasChanges(true);
+    },
+    [data.world_folder_name, data.world_rules, currentWorldRules, hasChanges, worldRulesChanged, lang, handleSave],
+  );
+
   const handleDebugOptionChange = (field: string, value: any) => {
     setData((prev) => ({
       ...prev,
@@ -387,14 +458,13 @@ function App() {
         onExperimentChange={handleExperimentChange}
         markInitialized={markInitialized}
         currentWorldFolder={data.world_folder_name}
-        onSwitchWorld={(folderName, displayName) => {
-          setData((prev) => ({
-            ...prev,
-            world_folder_name: folderName,
-            world_name: displayName,
-          }));
-          setHasChanges(true);
-        }}
+        currentWorldName={data.world_name}
+        onSwitchWorld={handleSwitchWorld}
+        tab={worldTab}
+        onTabChange={setWorldTab}
+        worldRules={currentWorldRules}
+        onWorldRuleChange={handleWorldRuleChange}
+        onWorldExperimentChange={handleWorldExperimentChange}
       />
 
       {/* Game Options */}

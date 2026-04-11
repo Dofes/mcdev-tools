@@ -12,6 +12,24 @@ export interface WorldInfo {
   isCurrent: boolean;
 }
 
+export interface WorldRules {
+  enable_cheats?: boolean;
+  keep_inventory?: boolean;
+  do_daylight_cycle?: boolean;
+  do_weather_cycle?: boolean;
+  do_mob_spawning?: boolean;
+  do_mob_loot?: boolean;
+  mob_griefing?: boolean;
+  bonus_chest?: boolean;
+  start_time?: number | null;
+  game_mode?: number;
+  experiment_options?: {
+    data_driven_biomes?: boolean;
+    data_driven_items?: boolean;
+    experimental_molang_features?: boolean;
+  };
+}
+
 export interface McdevData {
   game_executable_path?: string;
   world_name?: string;
@@ -27,6 +45,11 @@ export interface McdevData {
   auto_hot_reload_mods?: boolean;
   do_daylight_cycle?: boolean;
   do_weather_cycle?: boolean;
+  do_mob_spawning?: boolean;
+  do_mob_loot?: boolean;
+  mob_griefing?: boolean;
+  bonus_chest?: boolean;
+  start_time?: number | null;
   user_name?: string;
   skin_info?: {
     slim: boolean;
@@ -53,4 +76,5 @@ export interface McdevData {
     data_driven_items?: boolean;
     experimental_molang_features?: boolean;
   };
+  world_rules?: Record<string, WorldRules>;
 }

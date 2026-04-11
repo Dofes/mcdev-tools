@@ -84,6 +84,25 @@ body {
   transform: scale(0.98);
 }
 
+.time-preset-buttons {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.time-preset-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.time-preset-btn.active {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
 .btn-run {
   flex: 3;
   justify-content: center;
@@ -718,7 +737,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  height: 196px;
+  max-height: 196px;
   overflow-y: auto;
   padding-right: 2px;
 }

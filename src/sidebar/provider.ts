@@ -409,9 +409,46 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
       }
 
       webview.postMessage({ type: "worldsList", worlds });
+
+      // Clean up stale world_rules entries
+      this.cleanupWorldRules(worlds.map((w) => w.folderName));
     } catch (e) {
       console.error("Failed to list worlds:", e);
       webview.postMessage({ type: "worldsListError", error: String(e) });
+    }
+  }
+
+  /**
+   * 清理 .mcdev.json 中 world_rules 里已不存在的世界条目
+   */
+  private cleanupWorldRules(existingFolders: string[]): void {
+    try {
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (!workspaceFolder) return;
+
+      const mcdevPath = path.join(workspaceFolder.uri.fsPath, ".mcdev.json");
+      if (!fs.existsSync(mcdevPath)) return;
+
+      const content = fs.readFileSync(mcdevPath, "utf8");
+      const parsed = jsonc.parse(content) || {};
+      const worldRules = parsed.world_rules;
+      if (!worldRules || typeof worldRules !== "object") return;
+
+      const folderSet = new Set(existingFolders);
+      let changed = false;
+      for (const key of Object.keys(worldRules)) {
+        if (!folderSet.has(key)) {
+          delete worldRules[key];
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        parsed.world_rules = worldRules;
+        fs.writeFileSync(mcdevPath, JSON.stringify(parsed, null, 4), "utf8");
+      }
+    } catch (e) {
+      console.error("Failed to cleanup world_rules:", e);
     }
   }
 
