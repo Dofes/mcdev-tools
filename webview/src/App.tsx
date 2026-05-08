@@ -12,6 +12,7 @@ import { SkinOptions } from './components/SkinOptions';
 import { DebugKeybindings } from './components/DebugKeybindings';
 import { LauncherSettings } from './components/LauncherSettings';
 import { McpServerConfig } from './components/McpServerConfig';
+import { AssistantMcpLink } from './components/AssistantMcpLink';
 import './App.css';
 
 function App() {
@@ -384,6 +385,9 @@ function App() {
         onMcpServerConfigChange={handleMcpServerConfigChange}
         markInitialized={markInitialized}
       />
+
+      {/* Assistant MCP Link */}
+      <AssistantMcpLink t={t} />
 
       {/* Window Style */}
       <WindowStyle

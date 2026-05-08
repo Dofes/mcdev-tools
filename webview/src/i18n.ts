@@ -85,6 +85,9 @@ export interface I18nText {
   mcpServerIp: string;
   mcpServerPort: string;
   getMcpBridgeTool: string;
+  getMcpAssistant: string;
+  mcpAssistantBadge: string;
+  mcpAssistantDescription: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -175,6 +178,9 @@ export const i18n: Record<string, I18nText> = {
     mcpServerIp: 'Server IP',
     mcpServerPort: 'Server Port',
     getMcpBridgeTool: 'Get Bridge',
+    getMcpAssistant: 'MC Assistant MCP',
+    mcpAssistantBadge: 'RAG',
+    mcpAssistantDescription: 'MODSDK knowledge-base MCP, independent of the game itself.',
 
   },
   zh: {
@@ -264,5 +270,8 @@ export const i18n: Record<string, I18nText> = {
     mcpServerIp: '服务器 IP',
     mcpServerPort: '服务器端口',
     getMcpBridgeTool: '获取跳板',
+    getMcpAssistant: 'MC 助理 MCP',
+    mcpAssistantBadge: 'RAG',
+    mcpAssistantDescription: 'MODSDK资料库，不依赖游戏本身。',
   },
 };
