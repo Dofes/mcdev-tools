@@ -267,6 +267,7 @@ body {
 }
 
 .control-group input[type="text"],
+.control-group input[type="number"],
 .control-group select {
   width: 100%;
   padding: var(--input-padding-vertical) var(--input-padding-horizontal);
@@ -294,6 +295,7 @@ body {
 }
 
 .control-group input[type="text"]:focus,
+.control-group input[type="number"]:focus,
 .control-group select:focus {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: -1px;
@@ -476,6 +478,54 @@ body {
 
 .btn-icon.browse {
   color: var(--vscode-foreground);
+}
+
+.section-description {
+  margin-bottom: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.btn-link-compact {
+  background: transparent;
+  border: 1px solid var(--vscode-button-border, transparent);
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+.btn-link-compact:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-textLink-activeForeground);
+  opacity: 1;
+}
+
+.btn-link-compact .codicon {
+  font-size: 12px;
+}
+
+.mcp-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 10px;
+  align-items: start;
+}
+
+.mcp-config-grid .control-group {
+  margin-bottom: 0;
+}
+
+.mcp-bridge-btn {
+  flex-shrink: 0;
 }
 
 .keybind-display {

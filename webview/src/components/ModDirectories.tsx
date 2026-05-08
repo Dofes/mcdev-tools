@@ -57,8 +57,9 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
           </div>
         ) : (
           modDirs.map((dir, idx) => {
-            const folderName = dir.path
-              ? dir.path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || dir.path
+            const normalizedPath = dir.path.trim().replace(/[\\/]+$/, '');
+            const folderName = normalizedPath && normalizedPath !== '.'
+              ? normalizedPath.split(/[\\/]/).pop() || normalizedPath
               : '';
             return (
             <div key={idx} className="mod-item">

@@ -79,6 +79,12 @@ export interface I18nText {
   launcherSettings: string;
   launcherPath: string;
   launcherPathPlaceholder: string;
+  mcpServerConfig: string;
+  mcpServerDescription: string;
+  mcpServerEnabled: string;
+  mcpServerIp: string;
+  mcpServerPort: string;
+  getMcpBridgeTool: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -163,6 +169,12 @@ export const i18n: Record<string, I18nText> = {
     launcherSettings: 'Launcher Settings',
     launcherPath: 'Game Launcher Path',
     launcherPathPlaceholder: 'Auto detect (default)',
+    mcpServerConfig: 'MCP Server',
+    mcpServerDescription: 'Provides log query, code execution, screen capture, automation and other MCP capabilities.',
+    mcpServerEnabled: 'Enable MCP Server',
+    mcpServerIp: 'Server IP',
+    mcpServerPort: 'Server Port',
+    getMcpBridgeTool: 'Get Bridge',
 
   },
   zh: {
@@ -246,5 +258,11 @@ export const i18n: Record<string, I18nText> = {
     launcherSettings: '启动器设置',
     launcherPath: '游戏启动路径',
     launcherPathPlaceholder: '自动检测（默认）',
+    mcpServerConfig: 'MCP 服务器',
+    mcpServerDescription: '该 MCP 提供日志查询、代码执行、画面捕获、自动化操作等能力。',
+    mcpServerEnabled: '启用 MCP 服务器',
+    mcpServerIp: '服务器 IP',
+    mcpServerPort: '服务器端口',
+    getMcpBridgeTool: '获取跳板',
   },
 };

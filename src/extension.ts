@@ -194,11 +194,17 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
                 title: '选择 MOD 目录'
             });
             if (result && result.length > 0) {
-                panel.webview.postMessage({ 
-                    type: 'folderSelected', 
+                panel.webview.postMessage({
+                    type: 'folderSelected',
                     index: msg.index,
-                    path: result[0].fsPath 
+                    path: result[0].fsPath
                 });
+            }
+        } else if (msg?.type === 'openExternal') {
+            const url = typeof msg.url === 'string' ? msg.url : '';
+            const uri = vscode.Uri.parse(url);
+            if (uri.scheme === 'https' || uri.scheme === 'http') {
+                await vscode.env.openExternal(uri);
             }
         }
     }, undefined, context.subscriptions);

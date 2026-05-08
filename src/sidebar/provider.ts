@@ -88,6 +88,8 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 await vscode.commands.executeCommand('mcdev-tools.startDebug');
             } else if (msg?.type === 'browseGameExecutable') {
                 await this.handleBrowseGameExecutable(webview, msg.currentPath);
+            } else if (msg?.type === 'openExternal') {
+                await this.handleOpenExternal(msg.url);
             } else if (msg?.type === 'log') {
                 const prefix = `[Webview ${msg.level || 'log'}]`;
                 if (msg.level === 'error') {
@@ -269,6 +271,20 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 type: 'gameExecutableSelected',
                 path: result[0].fsPath
             });
+        }
+    }
+
+    /**
+     * 打开外部链接
+     */
+    private async handleOpenExternal(url: string | undefined): Promise<void> {
+        if (!url || typeof url !== 'string') {
+            return;
+        }
+
+        const uri = vscode.Uri.parse(url);
+        if (uri.scheme === 'https' || uri.scheme === 'http') {
+            await vscode.env.openExternal(uri);
         }
     }
 

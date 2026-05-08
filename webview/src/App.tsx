@@ -11,6 +11,7 @@ import { WindowStyle } from './components/WindowStyle';
 import { SkinOptions } from './components/SkinOptions';
 import { DebugKeybindings } from './components/DebugKeybindings';
 import { LauncherSettings } from './components/LauncherSettings';
+import { McpServerConfig } from './components/McpServerConfig';
 import './App.css';
 
 function App() {
@@ -294,6 +295,17 @@ function App() {
     setHasChanges(true);
   };
 
+  const handleMcpServerConfigChange = (field: string, value: any) => {
+    setData(prev => ({
+      ...prev,
+      mcp_server_config: {
+        ...prev.mcp_server_config,
+        [field]: value,
+      },
+    }));
+    setHasChanges(true);
+  };
+
   return (
     <div className="container">
       {/* Toolbar */}
@@ -363,6 +375,14 @@ function App() {
           }));
           setHasChanges(true);
         }}
+      />
+
+      {/* MCP Server Config */}
+      <McpServerConfig
+        t={t}
+        mcpServerConfig={data.mcp_server_config}
+        onMcpServerConfigChange={handleMcpServerConfigChange}
+        markInitialized={markInitialized}
       />
 
       {/* Window Style */}
