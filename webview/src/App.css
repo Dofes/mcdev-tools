@@ -288,6 +288,7 @@ body {
 }
 
 .control-group input[type="text"],
+.control-group input[type="number"],
 .control-group select {
   width: 100%;
   padding: var(--input-padding-vertical) var(--input-padding-horizontal);
@@ -315,6 +316,7 @@ body {
 }
 
 .control-group input[type="text"]:focus,
+.control-group input[type="number"]:focus,
 .control-group select:focus {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: -1px;
@@ -505,6 +507,129 @@ body {
 
 .btn-icon.browse {
   color: var(--vscode-foreground);
+}
+
+.section-description {
+  margin-bottom: 12px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.btn-link-compact {
+  background: transparent;
+  border: 1px solid var(--vscode-button-border, transparent);
+  color: var(--vscode-textLink-foreground);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+.btn-link-compact:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-textLink-activeForeground);
+  opacity: 1;
+}
+
+.btn-link-compact .codicon {
+  font-size: 12px;
+}
+
+.assistant-mcp-link-section {
+  margin: -12px 0 22px;
+  display: flex;
+  justify-content: center;
+}
+
+.assistant-mcp-link {
+  width: 100%;
+  background: transparent;
+  border: 1px dashed var(--vscode-widget-border);
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 6px;
+  text-align: left;
+  opacity: 0.72;
+  transition: opacity 0.12s ease-out, border-color 0.12s ease-out, background-color 0.12s ease-out;
+}
+
+.assistant-mcp-link:hover {
+  background-color: var(--vscode-list-hoverBackground);
+  border-color: var(--vscode-textLink-foreground);
+  color: var(--vscode-foreground);
+  opacity: 0.95;
+}
+
+.assistant-mcp-link > .codicon:first-child {
+  color: var(--vscode-textLink-foreground);
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.assistant-mcp-link > .codicon:last-child {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.assistant-mcp-link-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.assistant-mcp-link-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.assistant-mcp-link-title em {
+  border: 1px solid var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  background-color: var(--vscode-badge-background);
+  border-radius: 999px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 5px;
+  opacity: 0.8;
+}
+
+.assistant-mcp-link-text small {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.mcp-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 10px;
+  align-items: start;
+}
+
+.mcp-config-grid .control-group {
+  margin-bottom: 0;
+}
+
+.mcp-bridge-btn {
+  flex-shrink: 0;
 }
 
 .keybind-display {

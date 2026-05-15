@@ -71,6 +71,11 @@ export interface McdevData {
     reload_shaders_key?: string;
     reload_key_global?: boolean;
   };
+  mcp_server_config?: {
+    enabled?: boolean;
+    server_ip?: string;
+    server_port?: number;
+  };
   experiment_options?: {
     data_driven_biomes?: boolean;
     data_driven_items?: boolean;

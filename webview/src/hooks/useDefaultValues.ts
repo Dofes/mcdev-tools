@@ -1,6 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { logger } from '../logger';
-
 /**
  * 自动初始化组件的默认值
  * 当组件挂载时，检查缺失的字段并自动设置默认值

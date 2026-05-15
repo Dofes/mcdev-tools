@@ -28,7 +28,8 @@ export interface I18nText {
   dataDrivenItems: string;
   experimentalMolang: string;
   startupOptions: string;
-
+  gameRules: string;
+  gameOptions: string;
   resetWorld: string;
   autoJoin: string;
   includeDebug: string;
@@ -112,7 +113,15 @@ export interface I18nText {
   gameRulesFor: string;
   gameRulesDefault: string;
   unsavedChangesPrompt: string;
-
+  mcpServerConfig: string;
+  mcpServerDescription: string;
+  mcpServerEnabled: string;
+  mcpServerIp: string;
+  mcpServerPort: string;
+  getMcpBridgeTool: string;
+  getMcpAssistant: string;
+  mcpAssistantBadge: string;
+  mcpAssistantDescription: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -146,7 +155,8 @@ export const i18n: Record<string, I18nText> = {
     dataDrivenItems: "Data Driven Items",
     experimentalMolang: "Experimental Molang Features",
     startupOptions: "Startup Options",
-
+    gameRules: "Game Rules",
+    gameOptions: "Game Options",
     resetWorld: "Reset World",
     autoJoin: "Auto Join Game",
     includeDebug: "Include Debug Mod",
@@ -231,7 +241,17 @@ export const i18n: Record<string, I18nText> = {
     gameRulesFor: "Game Rules - {0}",
     gameRulesDefault: "Game Rules (New World Defaults)",
     unsavedChangesPrompt: "You have unsaved changes. Save before switching?",
-
+    mcpServerConfig: "MCP Server",
+    mcpServerDescription:
+      "Provides log query, code execution, screen capture, automation and other MCP capabilities.",
+    mcpServerEnabled: "Enable MCP Server",
+    mcpServerIp: "Server IP",
+    mcpServerPort: "Server Port",
+    getMcpBridgeTool: "Get Bridge",
+    getMcpAssistant: "MC Assistant MCP",
+    mcpAssistantBadge: "RAG",
+    mcpAssistantDescription:
+      "MODSDK knowledge-base MCP, independent of the game itself.",
   },
   zh: {
     _locale: "zh",
@@ -263,7 +283,8 @@ export const i18n: Record<string, I18nText> = {
     dataDrivenItems: "数据驱动物品",
     experimentalMolang: "实验性Molang特性",
     startupOptions: "启动选项",
-
+    gameRules: "游戏规则",
+    gameOptions: "游戏选项",
     resetWorld: "重置世界",
     autoJoin: "自动加入游戏",
     includeDebug: "包含调试模组",
@@ -348,6 +369,15 @@ export const i18n: Record<string, I18nText> = {
     gameRulesFor: "游戏规则 - {0}",
     gameRulesDefault: "游戏规则（新建存档默认）",
     unsavedChangesPrompt: "当前有未保存的更改，是否先保存？",
-
+    mcpServerConfig: "MCP 服务器",
+    mcpServerDescription:
+      "该 MCP 提供日志查询、代码执行、画面捕获、自动化操作等能力。",
+    mcpServerEnabled: "启用 MCP 服务器",
+    mcpServerIp: "服务器 IP",
+    mcpServerPort: "服务器端口",
+    getMcpBridgeTool: "获取跳板",
+    getMcpAssistant: "MC 助理 MCP",
+    mcpAssistantBadge: "RAG",
+    mcpAssistantDescription: "MODSDK资料库，不依赖游戏本身。",
   },
 };

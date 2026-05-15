@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { vscode } from "./vscode";
-import { i18n, I18nText } from "./i18n";
-import { logger } from "./logger";
+import { i18n } from "./i18n";
 import { ModDir, McdevData, WorldRules } from "./types";
 import { ModDirectories } from "./components/ModDirectories";
 import { WorldSettings, GAME_RULE_DEFAULTS } from "./components/WorldSettings";
@@ -12,6 +11,8 @@ import { WindowStyle } from "./components/WindowStyle";
 import { SkinOptions } from "./components/SkinOptions";
 import { DebugKeybindings } from "./components/DebugKeybindings";
 import { LauncherSettings } from "./components/LauncherSettings";
+import { McpServerConfig } from "./components/McpServerConfig";
+import { AssistantMcpLink } from "./components/AssistantMcpLink";
 import "./App.css";
 
 function App() {
@@ -416,6 +417,17 @@ function App() {
     setHasChanges(true);
   };
 
+  const handleMcpServerConfigChange = (field: string, value: any) => {
+    setData(prev => ({
+      ...prev,
+      mcp_server_config: {
+        ...prev.mcp_server_config,
+        [field]: value,
+      },
+    }));
+    setHasChanges(true);
+  };
+
   return (
     <div className="container">
       {/* Toolbar */}
@@ -490,6 +502,17 @@ function App() {
           setHasChanges(true);
         }}
       />
+
+      {/* MCP Server Config */}
+      <McpServerConfig
+        t={t}
+        mcpServerConfig={data.mcp_server_config}
+        onMcpServerConfigChange={handleMcpServerConfigChange}
+        markInitialized={markInitialized}
+      />
+
+      {/* Assistant MCP Link */}
+      <AssistantMcpLink t={t} />
 
       {/* Window Style */}
       <WindowStyle
