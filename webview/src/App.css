@@ -301,11 +301,27 @@ body {
   outline-offset: -1px;
 }
 
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px 12px;
+  margin-bottom: 12px;
+}
+
+.checkbox-grid.compact {
+  margin-bottom: 8px;
+}
+
 .checkbox-group {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
   cursor: pointer;
+  min-width: 0;
+}
+
+.checkbox-grid .checkbox-group {
+  margin-bottom: 0;
 }
 
 .checkbox-group input[type="checkbox"] {
@@ -355,6 +371,10 @@ body {
   cursor: pointer;
   font-size: 13px;
   user-select: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .color-preview-box {
