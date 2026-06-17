@@ -33,6 +33,7 @@ export interface I18nText {
   autoJoin: string;
   includeDebug: string;
   autoHotReload: string;
+  autoHotReloadUi: string;
   enableCheats: string;
   keepInventory: string;
   doDaylightCycle: string;
@@ -126,6 +127,7 @@ export const i18n: Record<string, I18nText> = {
     autoJoin: 'Auto Join Game',
     includeDebug: 'Include Debug Mod',
     autoHotReload: 'Auto Hot Reload Mods',
+    autoHotReloadUi: 'UI Hot Reload',
     enableCheats: 'Enable Cheats',
     keepInventory: 'Keep Inventory',
     doDaylightCycle: 'Daylight Cycle',
@@ -218,6 +220,7 @@ export const i18n: Record<string, I18nText> = {
     autoJoin: '自动加入游戏',
     includeDebug: '包含调试模组',
     autoHotReload: '自动热重载',
+    autoHotReloadUi: 'UI自动热重载',
     enableCheats: '开启作弊',
     keepInventory: '保持物品栏',
     doDaylightCycle: '昼夜更替',

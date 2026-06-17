@@ -17,6 +17,7 @@ export interface McdevData {
   enable_cheats?: boolean;
   keep_inventory?: boolean;
   auto_hot_reload_mods?: boolean;
+  auto_hot_reload_ui?: boolean;
   do_daylight_cycle?: boolean;
   do_weather_cycle?: boolean;
   user_name?: string;

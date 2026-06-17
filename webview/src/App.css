@@ -377,6 +377,23 @@ body {
   white-space: nowrap;
 }
 
+.checkbox-group label.label-with-badge {
+  overflow: visible;
+}
+
+.beta-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background-color: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 600;
+  vertical-align: super;
+}
+
 .color-preview-box {
   flex: 1;
   height: 32px;

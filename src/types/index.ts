@@ -40,6 +40,7 @@ export interface McdevConfig {
     auto_join_game?: boolean;
     include_debug_mod?: boolean;
     auto_hot_reload_mods?: boolean;
+    auto_hot_reload_ui?: boolean;
     enable_cheats?: boolean;
     keep_inventory?: boolean;
     user_name?: string;

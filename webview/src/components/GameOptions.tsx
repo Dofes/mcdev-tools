@@ -7,6 +7,7 @@ interface McdevData {
   auto_join_game?: boolean;
   include_debug_mod?: boolean;
   auto_hot_reload_mods?: boolean;
+  auto_hot_reload_ui?: boolean;
   enable_cheats?: boolean;
   keep_inventory?: boolean;
   do_daylight_cycle?: boolean;
@@ -25,6 +26,7 @@ const DEFAULT_VALUES: McdevData = {
   auto_join_game: true,
   include_debug_mod: true,
   auto_hot_reload_mods: true,
+  auto_hot_reload_ui: false,
   enable_cheats: true,
   keep_inventory: true,
   do_daylight_cycle: true,
@@ -106,6 +108,27 @@ export const GameOptions: FC<Props> = ({
             />
             <label htmlFor="auto_hot_reload_mods" title={t.autoHotReload}>
               {t.autoHotReload}
+            </label>
+          </div>
+
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="auto_hot_reload_ui"
+              checked={
+                data.auto_hot_reload_ui ?? DEFAULT_VALUES.auto_hot_reload_ui
+              }
+              onChange={(e) =>
+                onDataChange('auto_hot_reload_ui', e.target.checked)
+              }
+            />
+            <label
+              className="label-with-badge"
+              htmlFor="auto_hot_reload_ui"
+              title={`${t.autoHotReloadUi} BETA`}
+            >
+              {t.autoHotReloadUi}
+              <sup className="beta-badge">BETA</sup>
             </label>
           </div>
         </div>
