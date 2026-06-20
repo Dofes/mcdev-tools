@@ -41,6 +41,7 @@ export interface McdevConfig {
     include_debug_mod?: boolean;
     auto_hot_reload_mods?: boolean;
     auto_hot_reload_ui?: boolean;
+    auto_hot_reload_shaders?: boolean;
     enable_cheats?: boolean;
     keep_inventory?: boolean;
     user_name?: string;

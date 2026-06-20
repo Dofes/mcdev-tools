@@ -34,6 +34,7 @@ export interface I18nText {
   includeDebug: string;
   autoHotReload: string;
   autoHotReloadUi: string;
+  autoHotReloadShaders: string;
   enableCheats: string;
   keepInventory: string;
   doDaylightCycle: string;
@@ -128,6 +129,7 @@ export const i18n: Record<string, I18nText> = {
     includeDebug: 'Include Debug Mod',
     autoHotReload: 'Auto Hot Reload Mods',
     autoHotReloadUi: 'UI Hot Reload',
+    autoHotReloadShaders: 'Shader Hot Reload',
     enableCheats: 'Enable Cheats',
     keepInventory: 'Keep Inventory',
     doDaylightCycle: 'Daylight Cycle',
@@ -221,6 +223,7 @@ export const i18n: Record<string, I18nText> = {
     includeDebug: '包含调试模组',
     autoHotReload: '自动热重载',
     autoHotReloadUi: 'UI自动热重载',
+    autoHotReloadShaders: 'Shader自动热重载',
     enableCheats: '开启作弊',
     keepInventory: '保持物品栏',
     doDaylightCycle: '昼夜更替',
