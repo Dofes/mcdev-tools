@@ -19,6 +19,7 @@ export interface McdevData {
   auto_hot_reload_mods?: boolean;
   auto_hot_reload_ui?: boolean;
   auto_hot_reload_shaders?: boolean;
+  auto_hot_reload_materials?: boolean;
   do_daylight_cycle?: boolean;
   do_weather_cycle?: boolean;
   user_name?: string;

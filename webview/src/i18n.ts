@@ -35,6 +35,7 @@ export interface I18nText {
   autoHotReload: string;
   autoHotReloadUi: string;
   autoHotReloadShaders: string;
+  autoHotReloadMaterials: string;
   enableCheats: string;
   keepInventory: string;
   doDaylightCycle: string;
@@ -127,9 +128,10 @@ export const i18n: Record<string, I18nText> = {
     resetWorld: 'Reset World',
     autoJoin: 'Auto Join Game',
     includeDebug: 'Include Debug Mod',
-    autoHotReload: 'Auto Hot Reload Mods',
-    autoHotReloadUi: 'UI Hot Reload',
-    autoHotReloadShaders: 'Shader Hot Reload',
+    autoHotReload: 'Script Auto Hot Update',
+    autoHotReloadUi: 'UI Auto Hot Update',
+    autoHotReloadShaders: 'Shader Hot Compile',
+    autoHotReloadMaterials: 'Material Auto Hot Update',
     enableCheats: 'Enable Cheats',
     keepInventory: 'Keep Inventory',
     doDaylightCycle: 'Daylight Cycle',
@@ -221,9 +223,10 @@ export const i18n: Record<string, I18nText> = {
     resetWorld: '重置世界',
     autoJoin: '自动加入游戏',
     includeDebug: '包含调试模组',
-    autoHotReload: '自动热重载',
-    autoHotReloadUi: 'UI自动热重载',
-    autoHotReloadShaders: 'Shader自动热重载',
+    autoHotReload: '脚本自动热更新',
+    autoHotReloadUi: 'UI自动热更新',
+    autoHotReloadShaders: '着色器热编译',
+    autoHotReloadMaterials: '材质自动热更新',
     enableCheats: '开启作弊',
     keepInventory: '保持物品栏',
     doDaylightCycle: '昼夜更替',
