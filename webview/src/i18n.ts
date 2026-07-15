@@ -36,6 +36,7 @@ export interface I18nText {
   autoHotReloadUi: string;
   autoHotReloadShaders: string;
   autoHotReloadMaterials: string;
+  autoHotReloadParticles: string;
   enableCheats: string;
   keepInventory: string;
   doDaylightCycle: string;
@@ -52,6 +53,8 @@ export interface I18nText {
   hideTitleBar: string;
   titleBarColor: string;
   titleBarColorPlaceholder: string;
+  windowOpacity: string;
+  opacityNotSet: string;
   fixedSize: string;
   fixedSizePlaceholder: string;
   width: string;
@@ -132,6 +135,7 @@ export const i18n: Record<string, I18nText> = {
     autoHotReloadUi: 'UI Auto Hot Update',
     autoHotReloadShaders: 'Shader Hot Compile',
     autoHotReloadMaterials: 'Material Auto Hot Update',
+    autoHotReloadParticles: 'Particle Auto Hot Update',
     enableCheats: 'Enable Cheats',
     keepInventory: 'Keep Inventory',
     doDaylightCycle: 'Daylight Cycle',
@@ -148,6 +152,8 @@ export const i18n: Record<string, I18nText> = {
     hideTitleBar: 'Hide Title Bar',
     titleBarColor: 'Title Bar Color',
     titleBarColorPlaceholder: 'e.g., #hex, rgb(r,g,b)',
+    windowOpacity: 'Window Opacity',
+    opacityNotSet: 'Not set',
     fixedSize: 'Fixed Size',
     fixedSizePlaceholder: 'e.g., 800,600',
     width: 'Width',
@@ -227,6 +233,7 @@ export const i18n: Record<string, I18nText> = {
     autoHotReloadUi: 'UI自动热更新',
     autoHotReloadShaders: '着色器热编译',
     autoHotReloadMaterials: '材质自动热更新',
+    autoHotReloadParticles: '粒子自动热更新',
     enableCheats: '开启作弊',
     keepInventory: '保持物品栏',
     doDaylightCycle: '昼夜更替',
@@ -243,6 +250,8 @@ export const i18n: Record<string, I18nText> = {
     hideTitleBar: '隐藏标题栏',
     titleBarColor: '标题栏颜色 (RGB)',
     titleBarColorPlaceholder: '例如 255,0,0 表示红色',
+    windowOpacity: '窗口整体不透明度',
+    opacityNotSet: '未设置',
     fixedSize: '锁定大小 (宽 x 高)',
     fixedSizePlaceholder: '例如 1920,1080',
     width: '宽',

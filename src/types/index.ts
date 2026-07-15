@@ -43,9 +43,19 @@ export interface McdevConfig {
     auto_hot_reload_ui?: boolean;
     auto_hot_reload_shaders?: boolean;
     auto_hot_reload_materials?: boolean;
+    auto_hot_reload_particles?: boolean;
     enable_cheats?: boolean;
     keep_inventory?: boolean;
     user_name?: string;
+    window_style?: {
+        always_on_top?: boolean;
+        hide_title_bar?: boolean;
+        title_bar_color?: number[] | null;
+        fixed_size?: number[] | null;
+        fixed_position?: number[] | null;
+        lock_corner?: number | null;
+        opacity?: number | null;
+    };
     debug_options?: {
         reload_key?: string;
         reload_world_key?: string;

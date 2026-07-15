@@ -20,6 +20,7 @@ export interface McdevData {
   auto_hot_reload_ui?: boolean;
   auto_hot_reload_shaders?: boolean;
   auto_hot_reload_materials?: boolean;
+  auto_hot_reload_particles?: boolean;
   do_daylight_cycle?: boolean;
   do_weather_cycle?: boolean;
   user_name?: string;
@@ -35,6 +36,7 @@ export interface McdevData {
     fixed_size?: number[] | null;
     fixed_position?: number[] | null;
     lock_corner?: number | null;
+    opacity?: number | null;
   };
   debug_options?: {
     reload_key?: string;

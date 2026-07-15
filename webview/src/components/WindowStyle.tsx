@@ -9,6 +9,7 @@ interface WindowStyleData {
   fixed_size?: number[] | null;
   fixed_position?: number[] | null;
   lock_corner?: number | null;
+  opacity?: number | null;
 }
 
 interface Props {
@@ -26,10 +27,16 @@ const DEFAULT_VALUES: WindowStyleData = {
   fixed_size: null,
   fixed_position: null,
   lock_corner: null,
+  opacity: null,
 };
 
 export const WindowStyle: React.FC<Props> = ({ t, windowStyle, onWindowStyleChange, markInitialized }) => {
   useNestedDefaultValues(windowStyle, DEFAULT_VALUES, onWindowStyleChange, markInitialized ? () => markInitialized('WindowStyle') : undefined);
+
+  const opacity = windowStyle?.opacity ?? null;
+  const opacityEnabled = opacity !== null;
+  const opacityValue = opacity ?? 255;
+  const opacityProgress = `${(opacityValue / 255) * 100}%`;
 
   return (
     <div className="section">
@@ -58,6 +65,41 @@ export const WindowStyle: React.FC<Props> = ({ t, windowStyle, onWindowStyleChan
           onChange={(e) => onWindowStyleChange('hide_title_bar', e.target.checked)}
         />
         <label htmlFor="ws_hide_title_bar">{t.hideTitleBar}</label>
+      </div>
+
+      <div className="control-group opacity-control">
+        <div className="opacity-control-header">
+          <label htmlFor="ws_opacity">{t.windowOpacity}</label>
+          <label className="toggle-switch" title={t.windowOpacity}>
+            <input
+              type="checkbox"
+              checked={opacityEnabled}
+              onChange={(e) =>
+                onWindowStyleChange('opacity', e.target.checked ? 255 : null)
+              }
+              aria-label={t.windowOpacity}
+            />
+            <span className="toggle-switch-track" aria-hidden="true">
+              <span className="toggle-switch-thumb" />
+            </span>
+          </label>
+        </div>
+        <div className={`opacity-slider-row${opacityEnabled ? '' : ' disabled'}`}>
+          <input
+            type="range"
+            id="ws_opacity"
+            min="0"
+            max="255"
+            step="1"
+            value={opacityValue}
+            disabled={!opacityEnabled}
+            style={{ '--range-progress': opacityProgress } as React.CSSProperties}
+            onChange={(e) => onWindowStyleChange('opacity', Number(e.target.value))}
+          />
+          <output htmlFor="ws_opacity">
+            {opacityEnabled ? opacityValue : t.opacityNotSet}
+          </output>
+        </div>
       </div>
 
       <div className="control-group">

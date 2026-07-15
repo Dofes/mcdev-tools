@@ -10,6 +10,7 @@ interface McdevData {
   auto_hot_reload_ui?: boolean;
   auto_hot_reload_shaders?: boolean;
   auto_hot_reload_materials?: boolean;
+  auto_hot_reload_particles?: boolean;
   enable_cheats?: boolean;
   keep_inventory?: boolean;
   do_daylight_cycle?: boolean;
@@ -31,6 +32,7 @@ const DEFAULT_VALUES: McdevData = {
   auto_hot_reload_ui: false,
   auto_hot_reload_shaders: false,
   auto_hot_reload_materials: false,
+  auto_hot_reload_particles: false,
   enable_cheats: true,
   keep_inventory: true,
   do_daylight_cycle: true,
@@ -126,13 +128,8 @@ export const GameOptions: FC<Props> = ({
                 onDataChange('auto_hot_reload_ui', e.target.checked)
               }
             />
-            <label
-              className="label-with-badge"
-              htmlFor="auto_hot_reload_ui"
-              title={`${t.autoHotReloadUi} BETA`}
-            >
+            <label htmlFor="auto_hot_reload_ui" title={t.autoHotReloadUi}>
               {t.autoHotReloadUi}
-              <sup className="beta-badge">BETA</sup>
             </label>
           </div>
 
@@ -149,12 +146,10 @@ export const GameOptions: FC<Props> = ({
               }
             />
             <label
-              className="label-with-badge"
               htmlFor="auto_hot_reload_shaders"
-              title={`${t.autoHotReloadShaders} BETA`}
+              title={t.autoHotReloadShaders}
             >
               {t.autoHotReloadShaders}
-              <sup className="beta-badge">BETA</sup>
             </label>
           </div>
 
@@ -171,12 +166,30 @@ export const GameOptions: FC<Props> = ({
               }
             />
             <label
-              className="label-with-badge"
               htmlFor="auto_hot_reload_materials"
-              title={`${t.autoHotReloadMaterials} BETA`}
+              title={t.autoHotReloadMaterials}
             >
               {t.autoHotReloadMaterials}
-              <sup className="beta-badge">BETA</sup>
+            </label>
+          </div>
+
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="auto_hot_reload_particles"
+              checked={
+                data.auto_hot_reload_particles ??
+                DEFAULT_VALUES.auto_hot_reload_particles
+              }
+              onChange={(e) =>
+                onDataChange('auto_hot_reload_particles', e.target.checked)
+              }
+            />
+            <label
+              htmlFor="auto_hot_reload_particles"
+              title={t.autoHotReloadParticles}
+            >
+              {t.autoHotReloadParticles}
             </label>
           </div>
         </div>
