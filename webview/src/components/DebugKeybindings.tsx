@@ -56,13 +56,13 @@ export const DebugKeybindings: React.FC<Props> = ({
           onClick={() => setActiveKeyListener(key)}
         >
           {isListening ? (
-            <span style={{ color: 'var(--vscode-focusBorder)' }}>
+            <span className="keybind-listening-text">
               {t.pressAnyKey}
             </span>
           ) : keyValue ? (
             <>
               <span>{getKeyName(keyValue)}</span>
-              <span style={{ opacity: 0.6, fontSize: '0.9em' }}>({keyValue})</span>
+              <span className="keybind-code">({keyValue})</span>
               <span
                 className="codicon codicon-close clear-btn"
                 title={t.clear}
@@ -73,7 +73,7 @@ export const DebugKeybindings: React.FC<Props> = ({
               ></span>
             </>
           ) : (
-            <span style={{ opacity: 0.5, fontStyle: 'italic' }}>{t.clickToSet}</span>
+            <span className="keybind-empty">{t.clickToSet}</span>
           )}
         </div>
       </div>
@@ -94,7 +94,7 @@ export const DebugKeybindings: React.FC<Props> = ({
         {renderKeybindDisplay('reload_addon_key', t.reloadAddons)}
         {renderKeybindDisplay('reload_shaders_key', t.reloadShaders)}
 
-        <div className="checkbox-group" style={{ marginTop: '12px' }}>
+        <div className="checkbox-group keybind-global-option">
           <input
             type="checkbox"
             id="reload_key_global"

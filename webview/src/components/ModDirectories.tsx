@@ -52,7 +52,8 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
       </div>
       <div className="mod-list">
         {modDirs.length === 0 ? (
-          <div style={{ padding: '10px', textAlign: 'center', opacity: 0.6 }}>
+          <div className="mod-empty-state">
+            <span className="codicon codicon-folder"></span>
             {t.noModDirs}
           </div>
         ) : (
@@ -78,6 +79,7 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
                   placeholder="./ or D:/Mods"
                 />
                 <button
+                  type="button"
                   className="btn-icon browse"
                   onClick={() => vscode.postMessage({ type: 'browseFolder', index: idx })}
                   title={t.browse}
@@ -86,7 +88,7 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
                 </button>
               </div>
               <div className="mod-options">
-                <label className="checkbox-group" style={{ margin: 0 }}>
+                <label className="checkbox-group">
                   <input
                     type="checkbox"
                     className="mod-enabled"
@@ -95,7 +97,7 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
                   />
                   <span>{t.enabled}</span>
                 </label>
-                <label className="checkbox-group" style={{ margin: 0 }}>
+                <label className="checkbox-group">
                   <input
                     type="checkbox"
                     className="mod-hotreload"
@@ -105,6 +107,7 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
                   <span>{t.hotReload}</span>
                 </label>
                 <button
+                  type="button"
                   className="btn-icon delete"
                   onClick={() => removeDir(idx)}
                   title={t.remove}
@@ -117,11 +120,11 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
           })
         )}
       </div>
-      <div style={{ marginTop: '12px' }}>
+      <div className="mod-add-action">
         <button
+          type="button"
           className="btn-primary"
           onClick={() => vscode.postMessage({ type: 'browseFolder', index: -1 })}
-          style={{ width: '100%' }}
         >
           <span className="codicon codicon-folder-opened"></span> {t.addModDirectory}
         </button>

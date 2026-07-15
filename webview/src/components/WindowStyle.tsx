@@ -37,6 +37,13 @@ export const WindowStyle: React.FC<Props> = ({ t, windowStyle, onWindowStyleChan
   const opacityEnabled = opacity !== null;
   const opacityValue = opacity ?? 255;
   const opacityProgress = `${(opacityValue / 255) * 100}%`;
+  const opacityStageColor = opacityValue < 64
+    ? '#89919d'
+    : opacityValue < 128
+      ? '#8296b0'
+      : opacityValue < 192
+        ? '#739bc4'
+        : '#62a3df';
 
   return (
     <div className="section">
@@ -84,18 +91,34 @@ export const WindowStyle: React.FC<Props> = ({ t, windowStyle, onWindowStyleChan
             </span>
           </label>
         </div>
-        <div className={`opacity-slider-row${opacityEnabled ? '' : ' disabled'}`}>
-          <input
-            type="range"
-            id="ws_opacity"
-            min="0"
-            max="255"
-            step="1"
-            value={opacityValue}
-            disabled={!opacityEnabled}
-            style={{ '--range-progress': opacityProgress } as React.CSSProperties}
-            onChange={(e) => onWindowStyleChange('opacity', Number(e.target.value))}
-          />
+        <div
+          className={`opacity-slider-row${opacityEnabled ? '' : ' disabled'}`}
+          style={{
+            '--range-progress': opacityProgress,
+            '--range-color': opacityStageColor,
+          } as React.CSSProperties}
+        >
+          <div className="opacity-range-control">
+            <input
+              type="range"
+              id="ws_opacity"
+              min="0"
+              max="255"
+              step="1"
+              value={opacityValue}
+              disabled={!opacityEnabled}
+              onChange={(e) => onWindowStyleChange('opacity', Number(e.target.value))}
+            />
+            <div className="opacity-range-visual" aria-hidden="true">
+              <div className="opacity-range-track">
+                <span className="opacity-range-fill" />
+                <span className="opacity-range-marker marker-25" />
+                <span className="opacity-range-marker marker-50" />
+                <span className="opacity-range-marker marker-75" />
+              </div>
+              <span className="opacity-range-thumb" />
+            </div>
+          </div>
           <output htmlFor="ws_opacity">
             {opacityEnabled ? opacityValue : t.opacityNotSet}
           </output>

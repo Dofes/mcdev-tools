@@ -312,6 +312,7 @@ function App() {
       {/* Toolbar */}
       <div className="toolbar">
         <button 
+          type="button"
           className="btn-primary btn-run" 
           onClick={() => vscode.postMessage({ type: 'runGame' })}
           title={t.runGameTooltip}
@@ -320,6 +321,7 @@ function App() {
           {t.runGame}
         </button>
         <button 
+          type="button"
           className="btn-primary btn-debug" 
           onClick={() => vscode.postMessage({ type: 'startDebug' })}
           title={t.startDebugTooltip}
@@ -329,7 +331,11 @@ function App() {
       </div>
 
       {/* Status Bar */}
-      <div className={`status-bar ${statusMsg ? 'visible' : ''} ${statusType}`}>
+      <div
+        className={`status-bar ${statusMsg ? 'visible' : ''} ${statusType}`}
+        role="status"
+        aria-live="polite"
+      >
         {statusMsg || '\u00A0'}
       </div>
 
@@ -422,7 +428,7 @@ function App() {
       {/* Floating Save Button */}
       {hasChanges && (
         <div className="floating-save-container">
-          <button className="btn-primary" onClick={handleSave}>
+          <button type="button" className="btn-primary" onClick={handleSave}>
             <span className="codicon codicon-save"></span>
             {t.saveChanges}
           </button>

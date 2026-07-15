@@ -52,6 +52,14 @@ export const GameOptions: FC<Props> = ({
     markInitialized ? () => markInitialized('GameOptions') : undefined,
   );
 
+  const enabledHotReloadCount = [
+    data.auto_hot_reload_mods ?? DEFAULT_VALUES.auto_hot_reload_mods,
+    data.auto_hot_reload_ui ?? DEFAULT_VALUES.auto_hot_reload_ui,
+    data.auto_hot_reload_shaders ?? DEFAULT_VALUES.auto_hot_reload_shaders,
+    data.auto_hot_reload_materials ?? DEFAULT_VALUES.auto_hot_reload_materials,
+    data.auto_hot_reload_particles ?? DEFAULT_VALUES.auto_hot_reload_particles,
+  ].filter(Boolean).length;
+
   return (
     <>
       <div className="section">
@@ -101,98 +109,120 @@ export const GameOptions: FC<Props> = ({
             </label>
           </div>
 
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              id="auto_hot_reload_mods"
-              checked={
-                data.auto_hot_reload_mods ?? DEFAULT_VALUES.auto_hot_reload_mods
-              }
-              onChange={(e) =>
-                onDataChange('auto_hot_reload_mods', e.target.checked)
-              }
-            />
-            <label htmlFor="auto_hot_reload_mods" title={t.autoHotReload}>
-              {t.autoHotReload}
-            </label>
-          </div>
-
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              id="auto_hot_reload_ui"
-              checked={
-                data.auto_hot_reload_ui ?? DEFAULT_VALUES.auto_hot_reload_ui
-              }
-              onChange={(e) =>
-                onDataChange('auto_hot_reload_ui', e.target.checked)
-              }
-            />
-            <label htmlFor="auto_hot_reload_ui" title={t.autoHotReloadUi}>
-              {t.autoHotReloadUi}
-            </label>
-          </div>
-
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              id="auto_hot_reload_shaders"
-              checked={
-                data.auto_hot_reload_shaders ??
-                DEFAULT_VALUES.auto_hot_reload_shaders
-              }
-              onChange={(e) =>
-                onDataChange('auto_hot_reload_shaders', e.target.checked)
-              }
-            />
-            <label
-              htmlFor="auto_hot_reload_shaders"
-              title={t.autoHotReloadShaders}
-            >
-              {t.autoHotReloadShaders}
-            </label>
-          </div>
-
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              id="auto_hot_reload_materials"
-              checked={
-                data.auto_hot_reload_materials ??
-                DEFAULT_VALUES.auto_hot_reload_materials
-              }
-              onChange={(e) =>
-                onDataChange('auto_hot_reload_materials', e.target.checked)
-              }
-            />
-            <label
-              htmlFor="auto_hot_reload_materials"
-              title={t.autoHotReloadMaterials}
-            >
-              {t.autoHotReloadMaterials}
-            </label>
-          </div>
-
-          <div className="checkbox-group">
-            <input
-              type="checkbox"
-              id="auto_hot_reload_particles"
-              checked={
-                data.auto_hot_reload_particles ??
-                DEFAULT_VALUES.auto_hot_reload_particles
-              }
-              onChange={(e) =>
-                onDataChange('auto_hot_reload_particles', e.target.checked)
-              }
-            />
-            <label
-              htmlFor="auto_hot_reload_particles"
-              title={t.autoHotReloadParticles}
-            >
-              {t.autoHotReloadParticles}
-            </label>
-          </div>
         </div>
+
+        <details className="settings-cluster">
+          <summary>
+            <span className="settings-cluster-leading">
+              <span className="settings-cluster-icon">
+                <span className="codicon codicon-sync"></span>
+              </span>
+              <span className="settings-cluster-copy">
+                <strong>{t.hotReload}</strong>
+                <small>
+                  {enabledHotReloadCount} / 5 {t.enabled}
+                </small>
+              </span>
+            </span>
+            <span className="settings-cluster-expand">
+              <span className="codicon codicon-chevron-right"></span>
+            </span>
+          </summary>
+
+          <div className="checkbox-grid settings-cluster-content">
+            <div className="checkbox-group">
+              <input
+                type="checkbox"
+                id="auto_hot_reload_mods"
+                checked={
+                  data.auto_hot_reload_mods ?? DEFAULT_VALUES.auto_hot_reload_mods
+                }
+                onChange={(e) =>
+                  onDataChange('auto_hot_reload_mods', e.target.checked)
+                }
+              />
+              <label htmlFor="auto_hot_reload_mods" title={t.autoHotReload}>
+                {t.autoHotReload}
+              </label>
+            </div>
+
+            <div className="checkbox-group">
+              <input
+                type="checkbox"
+                id="auto_hot_reload_ui"
+                checked={
+                  data.auto_hot_reload_ui ?? DEFAULT_VALUES.auto_hot_reload_ui
+                }
+                onChange={(e) =>
+                  onDataChange('auto_hot_reload_ui', e.target.checked)
+                }
+              />
+              <label htmlFor="auto_hot_reload_ui" title={t.autoHotReloadUi}>
+                {t.autoHotReloadUi}
+              </label>
+            </div>
+
+            <div className="checkbox-group">
+              <input
+                type="checkbox"
+                id="auto_hot_reload_shaders"
+                checked={
+                  data.auto_hot_reload_shaders ??
+                  DEFAULT_VALUES.auto_hot_reload_shaders
+                }
+                onChange={(e) =>
+                  onDataChange('auto_hot_reload_shaders', e.target.checked)
+                }
+              />
+              <label
+                htmlFor="auto_hot_reload_shaders"
+                title={t.autoHotReloadShaders}
+              >
+                {t.autoHotReloadShaders}
+              </label>
+            </div>
+
+            <div className="checkbox-group">
+              <input
+                type="checkbox"
+                id="auto_hot_reload_materials"
+                checked={
+                  data.auto_hot_reload_materials ??
+                  DEFAULT_VALUES.auto_hot_reload_materials
+                }
+                onChange={(e) =>
+                  onDataChange('auto_hot_reload_materials', e.target.checked)
+                }
+              />
+              <label
+                htmlFor="auto_hot_reload_materials"
+                title={t.autoHotReloadMaterials}
+              >
+                {t.autoHotReloadMaterials}
+              </label>
+            </div>
+
+            <div className="checkbox-group">
+              <input
+                type="checkbox"
+                id="auto_hot_reload_particles"
+                checked={
+                  data.auto_hot_reload_particles ??
+                  DEFAULT_VALUES.auto_hot_reload_particles
+                }
+                onChange={(e) =>
+                  onDataChange('auto_hot_reload_particles', e.target.checked)
+                }
+              />
+              <label
+                htmlFor="auto_hot_reload_particles"
+                title={t.autoHotReloadParticles}
+              >
+                {t.autoHotReloadParticles}
+              </label>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div className="section">
