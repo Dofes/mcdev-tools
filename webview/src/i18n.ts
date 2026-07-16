@@ -51,6 +51,7 @@ export interface I18nText {
   windowStyle: string;
   alwaysOnTop: string;
   hideTitleBar: string;
+  hideTaskbarIcon: string;
   titleBarColor: string;
   titleBarColorPlaceholder: string;
   windowOpacity: string;
@@ -150,6 +151,7 @@ export const i18n: Record<string, I18nText> = {
     windowStyle: 'Window Style',
     alwaysOnTop: 'Always On Top',
     hideTitleBar: 'Hide Title Bar',
+    hideTaskbarIcon: 'Hide Taskbar Icon',
     titleBarColor: 'Title Bar Color',
     titleBarColorPlaceholder: 'e.g., #hex, rgb(r,g,b)',
     windowOpacity: 'Window Opacity',
@@ -248,6 +250,7 @@ export const i18n: Record<string, I18nText> = {
     windowStyle: '窗口样式',
     alwaysOnTop: '悬浮置顶',
     hideTitleBar: '隐藏标题栏',
+    hideTaskbarIcon: '隐藏任务栏图标',
     titleBarColor: '标题栏颜色 (RGB)',
     titleBarColorPlaceholder: '例如 255,0,0 表示红色',
     windowOpacity: '窗口整体不透明度',

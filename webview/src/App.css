@@ -391,12 +391,146 @@ button:focus-visible {
   padding-right: 30px;
 }
 
+body.vscode-dark .control-group select,
+body.vscode-high-contrast .control-group select {
+  color-scheme: dark;
+}
+
+.control-group select option {
+  color: var(--vscode-dropdown-foreground);
+  background-color: var(--vscode-dropdown-background);
+}
+
 .control-group input[type="text"]:focus,
 .control-group input[type="number"]:focus,
 .control-group select:focus {
   outline: none;
   border-color: var(--vscode-focusBorder);
   box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.number-select {
+  position: relative;
+  width: 100%;
+}
+
+.number-select.open {
+  z-index: 40;
+}
+
+.number-select-trigger {
+  width: 100%;
+  height: var(--control-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 9px 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
+  border-radius: var(--panel-radius);
+  color: var(--vscode-dropdown-foreground);
+  background-color: var(--vscode-dropdown-background);
+  font-family: var(--vscode-font-family);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.number-select-trigger > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.number-select-trigger > .codicon {
+  flex: 0 0 auto;
+  color: var(--vscode-descriptionForeground);
+  font-size: 14px;
+  transition: color 120ms ease, transform 150ms ease;
+}
+
+.number-select-trigger:hover {
+  border-color: color-mix(in srgb, var(--vscode-focusBorder) 58%, var(--vscode-dropdown-border));
+  background-color: color-mix(in srgb, var(--vscode-dropdown-background) 88%, var(--vscode-list-hoverBackground));
+}
+
+.number-select.open .number-select-trigger,
+.number-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.number-select.open .number-select-trigger > .codicon {
+  color: var(--vscode-foreground);
+  transform: rotate(180deg);
+}
+
+.number-select-list {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  max-height: 216px;
+  padding: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 1px solid var(--vscode-widget-border, var(--vscode-dropdown-border));
+  border-radius: 8px;
+  color: var(--vscode-dropdown-foreground);
+  background-color: var(--vscode-dropdown-background);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34), 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: numberSelectOpen 120ms ease-out;
+  transform-origin: top center;
+}
+
+@keyframes numberSelectOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.number-select-option {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+  line-height: 1.35;
+  cursor: pointer;
+  user-select: none;
+}
+
+.number-select-option.active {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.number-select-option.selected {
+  color: var(--vscode-list-activeSelectionForeground, var(--vscode-dropdown-foreground));
+  background-color: var(--vscode-list-activeSelectionBackground, #094771);
+}
+
+.number-select-option.selected.active {
+  background-color: var(--vscode-list-activeSelectionBackground, #094771);
+  filter: brightness(1.08);
+}
+
+.number-select-option > .codicon {
+  flex: 0 0 auto;
+  font-size: 14px;
 }
 
 .checkbox-grid {
@@ -500,7 +634,7 @@ button:focus-visible {
 }
 
 .settings-cluster {
-  --cluster-accent: #d97757;
+  --cluster-accent: #8b7cff;
   position: relative;
   margin-top: 14px;
   overflow: hidden;
@@ -540,6 +674,7 @@ button:focus-visible {
   width: 3px;
   border-radius: 0 2px 2px 0;
   background-color: var(--cluster-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cluster-accent) 46%, transparent);
   opacity: 0.9;
 }
 
@@ -573,6 +708,7 @@ button:focus-visible {
   border-radius: var(--panel-radius);
   color: var(--cluster-accent);
   background-color: color-mix(in srgb, var(--cluster-accent) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cluster-accent) 16%, transparent), 0 0 10px color-mix(in srgb, var(--cluster-accent) 12%, transparent);
 }
 
 .settings-cluster-icon .codicon {

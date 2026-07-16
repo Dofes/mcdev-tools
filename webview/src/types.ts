@@ -32,6 +32,7 @@ export interface McdevData {
   window_style?: {
     always_on_top?: boolean;
     hide_title_bar?: boolean;
+    hide_taskbar_icon?: boolean;
     title_bar_color?: number[] | null;
     fixed_size?: number[] | null;
     fixed_position?: number[] | null;

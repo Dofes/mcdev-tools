@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { I18nText } from '../i18n';
 import { useDefaultValues } from '../hooks/useDefaultValues';
 import { useExperimentDefaults, EXPERIMENT_DEFAULT_VALUES } from '../hooks/useExperimentDefaults';
+import { NumberSelect } from './NumberSelect';
 
 interface McdevData {
   world_name?: string;
@@ -86,29 +87,31 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
 
       <div className="control-group">
         <label htmlFor="world_type">{t.worldType}</label>
-        <select
+        <NumberSelect
           id="world_type"
-          value={data.world_type ?? DEFAULT_VALUES.world_type}
-          onChange={(e) => onDataChange('world_type', Number(e.target.value))}
-        >
-          <option value="1">{t.infinity}</option>
-          <option value="2">{t.flat}</option>
-          <option value="0">{t.old}</option>
-        </select>
+          value={data.world_type ?? DEFAULT_VALUES.world_type ?? 1}
+          options={[
+            { value: 1, label: t.infinity },
+            { value: 2, label: t.flat },
+            { value: 0, label: t.old },
+          ]}
+          onChange={(value) => onDataChange('world_type', value)}
+        />
       </div>
 
       <div className="control-group">
         <label htmlFor="game_mode">{t.gameMode}</label>
-        <select
+        <NumberSelect
           id="game_mode"
-          value={data.game_mode ?? DEFAULT_VALUES.game_mode}
-          onChange={(e) => onDataChange('game_mode', Number(e.target.value))}
-        >
-          <option value="0">{t.survival}</option>
-          <option value="1">{t.creative}</option>
-          <option value="2">{t.adventure}</option>
-          <option value="3">{t.spectator}</option>
-        </select>
+          value={data.game_mode ?? DEFAULT_VALUES.game_mode ?? 1}
+          options={[
+            { value: 0, label: t.survival },
+            { value: 1, label: t.creative },
+            { value: 2, label: t.adventure },
+            { value: 3, label: t.spectator },
+          ]}
+          onChange={(value) => onDataChange('game_mode', value)}
+        />
       </div>
 
       {/* Experimental Options Subsection */}

@@ -5,6 +5,7 @@ import { useNestedDefaultValues } from '../hooks/useDefaultValues';
 interface WindowStyleData {
   always_on_top?: boolean;
   hide_title_bar?: boolean;
+  hide_taskbar_icon?: boolean;
   title_bar_color?: number[] | null;
   fixed_size?: number[] | null;
   fixed_position?: number[] | null;
@@ -23,6 +24,7 @@ interface Props {
 const DEFAULT_VALUES: WindowStyleData = {
   always_on_top: false,
   hide_title_bar: false,
+  hide_taskbar_icon: false,
   title_bar_color: null,
   fixed_size: null,
   fixed_position: null,
@@ -72,6 +74,20 @@ export const WindowStyle: React.FC<Props> = ({ t, windowStyle, onWindowStyleChan
           onChange={(e) => onWindowStyleChange('hide_title_bar', e.target.checked)}
         />
         <label htmlFor="ws_hide_title_bar">{t.hideTitleBar}</label>
+      </div>
+
+      <div className="checkbox-group">
+        <input
+          type="checkbox"
+          id="ws_hide_taskbar_icon"
+          checked={
+            windowStyle?.hide_taskbar_icon ?? DEFAULT_VALUES.hide_taskbar_icon
+          }
+          onChange={(e) =>
+            onWindowStyleChange('hide_taskbar_icon', e.target.checked)
+          }
+        />
+        <label htmlFor="ws_hide_taskbar_icon">{t.hideTaskbarIcon}</label>
       </div>
 
       <div className="control-group opacity-control">
