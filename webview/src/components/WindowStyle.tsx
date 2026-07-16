@@ -1,6 +1,7 @@
 import React from 'react';
 import { I18nText } from '../i18n';
 import { useNestedDefaultValues } from '../hooks/useDefaultValues';
+import { ColorPicker } from './ColorPicker';
 
 interface WindowStyleData {
   always_on_top?: boolean;
@@ -143,37 +144,14 @@ export const WindowStyle: React.FC<Props> = ({ t, windowStyle, onWindowStyleChan
 
       <div className="control-group">
         <label>{t.titleBarColor}</label>
-        <div className="input-row">
-          <label className="color-preview-box" htmlFor="ws_title_bar_color_picker">
-            <div 
-              className="color-preview"
-              style={{ 
-                backgroundColor: windowStyle?.title_bar_color ? 
-                  `rgb(${windowStyle.title_bar_color.join(',')})` : 
-                  'transparent'
-              }}
-            />
-          </label>
-          <input
-            type="color"
-            id="ws_title_bar_color_picker"
-            value={windowStyle?.title_bar_color ? 
-              `#${windowStyle.title_bar_color.map(n => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0')).join('')}` : 
-              '#000000'}
-            onChange={(e) => {
-              const hex = e.target.value;
-              const r = parseInt(hex.slice(1, 3), 16);
-              const g = parseInt(hex.slice(3, 5), 16);
-              const b = parseInt(hex.slice(5, 7), 16);
-              onWindowStyleChange('title_bar_color', [r, g, b]);
-            }}
-          />
-          <span
-            className="codicon codicon-close clear-btn"
-            title={t.clear}
-            onClick={() => onWindowStyleChange('title_bar_color', null)}
-          />
-        </div>
+        <ColorPicker
+          id="ws_title_bar_color_picker"
+          value={windowStyle?.title_bar_color ?? null}
+          label={t.titleBarColor}
+          clearLabel={t.clear}
+          notSetLabel={t.colorNotSet}
+          onChange={(value) => onWindowStyleChange('title_bar_color', value)}
+        />
       </div>
 
       <div className="control-group">

@@ -54,6 +54,7 @@ export interface I18nText {
   hideTaskbarIcon: string;
   titleBarColor: string;
   titleBarColorPlaceholder: string;
+  colorNotSet: string;
   windowOpacity: string;
   opacityNotSet: string;
   fixedSize: string;
@@ -154,6 +155,7 @@ export const i18n: Record<string, I18nText> = {
     hideTaskbarIcon: 'Hide Taskbar Icon',
     titleBarColor: 'Title Bar Color',
     titleBarColorPlaceholder: 'e.g., #hex, rgb(r,g,b)',
+    colorNotSet: 'Not set',
     windowOpacity: 'Window Opacity',
     opacityNotSet: 'Not set',
     fixedSize: 'Fixed Size',
@@ -253,6 +255,7 @@ export const i18n: Record<string, I18nText> = {
     hideTaskbarIcon: '隐藏任务栏图标',
     titleBarColor: '标题栏颜色 (RGB)',
     titleBarColorPlaceholder: '例如 255,0,0 表示红色',
+    colorNotSet: '未设置',
     windowOpacity: '窗口整体不透明度',
     opacityNotSet: '未设置',
     fixedSize: '锁定大小 (宽 x 高)',
