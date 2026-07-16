@@ -7,6 +7,21 @@ export interface I18nText {
   addModDirectory: string;
   browse: string;
   hotReload: string;
+  analyzeMod: string;
+  codeReview: string;
+  selectReviewTarget: string;
+  runReview: string;
+  reviewIdle: string;
+  reviewQueued: string;
+  reviewRunning: string;
+  reviewClean: string;
+  reviewIssues: string;
+  reviewFailed: string;
+  reviewResults: string;
+  openReviewReport: string;
+  staticReviewBasedOn: string;
+  reviewRulesMayChange: string;
+  reviewOutputDirectory: string;
   enabled: string;
   noModDirs: string;
   worldSettings: string;
@@ -108,6 +123,21 @@ export const i18n: Record<string, I18nText> = {
     addModDirectory: 'Add Mod Directory',
     browse: 'Browse...',
     hotReload: 'Hot Reload',
+    analyzeMod: 'Analyze This Mod',
+    codeReview: 'Code Review',
+    selectReviewTarget: 'Select Review Target',
+    runReview: 'Run Review',
+    reviewIdle: 'Not analyzed',
+    reviewQueued: 'Queued',
+    reviewRunning: 'Analyzing',
+    reviewClean: 'Clean',
+    reviewIssues: 'issues',
+    reviewFailed: 'Failed',
+    reviewResults: 'Review Results',
+    openReviewReport: 'Open Review Report',
+    staticReviewBasedOn: 'Static review is powered by',
+    reviewRulesMayChange: 'Rules may change between versions.',
+    reviewOutputDirectory: 'Review output',
     enabled: 'Enabled',
     noModDirs: 'No mod directories configured.',
     worldSettings: 'World Settings',
@@ -208,6 +238,21 @@ export const i18n: Record<string, I18nText> = {
     addModDirectory: '添加 Mod 目录',
     browse: '浏览...',
     hotReload: '热重载',
+    analyzeMod: '分析此 Mod',
+    codeReview: '代码诊断',
+    selectReviewTarget: '选择诊断目标',
+    runReview: '开始诊断',
+    reviewIdle: '未分析',
+    reviewQueued: '等待分析',
+    reviewRunning: '分析中',
+    reviewClean: '无问题',
+    reviewIssues: '个问题',
+    reviewFailed: '分析失败',
+    reviewResults: '诊断结果',
+    openReviewReport: '打开诊断报告',
+    staticReviewBasedOn: '静态诊断基于',
+    reviewRulesMayChange: '标准规则可能随时调整。',
+    reviewOutputDirectory: '报告目录',
     enabled: '启用',
     noModDirs: '未配置模组目录。',
     worldSettings: '世界设置',

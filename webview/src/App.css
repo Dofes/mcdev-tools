@@ -1330,8 +1330,99 @@ body.vscode-high-contrast .control-group select {
   color: var(--panel-muted);
 }
 
-.mod-options .btn-icon {
+.mod-options > .btn-icon.delete {
   margin-left: auto;
+}
+
+.mod-review-status {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: var(--vscode-descriptionForeground);
+  background-color: color-mix(in srgb, var(--panel-surface) 64%, transparent);
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+button.mod-review-status {
+  border: 0;
+  font-family: var(--vscode-font-family);
+}
+
+button.mod-review-status:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.review-report-status:not(:disabled) {
+  cursor: pointer;
+  transition: filter 120ms ease, box-shadow 120ms ease;
+}
+
+.review-report-status:not(:disabled):hover {
+  filter: brightness(1.12);
+  box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 34%, transparent);
+}
+
+.mod-review-status > .codicon {
+  font-size: 11px;
+}
+
+.mod-review-status.queued,
+.mod-review-status.running {
+  color: #a79eff;
+  background-color: color-mix(in srgb, #8b7cff 10%, transparent);
+}
+
+.mod-review-status.clean {
+  color: var(--vscode-testing-iconPassed);
+  background-color: color-mix(in srgb, var(--vscode-testing-iconPassed) 10%, transparent);
+}
+
+.mod-review-status.issues {
+  color: var(--vscode-editorWarning-foreground);
+  background-color: color-mix(in srgb, var(--vscode-editorWarning-foreground) 10%, transparent);
+}
+
+.mod-review-status.error {
+  color: var(--vscode-errorForeground);
+  background-color: color-mix(in srgb, var(--vscode-errorForeground) 10%, transparent);
+}
+
+.btn-icon.review {
+  color: #a79eff;
+}
+
+.btn-icon.review:hover {
+  border-color: color-mix(in srgb, #8b7cff 42%, var(--panel-border));
+  background-color: color-mix(in srgb, #8b7cff 10%, transparent);
+}
+
+.btn-icon:disabled,
+.btn-link-compact:disabled {
+  cursor: default;
+  opacity: 0.42;
+  box-shadow: none;
+}
+
+.btn-icon:disabled:hover,
+.btn-link-compact:disabled:hover {
+  border-color: transparent;
+  background-color: transparent;
+}
+
+.codicon-loading {
+  animation: reviewSpin 850ms linear infinite;
+}
+
+@keyframes reviewSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .mod-empty-state {
@@ -1408,6 +1499,328 @@ body.vscode-high-contrast .control-group select {
   color: var(--vscode-descriptionForeground);
   font-size: 11px;
   line-height: 1.55;
+}
+
+.review-entry-button {
+  --review-accent: #8b7cff;
+  flex: 0 0 auto;
+  border-color: color-mix(in srgb, var(--review-accent) 32%, var(--panel-border));
+  color: color-mix(in srgb, var(--review-accent) 62%, var(--vscode-foreground));
+  background-color: color-mix(in srgb, var(--review-accent) 7%, var(--panel-surface));
+}
+
+.review-entry-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--review-accent) 58%, var(--panel-border));
+  color: color-mix(in srgb, var(--review-accent) 42%, white);
+  background-color: color-mix(in srgb, var(--review-accent) 11%, var(--vscode-list-hoverBackground));
+}
+
+.review-launcher {
+  margin: -4px 0 10px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #8b7cff 34%, var(--panel-border));
+  border-radius: var(--panel-radius);
+  background-color: color-mix(in srgb, var(--panel-surface) 58%, transparent);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+  animation: numberSelectOpen 140ms ease-out;
+}
+
+.review-launcher-header {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 5px 4px 10px;
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.review-launcher-header .btn-icon {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.review-target-list {
+  max-height: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px;
+  overflow-y: auto;
+}
+
+.review-target-option {
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-family: var(--vscode-font-family);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.review-target-option:hover {
+  border-color: var(--panel-border);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.review-target-option.selected {
+  border-color: color-mix(in srgb, #8b7cff 48%, var(--panel-border));
+  background-color: color-mix(in srgb, #8b7cff 8%, var(--vscode-list-hoverBackground));
+}
+
+.review-target-option > .codicon {
+  color: var(--vscode-icon-foreground);
+  font-size: 14px;
+}
+
+.review-target-option.selected > .codicon {
+  color: #a79eff;
+}
+
+.review-target-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.review-target-copy strong,
+.review-target-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-target-copy strong {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.review-target-copy small {
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.review-target-radio {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--vscode-checkbox-border);
+  border-radius: 50%;
+}
+
+.review-target-option.selected .review-target-radio {
+  border-color: #8b7cff;
+  box-shadow: inset 0 0 0 3px var(--vscode-input-background);
+  background-color: #8b7cff;
+}
+
+.review-launcher-footer {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 7px 6px 9px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.review-output-preview {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+}
+
+.review-output-preview .codicon {
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.review-output-preview code {
+  overflow: hidden;
+  color: inherit;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-launcher-footer .btn-primary {
+  min-height: 30px;
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  font-size: 11px;
+}
+
+.review-launcher-footer .btn-primary:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.review-source-link {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--vscode-textLink-foreground);
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.review-source-link:hover {
+  color: var(--vscode-textLink-activeForeground);
+  text-decoration: underline;
+}
+
+.review-output-path {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding-left: 7px;
+  border-left: 1px solid var(--panel-border);
+  white-space: nowrap;
+}
+
+.review-results-panel {
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--panel-radius);
+  background-color: color-mix(in srgb, var(--panel-surface) 48%, transparent);
+}
+
+.review-results-header {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.review-results-title {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.review-results-title .codicon {
+  color: #9e96e8;
+  font-size: 13px;
+}
+
+.review-results-list {
+  display: flex;
+  flex-direction: column;
+  padding: 3px;
+}
+
+.review-result-row {
+  min-height: 36px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 30px;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 5px 3px 7px;
+  border-radius: 5px;
+}
+
+.review-result-row + .review-result-row {
+  border-top: 1px solid color-mix(in srgb, var(--panel-border) 62%, transparent);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.review-result-row:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.review-result-target {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-result-target .codicon {
+  flex: 0 0 auto;
+  color: var(--vscode-symbolIcon-folderForeground, var(--vscode-icon-foreground));
+  font-size: 12px;
+}
+
+.review-source-footer {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 0 2px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  line-height: 1.45;
+  opacity: 0.72;
+}
+
+.review-source-footer > .codicon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  font-size: 11px;
+}
+
+.review-source-footer:hover {
+  opacity: 0.92;
+}
+
+.review-launcher > .review-source-footer,
+.review-results-panel > .review-source-footer {
+  margin: 0;
+  padding: 6px 9px;
+  border-top: 1px solid color-mix(in srgb, var(--panel-border) 68%, transparent);
+  background-color: color-mix(in srgb, var(--vscode-sideBar-background) 26%, transparent);
+}
+
+.review-output-path .codicon {
+  font-size: 11px;
+}
+
+.review-output-path code {
+  color: color-mix(in srgb, var(--vscode-descriptionForeground) 76%, var(--vscode-foreground));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 9px;
 }
 
 .btn-link-compact {
@@ -1714,6 +2127,44 @@ body.vscode-high-contrast .control-group select {
 
   .mod-options {
     gap: 8px;
+  }
+
+  .review-output-path {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .mod-options {
+    flex-wrap: wrap;
+  }
+
+  .review-results-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .review-result-row {
+    grid-template-columns: minmax(0, 1fr) 30px;
+  }
+
+  .review-result-row .mod-review-status {
+    grid-column: 1;
+    width: max-content;
+  }
+
+  .review-result-row .btn-icon {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .review-launcher-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-launcher-footer .btn-primary {
+    width: 100%;
   }
 }
 

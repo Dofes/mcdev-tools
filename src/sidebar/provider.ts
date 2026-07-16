@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as cp from 'child_process';
 import * as jsonc from 'jsonc-parser';
 import { getNonce } from '../utils';
 
@@ -10,6 +11,7 @@ import { getNonce } from '../utils';
 export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
     private _fileWatcher?: vscode.FileSystemWatcher;
+    private _reviewProcess?: cp.ChildProcess;
     
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -61,6 +63,9 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 if (this._fileWatcher) {
                     this._fileWatcher.dispose();
                 }
+                if (this._reviewProcess && !this._reviewProcess.killed) {
+                    this._reviewProcess.kill();
+                }
             });
         } catch (err) {
             console.error('resolveWebviewView top-level error', err);
@@ -90,6 +95,10 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 await this.handleBrowseGameExecutable(webview, msg.currentPath);
             } else if (msg?.type === 'openExternal') {
                 await this.handleOpenExternal(msg.url);
+            } else if (msg?.type === 'runCodeReview') {
+                await this.handleCodeReview(webview, msg);
+            } else if (msg?.type === 'openReviewReport') {
+                await this.handleOpenReviewReport(msg.path);
             } else if (msg?.type === 'log') {
                 const prefix = `[Webview ${msg.level || 'log'}]`;
                 if (msg.level === 'error') {
@@ -286,6 +295,152 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
         if (uri.scheme === 'https' || uri.scheme === 'http') {
             await vscode.env.openExternal(uri);
         }
+    }
+
+    private async handleCodeReview(webview: vscode.Webview, message: any): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        const targetId = typeof message?.targetId === 'string' ? message.targetId : '';
+        const sendStatus = (status: string, extra: Record<string, unknown> = {}) => {
+            webview.postMessage({ type: 'codeReviewStatus', targetId, status, ...extra });
+        };
+
+        if (!workspaceFolder || !targetId || typeof message?.targetPath !== 'string') {
+            sendStatus('error');
+            vscode.window.showErrorMessage('无法启动代码诊断：工作区或目标路径无效。');
+            return;
+        }
+
+        if (this._reviewProcess && !this._reviewProcess.killed) {
+            sendStatus('error');
+            vscode.window.showWarningMessage('已有代码诊断任务正在运行。');
+            return;
+        }
+
+        const workspacePath = workspaceFolder.uri.fsPath;
+        const targetPath = path.isAbsolute(message.targetPath)
+            ? path.resolve(message.targetPath)
+            : path.resolve(workspacePath, message.targetPath);
+        const executablePath = vscode.Uri.joinPath(
+            this._extensionUri,
+            'bin',
+            'mcdk-python-review.exe'
+        ).fsPath;
+        const reportDirectory = path.resolve(workspacePath, '.mcdev', 'reviews');
+        const requestedName = typeof message.outputPath === 'string'
+            ? path.basename(message.outputPath)
+            : 'python-review.md';
+        const safeName = requestedName
+            .replace(/[<>:"/\\|?*\x00-\x1f]/g, '-')
+            .replace(/[. ]+$/g, '') || 'python-review.md';
+        const reportName = safeName.toLowerCase().endsWith('.md')
+            ? safeName
+            : `${safeName}.md`;
+        const reportPath = path.join(reportDirectory, reportName);
+
+        try {
+            if (!fs.existsSync(executablePath)) {
+                throw new Error(`诊断工具不存在: ${executablePath}`);
+            }
+            if (!fs.existsSync(targetPath) || !fs.statSync(targetPath).isDirectory()) {
+                throw new Error(`目标目录不存在: ${targetPath}`);
+            }
+            fs.mkdirSync(reportDirectory, { recursive: true });
+        } catch (error) {
+            sendStatus('error');
+            vscode.window.showErrorMessage(`无法启动代码诊断：${String(error)}`);
+            return;
+        }
+
+        const args = [
+            targetPath,
+            '--format',
+            'markdown',
+            '--output',
+            reportPath,
+        ];
+        let stderr = '';
+        let finished = false;
+
+        try {
+            const child = cp.spawn(executablePath, args, {
+                cwd: workspacePath,
+                windowsHide: true,
+                stdio: ['ignore', 'pipe', 'pipe'],
+            });
+            this._reviewProcess = child;
+            sendStatus('running');
+
+            child.stderr.on('data', (chunk: Buffer) => {
+                if (stderr.length < 32768) stderr += chunk.toString('utf8');
+            });
+
+            child.once('error', (error) => {
+                if (finished) return;
+                finished = true;
+                this._reviewProcess = undefined;
+                sendStatus('error');
+                vscode.window.showErrorMessage(`代码诊断启动失败：${error.message}`);
+            });
+
+            child.once('close', (code) => {
+                if (finished) return;
+                finished = true;
+                this._reviewProcess = undefined;
+
+                if (code !== 0) {
+                    sendStatus('error');
+                    const detail = stderr.trim() || `退出码 ${code ?? 'unknown'}`;
+                    vscode.window.showErrorMessage(`代码诊断失败：${detail}`);
+                    return;
+                }
+
+                try {
+                    const report = fs.readFileSync(reportPath, 'utf8');
+                    const overview = report.match(
+                        /^\|\s*\*\*\d+\*\*[^|]*\|\s*\*\*\d+\*\*[^|]*\|\s*\*\*(\d+)\*\*/m
+                    );
+                    if (!overview) {
+                        throw new Error('无法从 Markdown 概览中解析诊断数量。');
+                    }
+                    const issueCount = Number.parseInt(overview[1], 10);
+                    sendStatus(issueCount > 0 ? 'issues' : 'clean', {
+                        issueCount,
+                        outputPath: reportPath,
+                    });
+                } catch (error) {
+                    sendStatus('error');
+                    vscode.window.showErrorMessage(`诊断报告读取失败：${String(error)}`);
+                }
+            });
+        } catch (error) {
+            this._reviewProcess = undefined;
+            sendStatus('error');
+            vscode.window.showErrorMessage(`代码诊断启动失败：${String(error)}`);
+        }
+    }
+
+    private async handleOpenReviewReport(reportPath: string | undefined): Promise<void> {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder || !reportPath || typeof reportPath !== 'string') {
+            return;
+        }
+
+        const reportsRoot = path.resolve(workspaceFolder.uri.fsPath, '.mcdev', 'reviews');
+        const resolvedReport = path.resolve(reportPath);
+        if (
+            resolvedReport !== reportsRoot &&
+            !resolvedReport.startsWith(`${reportsRoot}${path.sep}`)
+        ) {
+            vscode.window.showErrorMessage('拒绝打开工作区诊断目录之外的文件。');
+            return;
+        }
+        if (!fs.existsSync(resolvedReport) || path.extname(resolvedReport).toLowerCase() !== '.md') {
+            vscode.window.showErrorMessage('诊断报告不存在。');
+            return;
+        }
+
+        const document = await vscode.workspace.openTextDocument(resolvedReport);
+        await vscode.window.showTextDocument(document, { preview: true });
     }
 
     /**
