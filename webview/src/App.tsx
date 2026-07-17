@@ -21,8 +21,6 @@ function App() {
   const [data, setData] = useState<McdevData>({});
   const [modDirs, setModDirs] = useState<ModDir[]>([{ path: './', hot_reload: true, enabled: true }]);
   const [hasChanges, setHasChanges] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
-  const [statusType, setStatusType] = useState<'success' | 'error' | 'info'>('info');
   const [debugExpanded, setDebugExpanded] = useState(false);
   const [activeKeyListener, setActiveKeyListener] = useState<string | null>(null);
   const [needsAutoSave, setNeedsAutoSave] = useState(false);
@@ -35,7 +33,6 @@ function App() {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const msg = event.data;
-      const currentT = i18n[lang] || i18n.en;
       switch (msg.type) {
         case 'init':
           // 设置语言
@@ -50,11 +47,9 @@ function App() {
             loadData(parsedData, msg.skinPreviewUri);
           }
           
-          showStatus(currentT.loaded, 'success');
           setHasChanges(false);
           break;
         case 'saved':
-          showStatus(currentT.savedSuccess, 'success');
           setHasChanges(false);
           break;
         case 'folderSelected':
@@ -88,13 +83,7 @@ function App() {
     vscode.postMessage({ type: 'ready' });
 
     return () => window.removeEventListener('message', handleMessage);
-  }, [lang]);
-
-  const showStatus = (msg: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setStatusMsg(msg);
-    setStatusType(type);
-    setTimeout(() => setStatusMsg(''), 3000);
-  };
+  }, []);
 
   const loadData = (newData: McdevData, skinPreviewUri?: string) => {
     setData(newData);
@@ -328,15 +317,6 @@ function App() {
         >
           <span className="codicon codicon-debug-alt"></span>
         </button>
-      </div>
-
-      {/* Status Bar */}
-      <div
-        className={`status-bar ${statusMsg ? 'visible' : ''} ${statusType}`}
-        role="status"
-        aria-live="polite"
-      >
-        {statusMsg || '\u00A0'}
       </div>
 
       {/* Mod Directories */}

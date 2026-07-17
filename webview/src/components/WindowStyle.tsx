@@ -2,6 +2,7 @@ import React from 'react';
 import { I18nText } from '../i18n';
 import { useNestedDefaultValues } from '../hooks/useDefaultValues';
 import { ColorPicker } from './ColorPicker';
+import { NumberSelect } from './NumberSelect';
 
 interface WindowStyleData {
   always_on_top?: boolean;
@@ -230,20 +231,20 @@ export const WindowStyle: React.FC<Props> = ({ t, windowStyle, onWindowStyleChan
 
       <div className="control-group">
         <label htmlFor="ws_lock_corner">{t.lockCorner}</label>
-        <select
+        <NumberSelect
           id="ws_lock_corner"
-          value={windowStyle?.lock_corner ?? ''}
-          onChange={(e) => {
-            const val = e.target.value;
-            onWindowStyleChange('lock_corner', val === '' ? null : Number(val));
-          }}
-        >
-          <option value="">{t.cornerNone}</option>
-          <option value="1">{t.cornerTopLeft}</option>
-          <option value="2">{t.cornerTopRight}</option>
-          <option value="3">{t.cornerBottomLeft}</option>
-          <option value="4">{t.cornerBottomRight}</option>
-        </select>
+          value={windowStyle?.lock_corner ?? 0}
+          options={[
+            { value: 0, label: t.cornerNone },
+            { value: 1, label: t.cornerTopLeft },
+            { value: 2, label: t.cornerTopRight },
+            { value: 3, label: t.cornerBottomLeft },
+            { value: 4, label: t.cornerBottomRight },
+          ]}
+          onChange={(value) =>
+            onWindowStyleChange('lock_corner', value === 0 ? null : value)
+          }
+        />
       </div>
     </div>
   );

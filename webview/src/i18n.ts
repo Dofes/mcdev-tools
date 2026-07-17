@@ -89,8 +89,6 @@ export interface I18nText {
   debugKeybindings: string;
   globalReloadKey: string;
   saveChanges: string;
-  loaded: string;
-  savedSuccess: string;
   reloadScripts: string;
   reloadWorld: string;
   reloadAddons: string;
@@ -205,8 +203,6 @@ export const i18n: Record<string, I18nText> = {
     debugKeybindings: 'Debug Keybindings',
     globalReloadKey: 'Global Reload Key',
     saveChanges: 'Save Changes',
-    loaded: 'Loaded',
-    savedSuccess: 'Saved successfully',
     reloadScripts: 'Reload Scripts',
     reloadWorld: 'Reload World',
     reloadAddons: 'Reload Addons',
@@ -320,8 +316,6 @@ export const i18n: Record<string, I18nText> = {
     debugKeybindings: '调试按键绑定',
     globalReloadKey: '全局重载按键',
     saveChanges: '保存更改',
-    loaded: '已加载',
-    savedSuccess: '保存成功',
     reloadScripts: '重载脚本',
     reloadWorld: '重载世界',
     reloadAddons: '重载插件',
