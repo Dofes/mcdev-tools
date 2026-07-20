@@ -12,8 +12,10 @@ interface McdevData {
   world_type?: number;
   experiment_options?: {
     data_driven_biomes?: boolean;
-    data_driven_items?: boolean;
-    experimental_molang_features?: boolean;
+    upcoming_creator_features?: boolean;
+    experimental_creator_cameras?: boolean;
+    gametest?: boolean;
+    deferred_technical_preview?: boolean;
   };
 }
 
@@ -135,20 +137,38 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
           <div className="checkbox-group">
             <input
               type="checkbox"
-              id="exp_data_driven_items"
-              checked={data.experiment_options?.data_driven_items ?? EXPERIMENT_DEFAULT_VALUES.data_driven_items}
-              onChange={(e) => onExperimentChange('data_driven_items', e.target.checked)}
+              id="exp_upcoming_creator_features"
+              checked={data.experiment_options?.upcoming_creator_features ?? EXPERIMENT_DEFAULT_VALUES.upcoming_creator_features}
+              onChange={(e) => onExperimentChange('upcoming_creator_features', e.target.checked)}
             />
-            <label htmlFor="exp_data_driven_items">{t.dataDrivenItems}</label>
+            <label htmlFor="exp_upcoming_creator_features">{t.upcomingCreatorFeatures}</label>
           </div>
           <div className="checkbox-group">
             <input
               type="checkbox"
-              id="exp_experimental_molang_features"
-              checked={data.experiment_options?.experimental_molang_features ?? EXPERIMENT_DEFAULT_VALUES.experimental_molang_features}
-              onChange={(e) => onExperimentChange('experimental_molang_features', e.target.checked)}
+              id="exp_experimental_creator_cameras"
+              checked={data.experiment_options?.experimental_creator_cameras ?? EXPERIMENT_DEFAULT_VALUES.experimental_creator_cameras}
+              onChange={(e) => onExperimentChange('experimental_creator_cameras', e.target.checked)}
             />
-            <label htmlFor="exp_experimental_molang_features">{t.experimentalMolang}</label>
+            <label htmlFor="exp_experimental_creator_cameras">{t.experimentalCreatorCameras}</label>
+          </div>
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="exp_gametest"
+              checked={data.experiment_options?.gametest ?? EXPERIMENT_DEFAULT_VALUES.gametest}
+              onChange={(e) => onExperimentChange('gametest', e.target.checked)}
+            />
+            <label htmlFor="exp_gametest">{t.betaApi}</label>
+          </div>
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="exp_deferred_technical_preview"
+              checked={data.experiment_options?.deferred_technical_preview ?? EXPERIMENT_DEFAULT_VALUES.deferred_technical_preview}
+              onChange={(e) => onExperimentChange('deferred_technical_preview', e.target.checked)}
+            />
+            <label htmlFor="exp_deferred_technical_preview">{t.deferredTechnicalPreview}</label>
           </div>
         </div>
       </div>

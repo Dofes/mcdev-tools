@@ -3,15 +3,19 @@ import { useNestedDefaultValues } from '../hooks/useDefaultValues';
 
 interface ExperimentOptions {
   data_driven_biomes?: boolean;
-  data_driven_items?: boolean;
-  experimental_molang_features?: boolean;
+  upcoming_creator_features?: boolean;
+  experimental_creator_cameras?: boolean;
+  gametest?: boolean;
+  deferred_technical_preview?: boolean;
 }
 
 
 export const EXPERIMENT_DEFAULT_VALUES: ExperimentOptions = {
   data_driven_biomes: false,
-  data_driven_items: false,
-  experimental_molang_features: false,
+  upcoming_creator_features: false,
+  experimental_creator_cameras: false,
+  gametest: false,
+  deferred_technical_preview: false,
 };
 
 /**
