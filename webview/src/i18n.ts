@@ -39,8 +39,10 @@ export interface I18nText {
   spectator: string;
   experimentOptions: string;
   dataDrivenBiomes: string;
-  dataDrivenItems: string;
-  experimentalMolang: string;
+  upcomingCreatorFeatures: string;
+  experimentalCreatorCameras: string;
+  betaApi: string;
+  deferredTechnicalPreview: string;
   startupOptions: string;
   gameRules: string;
   gameOptions: string;
@@ -153,8 +155,10 @@ export const i18n: Record<string, I18nText> = {
     spectator: 'Spectator',
     experimentOptions: 'Experimental Options',
     dataDrivenBiomes: 'Data Driven Biomes',
-    dataDrivenItems: 'Data Driven Items',
-    experimentalMolang: 'Experimental Molang Features',
+    upcomingCreatorFeatures: 'Upcoming Creator Features',
+    experimentalCreatorCameras: 'Experimental Creator Cameras',
+    betaApi: 'Beta APIs',
+    deferredTechnicalPreview: 'Deferred Technical Preview',
     startupOptions: 'Startup Options',
     gameRules: 'Game Rules',
     gameOptions: 'Game Options',
@@ -266,8 +270,10 @@ export const i18n: Record<string, I18nText> = {
     spectator: '旁观者',
     experimentOptions: '实验性选项',
     dataDrivenBiomes: '数据驱动生物群系',
-    dataDrivenItems: '数据驱动物品',
-    experimentalMolang: '实验性Molang特性',
+    upcomingCreatorFeatures: '即将到来的创作者功能',
+    experimentalCreatorCameras: '创建者照相机的实验性功能',
+    betaApi: 'beta版api',
+    deferredTechnicalPreview: '为创作者提供的RenderDragon功能',
     startupOptions: '启动选项',
     gameRules: '游戏规则',
     gameOptions: '游戏选项',

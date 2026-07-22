@@ -53,7 +53,9 @@ export interface McdevData {
   };
   experiment_options?: {
     data_driven_biomes?: boolean;
-    data_driven_items?: boolean;
-    experimental_molang_features?: boolean;
+    upcoming_creator_features?: boolean;
+    experimental_creator_cameras?: boolean;
+    gametest?: boolean;
+    deferred_technical_preview?: boolean;
   };
 }
