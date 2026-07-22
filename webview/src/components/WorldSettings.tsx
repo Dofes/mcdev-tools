@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { I18nText } from '../i18n';
 import { useDefaultValues } from '../hooks/useDefaultValues';
 import { useExperimentDefaults, EXPERIMENT_DEFAULT_VALUES } from '../hooks/useExperimentDefaults';
 import { NumberSelect } from './NumberSelect';
 
 interface McdevData {
+  world_source_path?: string | null;
   world_name?: string;
   world_folder_name?: string;
   world_seed?: number | null;
@@ -24,11 +25,14 @@ interface Props {
   data: McdevData;
   onDataChange: (field: string, value: any) => void;
   onExperimentChange: (field: string, checked: boolean) => void;
+  isWorldMode: boolean;
+  showWorldSourceControl: boolean;
   markInitialized?: (componentId: string) => void;
 }
 
 
 const DEFAULT_VALUES: McdevData = {
+  world_source_path: 'auto',
   world_name: 'MC_DEV_WORLD',
   world_folder_name: 'MC_DEV_WORLD',
   world_seed: null,
@@ -36,8 +40,41 @@ const DEFAULT_VALUES: McdevData = {
   game_mode: 1,
 };
 
-export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperimentChange, markInitialized }) => {
+export const WorldSettings: React.FC<Props> = ({
+  t,
+  data,
+  onDataChange,
+  onExperimentChange,
+  isWorldMode,
+  showWorldSourceControl,
+  markInitialized,
+}) => {
   const [experimentExpanded, setExperimentExpanded] = useState(false);
+  const worldSourceValue = data.world_source_path;
+  const worldSourceMode = worldSourceValue === null || worldSourceValue === ''
+    ? 'disabled'
+    : worldSourceValue === undefined || worldSourceValue === 'auto'
+      ? 'auto'
+      : 'custom';
+  const lastCustomWorldSource = useRef(
+    worldSourceMode === 'custom' ? worldSourceValue as string : './',
+  );
+
+  useEffect(() => {
+    if (worldSourceMode === 'custom' && typeof worldSourceValue === 'string') {
+      lastCustomWorldSource.current = worldSourceValue;
+    }
+  }, [worldSourceMode, worldSourceValue]);
+
+  const setWorldSourceMode = (mode: 'auto' | 'custom' | 'disabled') => {
+    if (mode === 'auto') {
+      onDataChange('world_source_path', 'auto');
+    } else if (mode === 'disabled') {
+      onDataChange('world_source_path', null);
+    } else {
+      onDataChange('world_source_path', lastCustomWorldSource.current || './');
+    }
+  };
 
   useDefaultValues(data, DEFAULT_VALUES, onDataChange, markInitialized ? () => markInitialized('WorldSettings') : undefined);
   useExperimentDefaults(data.experiment_options, onExperimentChange, markInitialized ? () => markInitialized('ExperimentOptions') : undefined);
@@ -50,6 +87,51 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
           {t.worldSettings}
         </span>
       </div>
+
+      {showWorldSourceControl && (
+        <div className="control-group world-source-control">
+          <label>{t.worldSource}</label>
+          <div className="world-source-modes" role="group" aria-label={t.worldSource}>
+            <button
+              type="button"
+              className={worldSourceMode === 'auto' ? 'active' : ''}
+              aria-pressed={worldSourceMode === 'auto'}
+              onClick={() => setWorldSourceMode('auto')}
+            >
+              {t.worldSourceAuto}
+            </button>
+            <button
+              type="button"
+              className={worldSourceMode === 'custom' ? 'active' : ''}
+              aria-pressed={worldSourceMode === 'custom'}
+              onClick={() => setWorldSourceMode('custom')}
+            >
+              {t.worldSourceCustom}
+            </button>
+            <button
+              type="button"
+              className={worldSourceMode === 'disabled' ? 'active' : ''}
+              aria-pressed={worldSourceMode === 'disabled'}
+              onClick={() => setWorldSourceMode('disabled')}
+            >
+              {t.worldSourceDisabled}
+            </button>
+          </div>
+          {worldSourceMode === 'custom' && (
+            <input
+              type="text"
+              id="world_source_path"
+              value={typeof worldSourceValue === 'string' ? worldSourceValue : ''}
+              onChange={(e) => {
+                lastCustomWorldSource.current = e.target.value;
+                onDataChange('world_source_path', e.target.value);
+              }}
+              placeholder={t.worldSourcePlaceholder}
+              aria-label={t.worldSourcePlaceholder}
+            />
+          )}
+        </div>
+      )}
       
       <div className="control-group">
         <label htmlFor="world_name">{t.worldName}</label>
@@ -73,19 +155,21 @@ export const WorldSettings: React.FC<Props> = ({ t, data, onDataChange, onExperi
         />
       </div>
 
-      <div className="control-group">
-        <label htmlFor="world_seed">{t.worldSeed}</label>
-        <input
-          type="text"
-          id="world_seed"
-          value={data.world_seed === null || data.world_seed === undefined ? '' : String(data.world_seed)}
-          onChange={(e) => {
-            const val = e.target.value.trim();
-            onDataChange('world_seed', val === '' ? null : Number(val));
-          }}
-          placeholder={t.worldSeed}
-        />
-      </div>
+      {!isWorldMode && (
+        <div className="control-group">
+          <label htmlFor="world_seed">{t.worldSeed}</label>
+          <input
+            type="text"
+            id="world_seed"
+            value={data.world_seed === null || data.world_seed === undefined ? '' : String(data.world_seed)}
+            onChange={(e) => {
+              const val = e.target.value.trim();
+              onDataChange('world_seed', val === '' ? null : Number(val));
+            }}
+            placeholder={t.worldSeed}
+          />
+        </div>
+      )}
 
       <div className="control-group">
         <label htmlFor="world_type">{t.worldType}</label>

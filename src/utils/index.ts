@@ -127,9 +127,49 @@ export async function findAvailablePort(
 /**
  * 简单检测工作区是否为 Minecraft addon/包 的常见结构
  */
+export function isMinecraftWorldWorkspace(folder: vscode.WorkspaceFolder): boolean {
+    try {
+        return fs.statSync(path.join(folder.uri.fsPath, 'level.dat')).isFile();
+    } catch {
+        return false;
+    }
+}
+
+export interface MinecraftWorldDefaults {
+    worldName: string;
+    worldFolderName: string;
+}
+
+export function getMinecraftWorldDefaults(folder: vscode.WorkspaceFolder): MinecraftWorldDefaults {
+    const fallbackName = 'MC_DEV_WORLD';
+    const worldName = path.basename(folder.uri.fsPath) || fallbackName;
+    let worldFolderName = worldName
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^A-Za-z0-9_-]+/g, '_')
+        .replace(/^[_-]+|[_-]+$/g, '')
+        .slice(0, 64)
+        .replace(/[_-]+$/g, '');
+
+    if (!worldFolderName) {
+        worldFolderName = fallbackName;
+    }
+
+    const windowsReservedName = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i;
+    if (windowsReservedName.test(worldFolderName)) {
+        worldFolderName = `WORLD_${worldFolderName}`;
+    }
+
+    return { worldName, worldFolderName };
+}
+
 export function isMinecraftAddonWorkspace(folder: vscode.WorkspaceFolder): boolean {
     try {
         const root = folder.uri.fsPath;
+
+        if (isMinecraftWorldWorkspace(folder)) {
+            return true;
+        }
 
         // 0) 根目录有 .mcdev.json 文件（MCDK 项目标志）
         const mcdevJson = path.join(root, '.mcdev.json');

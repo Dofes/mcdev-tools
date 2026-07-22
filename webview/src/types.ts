@@ -6,6 +6,7 @@ export interface ModDir {
 
 export interface McdevData {
   game_executable_path?: string;
+  world_source_path?: string | null;
   world_name?: string;
   world_folder_name?: string;
   world_seed?: number | null;

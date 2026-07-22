@@ -31,6 +31,7 @@ export interface ModDirConfig {
 /** .mcdev.json 配置结构 */
 export interface McdevConfig {
     included_mod_dirs?: (string | ModDirConfig)[];
+    world_source_path?: string | null;
     world_name?: string;
     world_folder_name?: string;
     world_seed?: number | null;

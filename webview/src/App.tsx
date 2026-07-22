@@ -15,6 +15,15 @@ import { McpServerConfig } from './components/McpServerConfig';
 import { AssistantMcpLink } from './components/AssistantMcpLink';
 import './App.css';
 
+interface WorkspaceWorldDefaults {
+  worldName: string;
+  worldFolderName: string;
+}
+
+const isAutoDetectedWorld = (data: McdevData, workspaceHasLevelDat: boolean) =>
+  (data.world_source_path === undefined || data.world_source_path === 'auto')
+  && workspaceHasLevelDat;
+
 function App() {
   const [lang, setLang] = useState<string>('en');
   const t = i18n[lang] || i18n.en;
@@ -25,6 +34,7 @@ function App() {
   const [activeKeyListener, setActiveKeyListener] = useState<string | null>(null);
   const [needsAutoSave, setNeedsAutoSave] = useState(false);
   const [skinPreviewUrl, setSkinPreviewUrl] = useState<string | null>(null);
+  const [workspaceHasLevelDat, setWorkspaceHasLevelDat] = useState(false);
   
   const initializedComponentsRef = useRef<Set<string>>(new Set());
   const initTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,11 +50,24 @@ function App() {
             setLang(msg.language.startsWith('zh') ? 'zh' : 'en');
           }
           const parsedData = JSON.parse(msg.content || '{}');
+          const hasLevelDat = msg.workspaceHasLevelDat === true;
+          const workspaceWorldDefaults = msg.workspaceWorldDefaults as WorkspaceWorldDefaults | undefined;
+          const autoDetectedWorld = isAutoDetectedWorld(parsedData, hasLevelDat);
+          setWorkspaceHasLevelDat(hasLevelDat);
           
           if (msg.needsInitialSave) {
+            if (autoDetectedWorld && workspaceWorldDefaults) {
+              setData(prev => ({
+                ...prev,
+                world_source_path: 'auto',
+                world_name: workspaceWorldDefaults.worldName,
+                world_folder_name: workspaceWorldDefaults.worldFolderName,
+              }));
+              setModDirs([]);
+            }
             setNeedsAutoSave(true);
           } else {
-            loadData(parsedData, msg.skinPreviewUri);
+            loadData(parsedData, msg.skinPreviewUri, autoDetectedWorld, workspaceWorldDefaults);
           }
           
           setHasChanges(false);
@@ -85,15 +108,29 @@ function App() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const loadData = (newData: McdevData, skinPreviewUri?: string) => {
-    setData(newData);
-    const dirs = parseModDirs(newData.included_mod_dirs);
+  const loadData = (
+    newData: McdevData,
+    skinPreviewUri?: string,
+    autoDetectedWorld = false,
+    workspaceWorldDefaults?: WorkspaceWorldDefaults,
+  ) => {
+    const dataWithWorldDefaults = autoDetectedWorld && workspaceWorldDefaults
+      ? {
+          ...newData,
+          world_name: newData.world_name ?? workspaceWorldDefaults.worldName,
+          world_folder_name: newData.world_folder_name ?? workspaceWorldDefaults.worldFolderName,
+        }
+      : newData;
+    setData(dataWithWorldDefaults);
+    const dirs = parseModDirs(newData.included_mod_dirs, autoDetectedWorld ? [] : undefined);
     setModDirs(dirs);
     setSkinPreviewUrl(skinPreviewUri || null);
   };
 
-  const parseModDirs = (dirs?: (string | ModDir)[]): ModDir[] => {
-    if (!dirs || !Array.isArray(dirs)) return [{ path: './', hot_reload: true, enabled: true }];
+  const parseModDirs = (dirs?: (string | ModDir)[], fallback?: ModDir[]): ModDir[] => {
+    if (!dirs || !Array.isArray(dirs)) {
+      return fallback ?? [{ path: './', hot_reload: true, enabled: true }];
+    }
     return dirs.map(item => {
       if (typeof item === 'string') return { path: item, hot_reload: true, enabled: true };
       if (item && typeof item === 'object') return { path: item.path || './', hot_reload: item.hot_reload !== false, enabled: item.enabled !== false };
@@ -296,6 +333,16 @@ function App() {
     setHasChanges(true);
   };
 
+  const worldSourceSetting = data.world_source_path === undefined
+    ? 'auto'
+    : data.world_source_path;
+  const normalizedWorldSource = typeof worldSourceSetting === 'string'
+    ? worldSourceSetting.trim()
+    : '';
+  const isAutoWorldSource = worldSourceSetting === 'auto';
+  const isExplicitWorldSource = normalizedWorldSource !== '' && !isAutoWorldSource;
+  const isWorldMode = isExplicitWorldSource || (isAutoWorldSource && workspaceHasLevelDat);
+
   return (
     <div className="container">
       {/* Toolbar */}
@@ -325,6 +372,9 @@ function App() {
         modDirs={modDirs}
         setModDirs={setModDirs}
         setHasChanges={setHasChanges}
+        isWorldMode={isWorldMode}
+        isAutoWorldSource={isAutoWorldSource}
+        worldSourcePath={isAutoWorldSource ? './' : normalizedWorldSource}
       />
 
       {/* World Settings */}
@@ -333,6 +383,8 @@ function App() {
         data={data}
         onDataChange={handleDataChange}
         onExperimentChange={handleExperimentChange}
+        isWorldMode={isWorldMode}
+        showWorldSourceControl={workspaceHasLevelDat || isExplicitWorldSource}
         markInitialized={markInitialized}
       />
 

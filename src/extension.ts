@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { isMinecraftAddonWorkspace } from './utils';
+import { getMinecraftWorldDefaults, isMinecraftAddonWorkspace, isMinecraftWorldWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
 import { 
     McDevToolsDebugConfigurationProvider,
@@ -159,19 +159,21 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
     panel.webview.onDidReceiveMessage(async (msg) => {
         if (msg?.type === 'ready') {
             if (!wf) {
-                panel.webview.postMessage({ type: 'init', content: '{}' });
+                panel.webview.postMessage({ type: 'init', content: '{}', workspaceHasLevelDat: false });
                 return;
             }
             const mcdevPath = path.join(wf.uri.fsPath, '.mcdev.json');
+            const workspaceHasLevelDat = isMinecraftWorldWorkspace(wf);
+            const workspaceWorldDefaults = getMinecraftWorldDefaults(wf);
             try {
                 if (fs.existsSync(mcdevPath)) {
                     const content = fs.readFileSync(mcdevPath, 'utf8');
-                    panel.webview.postMessage({ type: 'init', content });
+                    panel.webview.postMessage({ type: 'init', content, workspaceHasLevelDat, workspaceWorldDefaults });
                 } else {
-                    panel.webview.postMessage({ type: 'init', content: '{}' });
+                    panel.webview.postMessage({ type: 'init', content: '{}', workspaceHasLevelDat, workspaceWorldDefaults });
                 }
             } catch {
-                panel.webview.postMessage({ type: 'init', content: '{}' });
+                panel.webview.postMessage({ type: 'init', content: '{}', workspaceHasLevelDat, workspaceWorldDefaults });
             }
         } else if (msg?.type === 'save') {
             if (!wf) {

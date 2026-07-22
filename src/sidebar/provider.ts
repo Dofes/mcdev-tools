@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as cp from 'child_process';
 import * as jsonc from 'jsonc-parser';
-import { getNonce } from '../utils';
+import { getMinecraftWorldDefaults, getNonce, isMinecraftWorldWorkspace } from '../utils';
 
 /**
  * 侧边栏 Webview 提供者，用于可视化编辑 .mcdev.json
@@ -120,11 +120,13 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
         const language = vscode.env.language; // 获取 VS Code 语言设置
         
         if (!workspaceFolder) {
-            webview.postMessage({ type: 'init', content: '{}', language });
+            webview.postMessage({ type: 'init', content: '{}', language, workspaceHasLevelDat: false });
             return;
         }
 
         const mcdevPath = path.join(workspaceFolder.uri.fsPath, '.mcdev.json');
+        const workspaceHasLevelDat = isMinecraftWorldWorkspace(workspaceFolder);
+        const workspaceWorldDefaults = getMinecraftWorldDefaults(workspaceFolder);
         try {
             if (fs.existsSync(mcdevPath)) {
                 const content = fs.readFileSync(mcdevPath, 'utf8');
@@ -142,13 +144,34 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                     skinPreviewUri = webview.asWebviewUri(fileUri).toString();
                 }
 
-                webview.postMessage({ type: 'init', content: jsonContent, language, skinPreviewUri });
+                webview.postMessage({
+                    type: 'init',
+                    content: jsonContent,
+                    language,
+                    skinPreviewUri,
+                    workspaceHasLevelDat,
+                    workspaceWorldDefaults
+                });
             } else {
                 // 文件不存在时，发送空配置并标记需要初始化
-                webview.postMessage({ type: 'init', content: '{}', needsInitialSave: true, language });
+                webview.postMessage({
+                    type: 'init',
+                    content: '{}',
+                    needsInitialSave: true,
+                    language,
+                    workspaceHasLevelDat,
+                    workspaceWorldDefaults
+                });
             }
         } catch (e) {
-            webview.postMessage({ type: 'init', content: '{}', error: String(e), language });
+            webview.postMessage({
+                type: 'init',
+                content: '{}',
+                error: String(e),
+                language,
+                workspaceHasLevelDat,
+                workspaceWorldDefaults
+            });
         }
     }
 
@@ -476,7 +499,13 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                         skinPreviewUri = webview.asWebviewUri(fileUri).toString();
                     }
 
-                    webview.postMessage({ type: 'init', content: jsonContent, skinPreviewUri });
+                    webview.postMessage({
+                        type: 'init',
+                        content: jsonContent,
+                        skinPreviewUri,
+                        workspaceHasLevelDat: isMinecraftWorldWorkspace(workspaceFolder),
+                        workspaceWorldDefaults: getMinecraftWorldDefaults(workspaceFolder)
+                    });
                 }
             } catch (e) {
                 console.error('Error reading .mcdev.json after external change:', e);
@@ -502,7 +531,13 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                         skinPreviewUri = webview.asWebviewUri(fileUri).toString();
                     }
 
-                    webview.postMessage({ type: 'init', content: jsonContent, skinPreviewUri });
+                    webview.postMessage({
+                        type: 'init',
+                        content: jsonContent,
+                        skinPreviewUri,
+                        workspaceHasLevelDat: isMinecraftWorldWorkspace(workspaceFolder),
+                        workspaceWorldDefaults: getMinecraftWorldDefaults(workspaceFolder)
+                    });
                 }
             } catch (e) {
                 console.error('Error reading .mcdev.json after creation:', e);
@@ -511,7 +546,12 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
 
         // 监听文件删除
         this._fileWatcher.onDidDelete(() => {
-            webview.postMessage({ type: 'init', content: '{}' });
+            webview.postMessage({
+                type: 'init',
+                content: '{}',
+                workspaceHasLevelDat: isMinecraftWorldWorkspace(workspaceFolder),
+                workspaceWorldDefaults: getMinecraftWorldDefaults(workspaceFolder)
+            });
         });
     }
 

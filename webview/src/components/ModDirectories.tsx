@@ -13,6 +13,9 @@ interface Props {
   modDirs: ModDir[];
   setModDirs: (dirs: ModDir[]) => void;
   setHasChanges: (changed: boolean) => void;
+  isWorldMode: boolean;
+  isAutoWorldSource: boolean;
+  worldSourcePath: string;
 }
 
 type ReviewStatus = 'idle' | 'queued' | 'running' | 'clean' | 'issues' | 'error';
@@ -45,7 +48,15 @@ const createReportName = (path: string, index: number) => {
   return `${String(index + 1).padStart(2, '0')}-${safeName}.md`;
 };
 
-export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHasChanges }) => {
+export const ModDirectories: React.FC<Props> = ({
+  t,
+  modDirs,
+  setModDirs,
+  setHasChanges,
+  isWorldMode,
+  isAutoWorldSource,
+  worldSourcePath,
+}) => {
   const [reviewStates, setReviewStates] = useState<Record<string, ReviewState>>({});
   const [reviewLauncherOpen, setReviewLauncherOpen] = useState(false);
   const [selectedReviewTarget, setSelectedReviewTarget] = useState<string | null>(null);
@@ -276,12 +287,27 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
         </div>
       )}
 
+      {isWorldMode && (
+        <div className="world-source-reference" title={worldSourcePath}>
+          <span className="codicon codicon-map" aria-hidden="true"></span>
+          <code>{worldSourcePath}</code>
+          <span className="world-source-tags">
+            <span className="world-source-tag mode">{t.worldMode}</span>
+            <span className="world-source-tag reference">
+              {isAutoWorldSource ? t.worldAutoReference : t.worldExplicitReference}
+            </span>
+          </span>
+        </div>
+      )}
+
       <div className="mod-list">
         {modDirs.length === 0 ? (
-          <div className="mod-empty-state">
-            <span className="codicon codicon-folder"></span>
-            {t.noModDirs}
-          </div>
+          !isWorldMode && (
+            <div className="mod-empty-state">
+              <span className="codicon codicon-folder"></span>
+              {t.noModDirs}
+            </div>
+          )
         ) : (
           modDirs.map((dir, idx) => {
             const normalizedPath = dir.path.trim().replace(/[\\/]+$/, '');

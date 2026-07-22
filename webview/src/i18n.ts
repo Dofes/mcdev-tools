@@ -25,6 +25,14 @@ export interface I18nText {
   enabled: string;
   noModDirs: string;
   worldSettings: string;
+  worldSource: string;
+  worldSourcePlaceholder: string;
+  worldSourceAuto: string;
+  worldSourceCustom: string;
+  worldSourceDisabled: string;
+  worldMode: string;
+  worldAutoReference: string;
+  worldExplicitReference: string;
   worldName: string;
   worldFolder: string;
   worldSeed: string;
@@ -141,6 +149,14 @@ export const i18n: Record<string, I18nText> = {
     enabled: 'Enabled',
     noModDirs: 'No mod directories configured.',
     worldSettings: 'World Settings',
+    worldSource: 'World Source',
+    worldSourcePlaceholder: 'World folder path',
+    worldSourceAuto: 'Auto',
+    worldSourceCustom: 'Custom',
+    worldSourceDisabled: 'Off',
+    worldMode: 'Map mode',
+    worldAutoReference: 'Auto-detected reference',
+    worldExplicitReference: 'Explicit reference',
     worldName: 'World Name',
     worldFolder: 'World Folder',
     worldSeed: 'World Seed',
@@ -256,6 +272,14 @@ export const i18n: Record<string, I18nText> = {
     enabled: '启用',
     noModDirs: '未配置模组目录。',
     worldSettings: '世界设置',
+    worldSource: '地图源目录',
+    worldSourcePlaceholder: '地图目录路径',
+    worldSourceAuto: '自动',
+    worldSourceCustom: '自定义',
+    worldSourceDisabled: '关闭',
+    worldMode: '地图模式',
+    worldAutoReference: '自感知引用',
+    worldExplicitReference: '显式引用',
     worldName: '世界名称',
     worldFolder: '世界文件夹',
     worldSeed: '世界种子',
