@@ -2021,6 +2021,180 @@ button.mod-review-status:disabled {
   min-width: 0;
 }
 
+.game-path-picker {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.input-row .game-path-picker input {
+  display: block;
+  width: 100%;
+}
+
+.game-path-picker:has(.game-path-toggle) input {
+  padding-right: 36px;
+}
+
+.game-path-toggle {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.game-path-toggle:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+
+.game-path-toggle .codicon {
+  font-size: 14px;
+  transition: transform 140ms ease;
+}
+
+.game-path-picker.open .game-path-toggle .codicon {
+  transform: rotate(180deg);
+}
+
+.game-path-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 80;
+  min-width: 0;
+  max-height: 236px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 4px;
+  color: var(--vscode-dropdown-foreground);
+  background-color: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, var(--panel-border));
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+}
+
+.game-path-option {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 6px 8px;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.game-path-option:hover,
+.game-path-option.active {
+  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-list-hoverForeground, var(--vscode-dropdown-foreground));
+}
+
+.game-path-option.selected {
+  color: var(--vscode-list-activeSelectionForeground);
+  background-color: var(--vscode-list-activeSelectionBackground);
+}
+
+.game-path-option > .codicon {
+  font-size: 14px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.game-path-option.selected > .codicon {
+  color: inherit;
+}
+
+.game-path-option-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-path-option-heading,
+.game-path-option-title,
+.game-path-option-path {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0;
+}
+
+.game-path-option-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.game-path-option-title {
+  flex: 0 1 auto;
+}
+
+.game-path-option-title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.game-path-option-path {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.game-path-latest-badge {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  color: var(--vscode-badge-foreground);
+  background-color: var(--vscode-badge-background);
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.game-path-option.selected .game-path-option-path {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.game-path-menu-state {
+  min-height: 54px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  text-align: center;
+}
+
+.game-path-menu-state .codicon {
+  font-size: 14px;
+}
+
 .input-row .clear-btn {
   width: 30px;
   height: var(--control-height);

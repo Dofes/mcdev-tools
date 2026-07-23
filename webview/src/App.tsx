@@ -25,6 +25,9 @@ function App() {
   const [activeKeyListener, setActiveKeyListener] = useState<string | null>(null);
   const [needsAutoSave, setNeedsAutoSave] = useState(false);
   const [skinPreviewUrl, setSkinPreviewUrl] = useState<string | null>(null);
+  const [gameExecutableDiscoverySupported, setGameExecutableDiscoverySupported] = useState(false);
+  const [gameExecutableDiscoveryLoaded, setGameExecutableDiscoveryLoaded] = useState(false);
+  const [gameExecutablePaths, setGameExecutablePaths] = useState<string[]>([]);
   
   const initializedComponentsRef = useRef<Set<string>>(new Set());
   const initTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -40,6 +43,14 @@ function App() {
             setLang(msg.language.startsWith('zh') ? 'zh' : 'en');
           }
           const parsedData = JSON.parse(msg.content || '{}');
+          if (typeof msg.gameExecutableDiscoverySupported === 'boolean') {
+            const discoverySupported = msg.gameExecutableDiscoverySupported;
+            setGameExecutableDiscoverySupported(discoverySupported);
+            if (!discoverySupported) {
+              setGameExecutableDiscoveryLoaded(false);
+              setGameExecutablePaths([]);
+            }
+          }
           
           if (msg.needsInitialSave) {
             setNeedsAutoSave(true);
@@ -75,6 +86,12 @@ function App() {
             game_executable_path: msg.path
           }));
           setHasChanges(true);
+          break;
+        case 'gameExecutablePaths':
+          setGameExecutablePaths(Array.isArray(msg.paths)
+            ? msg.paths.filter((value: unknown): value is string => typeof value === 'string')
+            : []);
+          setGameExecutableDiscoveryLoaded(true);
           break;
       }
     };
@@ -362,6 +379,9 @@ function App() {
           }));
           setHasChanges(true);
         }}
+        discoverySupported={gameExecutableDiscoverySupported}
+        discoveryLoaded={gameExecutableDiscoveryLoaded}
+        discoveredPaths={gameExecutablePaths}
       />
 
       {/* MCP Server Config */}

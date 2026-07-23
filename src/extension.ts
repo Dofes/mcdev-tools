@@ -3,6 +3,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { isMinecraftAddonWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
+import { dynamicLibraryManager } from './native/dynamicLibraryManager';
+import {
+    getGameExecutablePaths,
+    isGameExecutableDiscoverySupported
+} from './native/gameDiscovery';
 import { 
     McDevToolsDebugConfigurationProvider,
     McdbgDebugConfigurationProvider,
@@ -159,19 +164,35 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
     panel.webview.onDidReceiveMessage(async (msg) => {
         if (msg?.type === 'ready') {
             if (!wf) {
-                panel.webview.postMessage({ type: 'init', content: '{}' });
+                panel.webview.postMessage({
+                    type: 'init',
+                    content: '{}',
+                    gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
+                });
                 return;
             }
             const mcdevPath = path.join(wf.uri.fsPath, '.mcdev.json');
             try {
                 if (fs.existsSync(mcdevPath)) {
                     const content = fs.readFileSync(mcdevPath, 'utf8');
-                    panel.webview.postMessage({ type: 'init', content });
+                    panel.webview.postMessage({
+                        type: 'init',
+                        content,
+                        gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
+                    });
                 } else {
-                    panel.webview.postMessage({ type: 'init', content: '{}' });
+                    panel.webview.postMessage({
+                        type: 'init',
+                        content: '{}',
+                        gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
+                    });
                 }
             } catch {
-                panel.webview.postMessage({ type: 'init', content: '{}' });
+                panel.webview.postMessage({
+                    type: 'init',
+                    content: '{}',
+                    gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
+                });
             }
         } else if (msg?.type === 'save') {
             if (!wf) {
@@ -199,6 +220,16 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
                     index: msg.index,
                     path: result[0].fsPath
                 });
+            }
+        } else if (msg?.type === 'getGameExecutablePaths') {
+            if (isGameExecutableDiscoverySupported) {
+                try {
+                    const paths = await getGameExecutablePaths(context.extensionPath);
+                    await panel.webview.postMessage({ type: 'gameExecutablePaths', paths });
+                } catch (error) {
+                    console.error('Failed to discover game executable paths:', error);
+                    await panel.webview.postMessage({ type: 'gameExecutablePaths', paths: [] });
+                }
             }
         } else if (msg?.type === 'openExternal') {
             const url = typeof msg.url === 'string' ? msg.url : '';
@@ -262,8 +293,9 @@ async function runMcdk(): Promise<void> {
     vscode.window.showInformationMessage('Minecraft ModPC 已启动（无调试）');
 }
 
-export function deactivate(): void {
+export async function deactivate(): Promise<void> {
     ptvsd.cleanupAllSessions();
     vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', false);
     vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', false);
+    await dynamicLibraryManager.unloadAll();
 }

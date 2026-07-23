@@ -102,6 +102,9 @@ export interface I18nText {
   launcherSettings: string;
   launcherPath: string;
   launcherPathPlaceholder: string;
+  launcherShowDetectedPaths: string;
+  launcherNoDetectedPaths: string;
+  launcherLatest: string;
   mcpServerConfig: string;
   mcpServerDescription: string;
   mcpServerEnabled: string;
@@ -155,10 +158,10 @@ export const i18n: Record<string, I18nText> = {
     spectator: 'Spectator',
     experimentOptions: 'Experimental Options',
     dataDrivenBiomes: 'Data Driven Biomes',
-    upcomingCreatorFeatures: 'Upcoming Creator Features',
-    experimentalCreatorCameras: 'Experimental Creator Cameras',
-    betaApi: 'Beta APIs',
-    deferredTechnicalPreview: 'Deferred Technical Preview',
+    upcomingCreatorFeatures: 'Creator Features Preview',
+    experimentalCreatorCameras: 'Creator Camera Experiments',
+    betaApi: 'Beta API Experiments',
+    deferredTechnicalPreview: 'Deferred Rendering Preview',
     startupOptions: 'Startup Options',
     gameRules: 'Game Rules',
     gameOptions: 'Game Options',
@@ -218,6 +221,9 @@ export const i18n: Record<string, I18nText> = {
     launcherSettings: 'Launcher Settings',
     launcherPath: 'Game Launcher Path',
     launcherPathPlaceholder: 'Auto detect (default)',
+    launcherShowDetectedPaths: 'Show detected games',
+    launcherNoDetectedPaths: 'No game installations detected',
+    launcherLatest: 'Latest',
     mcpServerConfig: 'MCP Server',
     mcpServerDescription: 'Provides log query, code execution, screen capture, automation and other MCP capabilities.',
     mcpServerEnabled: 'Enable MCP Server',
@@ -270,10 +276,10 @@ export const i18n: Record<string, I18nText> = {
     spectator: '旁观者',
     experimentOptions: '实验性选项',
     dataDrivenBiomes: '数据驱动生物群系',
-    upcomingCreatorFeatures: '即将到来的创作者功能',
-    experimentalCreatorCameras: '创建者照相机的实验性功能',
-    betaApi: 'beta版api',
-    deferredTechnicalPreview: '为创作者提供的RenderDragon功能',
+    upcomingCreatorFeatures: '创作者功能预览',
+    experimentalCreatorCameras: '创作者相机实验',
+    betaApi: 'Beta API 功能实验',
+    deferredTechnicalPreview: '延迟渲染技术预览',
     startupOptions: '启动选项',
     gameRules: '游戏规则',
     gameOptions: '游戏选项',
@@ -333,6 +339,9 @@ export const i18n: Record<string, I18nText> = {
     launcherSettings: '启动器设置',
     launcherPath: '游戏启动路径',
     launcherPathPlaceholder: '自动检测（默认）',
+    launcherShowDetectedPaths: '显示已检测到的游戏',
+    launcherNoDetectedPaths: '未发现游戏安装',
+    launcherLatest: '最新',
     mcpServerConfig: 'MCP 服务器',
     mcpServerDescription: '该 MCP 提供日志查询、代码执行、画面捕获、自动化操作等能力。',
     mcpServerEnabled: '启用 MCP 服务器',
