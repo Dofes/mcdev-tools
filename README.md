@@ -70,9 +70,9 @@
 
 | 配置项                  | 默认值 | 说明                                           |
 | ----------------------- | ------ | ---------------------------------------------- |
+| `mcdev-tools.enable`    | false  | 强制启用插件（否则仅识别根目录 `.mcdev.json`） |
 | `mcdev-tools.timeout`   | 60000  | 等待调试器就绪的超时时间（毫秒）               |
 | `mcdev-tools.mcdkPath`  | (内置) | mcdk.exe 路径（留空使用插件内置）              |
-| `mcdev-tools.enable`    | false  | 强制启用插件（默认 false 自动扫描 Addon 结构） |
 
 ### 官方调试器（ptvsd）配置
 

@@ -17,10 +17,9 @@
         "Debuggers"
     ],
     "activationEvents": [
-        "onDebug",
         "onDebugResolve:mcdev-tools",
+        "onDebugResolve:mcdev-tools-inject",
         "workspaceContains:.mcdev.json",
-        "workspaceContains:*/manifest.json",
         "onStartupFinished"
     ],
     "keywords": [
@@ -45,17 +44,25 @@
             {
                 "command": "mcdev-tools.startDebug",
                 "title": "MC Dev Tools: 启动调试",
-                "icon": "$(debug-start)"
+                "icon": "$(debug-start)",
+                "enablement": "mcdev-tools:enabled || config.mcdev-tools.enable"
             },
             {
                 "command": "mcdev-tools.runGame",
                 "title": "MC Dev Tools: 运行游戏 (mcdk.exe)",
-                "icon": "$(play)"
+                "icon": "$(play)",
+                "enablement": "mcdev-tools:enabled || config.mcdev-tools.enable"
             },
             {
                 "command": "mcdev-tools.showSidebarPanel",
                 "title": "MC Dev Tools: 打开侧边栏面板",
-                "icon": "$(window)"
+                "icon": "$(window)",
+                "enablement": "mcdev-tools:enabled || config.mcdev-tools.enable"
+            },
+            {
+                "command": "mcdev-tools.runPythonFunction",
+                "title": "MC Dev Tools: 运行 Python 函数",
+                "enablement": "(mcdev-tools:enabled || config.mcdev-tools.enable) && editorLangId == python"
             }
         ],
         "debuggers": [
@@ -241,6 +248,11 @@
         "configuration": {
             "title": "MC Dev Tools",
             "properties": {
+                "mcdev-tools.enable": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "强制启用 MC Dev Tools；未启用时仅识别工作区根目录的 .mcdev.json。"
+                },
                 "mcdev-tools.timeout": {
                     "type": "number",
                     "default": 60000,
@@ -250,11 +262,6 @@
                     "type": "string",
                     "default": "",
                     "description": "可选：mcdk.exe 的路径（留空使用插件内置 bin/mcdk.exe 或相对于工作区路径）"
-                },
-                "mcdev-tools.enable": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "是否启用 MC Dev Tools 插件（若启用则即使未检测到项目结构也会激活）。建议只在 MC addon 项目手动开启。"
                 },
                 "mcdev-tools.ptvsd.enabled": {
                     "type": "boolean",
@@ -302,9 +309,17 @@
             {
                 "command": "mcdev-tools.runGame",
                 "key": "ctrl+f5",
-                "when": "mcdev-tools:enabled && editorTextFocus"
+                "when": "(mcdev-tools:enabled || config.mcdev-tools.enable) && editorTextFocus"
             }
         ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "mcdev-tools.runPythonFunction",
+                    "when": "false"
+                }
+            ]
+        },
         "viewsContainers": {
             "activitybar": [
                 {
@@ -320,7 +335,7 @@
                     "type": "webview",
                     "id": "mcdev-tools.sidebar",
                     "name": "MC Dev Tools Config",
-                    "when": "mcdev-tools:showSidebar",
+                    "when": "mcdev-tools:showSidebar || config.mcdev-tools.enable",
                     "icon": "./images/icon.svg"
                 }
             ]

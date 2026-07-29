@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { isMinecraftAddonWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
 import { dynamicLibraryManager } from './native/dynamicLibraryManager';
+import { McdevProjectRegistry } from './projectRegistry';
+import { PythonFunctionRunner } from './pythonFunctionRunner';
 import {
     getGameExecutablePaths,
     isGameExecutableDiscoverySupported
@@ -20,55 +21,80 @@ export function activate(context: vscode.ExtensionContext): void {
     console.log('Minecraft ModPC Debug 插件已激活');
     extensionContext = context;
 
-    // 初始化 ptvsd 持久化存储
-    ptvsd.initStorage(context);
+    const projects = new McdevProjectRegistry();
+    const pythonFunctionRunner = new PythonFunctionRunner(projects);
+    context.subscriptions.push(projects, pythonFunctionRunner);
 
-    // 根据用户设置或项目结构决定是否启用插件功能
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    const config = vscode.workspace.getConfiguration('mcdev-tools');
-    const userEnabled = config.get<boolean>('enable', false);
-    const isAddon = workspaceFolder ? isMinecraftAddonWorkspace(workspaceFolder) : false;
-    const pluginEnabled = userEnabled || isAddon;
+    let sidebarDisposable: vscode.Disposable | undefined;
+    let debugFeaturesDisposable: vscode.Disposable | undefined;
+    let debugStorageInitialized = false;
+    const refreshProjectFeatures = (): void => {
+        const pluginEnabled = projects.hasProjects;
+        void vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', pluginEnabled);
+        void vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', pluginEnabled);
 
-    // 设置上下文
-    vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', pluginEnabled);
-    vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', pluginEnabled);
+        if (pluginEnabled && !sidebarDisposable) {
+            const sidebarProvider = new McDevToolsSidebarProvider(context.extensionUri);
+            sidebarDisposable = vscode.window.registerWebviewViewProvider(
+                'mcdev-tools.sidebar',
+                sidebarProvider
+            );
+            console.log('McDevToolsSidebarProvider 已注册');
+        } else if (!pluginEnabled && sidebarDisposable) {
+            sidebarDisposable.dispose();
+            sidebarDisposable = undefined;
+        }
 
-    // 只有启用时才注册侧边栏提供器
-    if (pluginEnabled) {
-        const sidebarProvider = new McDevToolsSidebarProvider(context.extensionUri);
-        const sidebarDisp = vscode.window.registerWebviewViewProvider('mcdev-tools.sidebar', sidebarProvider);
-        context.subscriptions.push(sidebarDisp);
-        console.log('McDevToolsSidebarProvider 已注册');
-    }
+        if (pluginEnabled && !debugFeaturesDisposable) {
+            if (!debugStorageInitialized) {
+                ptvsd.initStorage(context);
+                debugStorageInitialized = true;
+            }
+            debugFeaturesDisposable = vscode.Disposable.from(
+                registerDebugProviders(context),
+                registerDebugSessionListener()
+            );
+        } else if (!pluginEnabled && debugFeaturesDisposable) {
+            debugFeaturesDisposable.dispose();
+            debugFeaturesDisposable = undefined;
+        }
+    };
+
+    refreshProjectFeatures();
+    context.subscriptions.push(
+        projects.onDidChange(refreshProjectFeatures),
+        {
+            dispose: () => {
+                sidebarDisposable?.dispose();
+                debugFeaturesDisposable?.dispose();
+            }
+        }
+    );
 
     // 注册命令
-    registerCommands(context);
-    
-    // 注册调试配置提供者
-    registerDebugProviders(context);
-    
-    // 监听调试会话结束事件
-    registerDebugSessionListener(context);
+    registerCommands(context, projects);
 }
 
 /**
  * 注册所有命令
  */
-function registerCommands(context: vscode.ExtensionContext): void {
+function registerCommands(
+    context: vscode.ExtensionContext,
+    projects: McdevProjectRegistry
+): void {
     // 启动调试命令
     const startDebugCmd = vscode.commands.registerCommand('mcdev-tools.startDebug', async () => {
-        await startDebugSession();
+        await startDebugSession(projects);
     });
 
     // 侧边栏面板回退命令
     const panelCmd = vscode.commands.registerCommand('mcdev-tools.showSidebarPanel', async () => {
-        await showSidebarPanel(context);
+        await showSidebarPanel(context, projects);
     });
 
     // 运行游戏命令 (Ctrl+F5)
     const runCmd = vscode.commands.registerCommand('mcdev-tools.runGame', async () => {
-        await runMcdk();
+        await runMcdk(projects);
     });
 
     context.subscriptions.push(startDebugCmd, panelCmd, runCmd);
@@ -77,7 +103,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
 /**
  * 注册调试配置提供者
  */
-function registerDebugProviders(context: vscode.ExtensionContext): void {
+function registerDebugProviders(context: vscode.ExtensionContext): vscode.Disposable {
     // ptvsd 模式 provider（推荐）
     const ptvsdProvider = new McDevToolsDebugConfigurationProvider(context.extensionPath);
     const ptvsdProviderDisposable = vscode.debug.registerDebugConfigurationProvider(
@@ -112,30 +138,34 @@ function registerDebugProviders(context: vscode.ExtensionContext): void {
         vscode.DebugConfigurationProviderTriggerKind.Dynamic
     );
 
-    context.subscriptions.push(ptvsdProviderDisposable, mcdbgProviderDisposable, dynamicProvider);
+    return vscode.Disposable.from(
+        ptvsdProviderDisposable,
+        mcdbgProviderDisposable,
+        dynamicProvider
+    );
 }
 
 /**
  * 注册调试会话监听器
  */
-function registerDebugSessionListener(context: vscode.ExtensionContext): void {
+function registerDebugSessionListener(): vscode.Disposable {
     // 监听调试会话结束，清理 ptvsd 会话
     const debugEndDisposable = vscode.debug.onDidTerminateDebugSession((session) => {
         // ptvsd 会话会在进程退出时自动清理
         console.log(`调试会话结束: ${session.name}`);
     });
 
-    context.subscriptions.push(debugEndDisposable);
+    return debugEndDisposable;
 }
 
 /**
  * 启动调试会话（从 GUI 按钮调用）
  * 总是启动新实例，不检查重新附加
  */
-async function startDebugSession(): Promise<void> {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+async function startDebugSession(projects: McdevProjectRegistry): Promise<void> {
+    const workspaceFolder = projects.folders[0];
     if (!workspaceFolder) {
-        vscode.window.showErrorMessage('请先打开工作区');
+        vscode.window.showErrorMessage('当前工作区根目录没有 .mcdev.json');
         return;
     }
 
@@ -149,8 +179,15 @@ async function startDebugSession(): Promise<void> {
 /**
  * 显示侧边栏面板（回退方案）
  */
-async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void> {
-    const wf = vscode.workspace.workspaceFolders?.[0];
+async function showSidebarPanel(
+    context: vscode.ExtensionContext,
+    projects: McdevProjectRegistry
+): Promise<void> {
+    const wf = projects.folders[0];
+    if (!wf) {
+        vscode.window.showErrorMessage('当前工作区根目录没有 .mcdev.json');
+        return;
+    }
     const panel = vscode.window.createWebviewPanel(
         'mcdevSidebarPanel', 
         'Minecraft (.mcdev.json)', 
@@ -244,10 +281,10 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
 /**
  * 运行 mcdk.exe（无调试模式，Ctrl+F5）
  */
-async function runMcdk(): Promise<void> {
-    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+async function runMcdk(projects: McdevProjectRegistry): Promise<void> {
+    const workspaceFolder = projects.folders[0];
     if (!workspaceFolder) {
-        vscode.window.showErrorMessage('请先打开工作区');
+        vscode.window.showErrorMessage('当前工作区根目录没有 .mcdev.json');
         return;
     }
 
