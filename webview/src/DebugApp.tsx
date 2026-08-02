@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { CodeExecutionTool } from './components/debugger/CodeExecutionTool';
+import { DebugFunctionsTool } from './components/debugger/DebugFunctionsTool';
 import { SessionPicker } from './components/debugger/SessionPicker';
 import { I18nText, i18n } from './i18n';
 import { HostBridgeSessionSummary, HostBridgeSnapshot } from './types';
@@ -24,6 +25,12 @@ const DEBUG_TOOLS: DebugToolDefinition[] = [
     icon: 'codicon-code',
     label: t => t.hostBridgeCodeTab,
     render: ({ session, t }) => <CodeExecutionTool session={session} t={t} />,
+  },
+  {
+    id: 'debug-functions',
+    icon: 'codicon-symbol-function',
+    label: t => t.debugFunctionsTab,
+    render: ({ session, t }) => <DebugFunctionsTool session={session} t={t} />,
   },
 ];
 
@@ -110,10 +117,6 @@ function DebugApp() {
           ))}
         </nav>
         <section className="debug-tool-page" aria-label={activeTool.label(t)}>
-          <header className="debug-tool-page-header">
-            <span className={`codicon ${activeTool.icon}`} />
-            <h2>{activeTool.label(t)}</h2>
-          </header>
           <div className="debug-tool-page-content">
             {activeTool.render({ session: selectedSession, t })}
           </div>

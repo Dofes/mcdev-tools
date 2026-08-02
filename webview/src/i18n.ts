@@ -145,6 +145,49 @@ export interface I18nText {
   hostBridgeClear: string;
   hostBridgeRequestFailed: string;
   hostBridgeMethodUnavailable: string;
+  debugFunctionsTab: string;
+  debugFunctionsSaved: string;
+  debugFunctionsAdd: string;
+  debugFunctionsEmpty: string;
+  debugFunctionsDiscoverTitle: string;
+  debugFunctionsSearch: string;
+  debugFunctionsRefresh: string;
+  debugFunctionsNoDiscovered: string;
+  debugFunctionsConfiguration: string;
+  debugFunctionsDisplayName: string;
+  debugFunctionsSource: string;
+  debugFunctionsArguments: string;
+  debugFunctionsNoArguments: string;
+  debugFunctionsModeFixed: string;
+  debugFunctionsModeOptional: string;
+  debugFunctionsModeRequired: string;
+  debugFunctionsFixedValue: string;
+  debugFunctionsOptionalDefault: string;
+  debugFunctionsJsonPlaceholder: string;
+  debugFunctionsPythonDefault: string;
+  debugFunctionsRunArguments: string;
+  debugFunctionsRuntimeOverride: string;
+  debugFunctionsRuntimeRequired: string;
+  debugFunctionsSave: string;
+  debugFunctionsSavedStatus: string;
+  debugFunctionsDelete: string;
+  debugFunctionsDeleteConfirm: string;
+  debugFunctionsSelect: string;
+  debugFunctionsResult: string;
+  debugFunctionsNoResult: string;
+  debugFunctionsProjectUnavailable: string;
+  debugFunctionsRunView: string;
+  debugFunctionsManageView: string;
+  debugFunctionsEdit: string;
+  debugFunctionsFixedArguments: string;
+  debugFunctionsNoRuntimeArguments: string;
+  debugFunctionsArgsPlaceholder: string;
+  debugFunctionsKwargsPlaceholder: string;
+  debugFunctionsFilterSaved: string;
+  debugFunctionsCancelDelete: string;
+  debugFunctionsConfirmDelete: string;
+  debugFunctionsScrollLeft: string;
+  debugFunctionsScrollRight: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -295,6 +338,49 @@ export const i18n: Record<string, I18nText> = {
     hostBridgeClear: 'Clear results',
     hostBridgeRequestFailed: 'Execution failed',
     hostBridgeMethodUnavailable: 'Code execution is unavailable',
+    debugFunctionsTab: 'Debug Functions',
+    debugFunctionsSaved: 'Saved Functions',
+    debugFunctionsAdd: 'Add from Project',
+    debugFunctionsEmpty: 'No debug functions saved',
+    debugFunctionsDiscoverTitle: 'Project Functions',
+    debugFunctionsSearch: 'Search module or function',
+    debugFunctionsRefresh: 'Rescan project',
+    debugFunctionsNoDiscovered: 'No top-level functions found under a modMain.py package',
+    debugFunctionsConfiguration: 'Function Configuration',
+    debugFunctionsDisplayName: 'Display Name',
+    debugFunctionsSource: 'Source',
+    debugFunctionsArguments: 'Parameter Rules',
+    debugFunctionsNoArguments: 'This function has no configurable parameters',
+    debugFunctionsModeFixed: 'Fixed',
+    debugFunctionsModeOptional: 'Optional',
+    debugFunctionsModeRequired: 'Fill each run',
+    debugFunctionsFixedValue: 'Fixed JSON Value',
+    debugFunctionsOptionalDefault: 'Configured Default',
+    debugFunctionsJsonPlaceholder: 'JSON, e.g. "text", 12, true, []',
+    debugFunctionsPythonDefault: 'Python default',
+    debugFunctionsRunArguments: 'Run Arguments',
+    debugFunctionsRuntimeOverride: 'Temporary override (optional)',
+    debugFunctionsRuntimeRequired: 'Required for this run',
+    debugFunctionsSave: 'Save Function',
+    debugFunctionsSavedStatus: 'Saved',
+    debugFunctionsDelete: 'Delete function',
+    debugFunctionsDeleteConfirm: 'Delete this saved debug function?',
+    debugFunctionsSelect: 'Select or add a function to configure',
+    debugFunctionsResult: 'Latest Result',
+    debugFunctionsNoResult: 'This function has not been run yet',
+    debugFunctionsProjectUnavailable: 'Open a project before managing debug functions',
+    debugFunctionsRunView: 'Run',
+    debugFunctionsManageView: 'Manage',
+    debugFunctionsEdit: 'Edit function',
+    debugFunctionsFixedArguments: 'Fixed Arguments',
+    debugFunctionsNoRuntimeArguments: 'No arguments are needed for this run',
+    debugFunctionsArgsPlaceholder: 'JSON array, e.g. [1, "text"]',
+    debugFunctionsKwargsPlaceholder: 'JSON object, e.g. {"count": 2}',
+    debugFunctionsFilterSaved: 'Filter saved functions',
+    debugFunctionsCancelDelete: 'Cancel',
+    debugFunctionsConfirmDelete: 'Delete',
+    debugFunctionsScrollLeft: 'Scroll functions left',
+    debugFunctionsScrollRight: 'Scroll functions right',
 
   },
   zh: {
@@ -444,5 +530,48 @@ export const i18n: Record<string, I18nText> = {
     hostBridgeClear: '清空结果',
     hostBridgeRequestFailed: '执行失败',
     hostBridgeMethodUnavailable: '当前版本不支持代码执行',
+    debugFunctionsTab: '调试函数',
+    debugFunctionsSaved: '已保存函数',
+    debugFunctionsAdd: '从项目添加',
+    debugFunctionsEmpty: '尚未保存调试函数',
+    debugFunctionsDiscoverTitle: '项目函数',
+    debugFunctionsSearch: '搜索模块或函数',
+    debugFunctionsRefresh: '重新扫描项目',
+    debugFunctionsNoDiscovered: '未在 modMain.py 所属包中发现顶层函数',
+    debugFunctionsConfiguration: '函数配置',
+    debugFunctionsDisplayName: '显示名称',
+    debugFunctionsSource: '源代码',
+    debugFunctionsArguments: '参数规则',
+    debugFunctionsNoArguments: '此函数没有可配置参数',
+    debugFunctionsModeFixed: '固定',
+    debugFunctionsModeOptional: '可选',
+    debugFunctionsModeRequired: '每次填写',
+    debugFunctionsFixedValue: '固定 JSON 值',
+    debugFunctionsOptionalDefault: '配置默认值',
+    debugFunctionsJsonPlaceholder: 'JSON，例如 "文本"、12、true、[]',
+    debugFunctionsPythonDefault: 'Python 默认值',
+    debugFunctionsRunArguments: '本次运行参数',
+    debugFunctionsRuntimeOverride: '临时覆盖（可不填）',
+    debugFunctionsRuntimeRequired: '本次运行必须填写',
+    debugFunctionsSave: '保存函数',
+    debugFunctionsSavedStatus: '已保存',
+    debugFunctionsDelete: '删除函数',
+    debugFunctionsDeleteConfirm: '确定删除这个已保存的调试函数吗？',
+    debugFunctionsSelect: '选择已保存函数，或从项目添加函数',
+    debugFunctionsResult: '最近一次结果',
+    debugFunctionsNoResult: '此函数尚未执行',
+    debugFunctionsProjectUnavailable: '请先打开项目再管理调试函数',
+    debugFunctionsRunView: '运行',
+    debugFunctionsManageView: '管理',
+    debugFunctionsEdit: '编辑函数',
+    debugFunctionsFixedArguments: '固定参数',
+    debugFunctionsNoRuntimeArguments: '本次运行无需填写参数',
+    debugFunctionsArgsPlaceholder: 'JSON 数组，例如 [1, "文本"]',
+    debugFunctionsKwargsPlaceholder: 'JSON 对象，例如 {"count": 2}',
+    debugFunctionsFilterSaved: '筛选已保存函数',
+    debugFunctionsCancelDelete: '取消',
+    debugFunctionsConfirmDelete: '确认删除',
+    debugFunctionsScrollLeft: '向左滚动函数',
+    debugFunctionsScrollRight: '向右滚动函数',
   },
 };

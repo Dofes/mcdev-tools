@@ -97,3 +97,35 @@ export interface HostBridgeSnapshot {
   error?: string;
   sessions: HostBridgeSessionSummary[];
 }
+
+export type DebugFunctionTarget = 'client' | 'server';
+export type DebugFunctionParameterKind = 'value' | 'varargs' | 'kwargs';
+export type DebugFunctionArgumentMode = 'fixed' | 'optional' | 'required';
+
+export interface DebugFunctionParameter {
+  name: string;
+  kind: DebugFunctionParameterKind;
+  required: boolean;
+  defaultValue?: string;
+}
+
+export interface DebugFunctionArgumentConfig {
+  mode: DebugFunctionArgumentMode;
+  value: string;
+}
+
+export interface DiscoveredDebugFunction {
+  key: string;
+  modulePath: string;
+  functionName: string;
+  relativeFilePath: string;
+  line: number;
+  parameters: DebugFunctionParameter[];
+}
+
+export interface SavedDebugFunction extends DiscoveredDebugFunction {
+  id: string;
+  label: string;
+  target: DebugFunctionTarget;
+  argumentConfigs: Record<string, DebugFunctionArgumentConfig>;
+}
