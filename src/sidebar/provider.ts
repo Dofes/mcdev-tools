@@ -12,10 +12,11 @@ import {
 /**
  * 侧边栏 Webview 提供者，用于可视化编辑 .mcdev.json
  */
-export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
+export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private _view?: vscode.WebviewView;
     private _fileWatcher?: vscode.FileSystemWatcher;
     private _reviewProcess?: cp.ChildProcess;
+    private _messageSubscription?: vscode.Disposable;
     
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -29,26 +30,7 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
             this._view = webviewView;
             const webview = webviewView.webview;
 
-            const roots: vscode.Uri[] = [this._extensionUri];
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (workspaceFolder) {
-                roots.push(workspaceFolder.uri);
-
-                // 允许预览与工作区同一磁盘根目录下的本地图片
-                try {
-                    const parsed = path.parse(workspaceFolder.uri.fsPath);
-                    if (parsed.root) {
-                        roots.push(vscode.Uri.file(parsed.root));
-                    }
-                } catch {
-                    // ignore
-                }
-            }
-
-            webview.options = {
-                enableScripts: true,
-                localResourceRoots: roots
-            };
+            this.configureWebview(webview);
 
             webviewView.webview.html = this.getHtmlForWebview(webview);
 
@@ -64,23 +46,56 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
 
             // Clean up watcher when view is disposed
             webviewView.onDidDispose(() => {
-                if (this._fileWatcher) {
-                    this._fileWatcher.dispose();
-                }
-                if (this._reviewProcess && !this._reviewProcess.killed) {
-                    this._reviewProcess.kill();
-                }
+                this.dispose();
             });
         } catch (err) {
             console.error('resolveWebviewView top-level error', err);
         }
     }
 
+    public resolveWebviewPanel(panel: vscode.WebviewPanel): void {
+        const webview = panel.webview;
+        this.configureWebview(webview);
+        webview.html = this.getHtmlForWebview(webview);
+        this.setupMessageHandler(webview);
+        this.setupFileWatcher(webview);
+        panel.onDidDispose(() => this.dispose());
+    }
+
+    public dispose(): void {
+        this._messageSubscription?.dispose();
+        this._messageSubscription = undefined;
+        this._fileWatcher?.dispose();
+        this._fileWatcher = undefined;
+        if (this._reviewProcess && !this._reviewProcess.killed) {
+            this._reviewProcess.kill();
+        }
+        this._reviewProcess = undefined;
+    }
+
+    private configureWebview(webview: vscode.Webview): void {
+        const roots: vscode.Uri[] = [this._extensionUri];
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (workspaceFolder) {
+            roots.push(workspaceFolder.uri);
+            try {
+                const parsed = path.parse(workspaceFolder.uri.fsPath);
+                if (parsed.root) {
+                    roots.push(vscode.Uri.file(parsed.root));
+                }
+            } catch {
+                // The extension root remains sufficient if the workspace root cannot be parsed.
+            }
+        }
+        webview.options = { enableScripts: true, localResourceRoots: roots };
+    }
+
     /**
      * 设置消息处理器
      */
     private setupMessageHandler(webview: vscode.Webview): void {
-        webview.onDidReceiveMessage(async (msg) => {
+        this._messageSubscription?.dispose();
+        this._messageSubscription = webview.onDidReceiveMessage(async (msg) => {
             if (msg?.type === 'ready') {
                 await this.handleReady(webview);
             } else if (msg?.type === 'save') {
@@ -105,6 +120,8 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
                 await this.handleCodeReview(webview, msg);
             } else if (msg?.type === 'openReviewReport') {
                 await this.handleOpenReviewReport(msg.path);
+            } else if (msg?.type === 'openGameDebugger') {
+                await vscode.commands.executeCommand('mcdev-tools.openGameDebugger');
             } else if (msg?.type === 'log') {
                 const prefix = `[Webview ${msg.level || 'log'}]`;
                 if (msg.level === 'error') {
@@ -490,6 +507,8 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider {
      * 设置文件监听器，当 .mcdev.json 被外部修改时自动重载
      */
     private setupFileWatcher(webview: vscode.Webview): void {
+        this._fileWatcher?.dispose();
+        this._fileWatcher = undefined;
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             return;

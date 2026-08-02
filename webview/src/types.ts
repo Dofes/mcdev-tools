@@ -59,3 +59,34 @@ export interface McdevData {
     deferred_technical_preview?: boolean;
   };
 }
+
+export interface HostBridgeMethodDescriptor {
+  name: string;
+  modes: string[];
+  gameAvailability: string;
+}
+
+export interface HostBridgeSessionSummary {
+  id: string;
+  registrationId: string;
+  connected: boolean;
+  state: 'starting' | 'process_started' | 'game_ready' | 'game_unavailable' | 'exiting' | 'exited';
+  stateSequence: number;
+  connectionGeneration: number;
+  startedAt?: string;
+  mcdkPid?: number;
+  minecraftPid?: number;
+  projectRoot: string;
+  worldName?: string;
+  worldFolderName?: string;
+  gameIpcConnected: boolean;
+  debugCapabilityEnabled: boolean;
+  methods?: HostBridgeMethodDescriptor[];
+}
+
+export interface HostBridgeSnapshot {
+  status: 'idle' | 'listening' | 'error';
+  port?: number;
+  error?: string;
+  sessions: HostBridgeSessionSummary[];
+}

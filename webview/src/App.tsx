@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { vscode } from './vscode';
-import { i18n, I18nText } from './i18n';
-import { logger } from './logger';
+import { i18n } from './i18n';
 import { ModDir, McdevData } from './types';
 import { ModDirectories } from './components/ModDirectories';
 import { WorldSettings } from './components/WorldSettings';
@@ -333,6 +332,19 @@ function App() {
           title={t.startDebugTooltip}
         >
           <span className="codicon codicon-debug-alt"></span>
+        </button>
+      </div>
+
+      <div className="sidebar-tool-entry-row">
+        <button
+          type="button"
+          className="sidebar-tool-entry"
+          onClick={() => vscode.postMessage({ type: 'openGameDebugger' })}
+          title={t.openGameDebuggerTooltip}
+        >
+          <span className="codicon codicon-terminal" />
+          <span>{t.openGameDebugger}</span>
+          <span className="codicon codicon-chevron-right" />
         </button>
       </div>
 

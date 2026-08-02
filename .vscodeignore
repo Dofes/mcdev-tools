@@ -5,6 +5,7 @@ src/**
 **/tsconfig.json
 **/*.map
 **/*.ts
+out/**/*.test.js
 node_modules/**
 !node_modules/jsonc-parser/**
 !node_modules/@vscode/**

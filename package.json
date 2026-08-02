@@ -56,6 +56,11 @@
                 "command": "mcdev-tools.showSidebarPanel",
                 "title": "MC Dev Tools: 打开侧边栏面板",
                 "icon": "$(window)"
+            },
+            {
+                "command": "mcdev-tools.openGameDebugger",
+                "title": "MC Dev Tools: 打开游戏调试",
+                "icon": "$(terminal)"
             }
         ],
         "debuggers": [
@@ -333,6 +338,7 @@
         "watch": "tsc -watch -p ./",
         "watch:webview": "cd webview && npm run dev",
         "build": "npm run compile && npm run compile:webview",
+        "test:host-bridge": "npm run compile && node --test out/hostBridge/protocol.test.js",
         "lint": "eslint src --ext ts"
     },
     "dependencies": {

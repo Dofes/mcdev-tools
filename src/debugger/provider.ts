@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { launchPtvsdDebugSession } from './ptvsd';
+import { HostBridgeManager } from '../hostBridge';
 
 /**
  * 调试配置提供者 - 处理 F5 启动
@@ -7,7 +8,10 @@ import { launchPtvsdDebugSession } from './ptvsd';
  */
 export class McDevToolsDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
     
-    constructor(private readonly extensionPath: string) {}
+    constructor(
+        private readonly extensionPath: string,
+        private readonly hostBridgeManager: HostBridgeManager
+    ) {}
     
     async resolveDebugConfiguration(
         _folder: vscode.WorkspaceFolder | undefined,
@@ -48,7 +52,7 @@ export class McDevToolsDebugConfigurationProvider implements vscode.DebugConfigu
         }
 
         // 使用 ptvsd 模式启动调试
-        const result = await launchPtvsdDebugSession(config, this.extensionPath);
+        const result = await launchPtvsdDebugSession(config, this.extensionPath, this.hostBridgeManager);
         
         // 返回 null 表示用户取消，VS Code 不会显示错误
         if (result === undefined) {

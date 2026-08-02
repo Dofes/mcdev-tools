@@ -3,6 +3,8 @@ export interface I18nText {
   runGameTooltip: string;
   startDebug: string;
   startDebugTooltip: string;
+  openGameDebugger: string;
+  openGameDebuggerTooltip: string;
   modDirectories: string;
   addModDirectory: string;
   browse: string;
@@ -114,6 +116,32 @@ export interface I18nText {
   getMcpAssistant: string;
   mcpAssistantBadge: string;
   mcpAssistantDescription: string;
+  hostBridgeTitle: string;
+  hostBridgeCodeTab: string;
+  hostBridgeSession: string;
+  hostBridgeTarget: string;
+  hostBridgeIdle: string;
+  hostBridgeWaiting: string;
+  hostBridgeStarting: string;
+  hostBridgeProcessStarted: string;
+  hostBridgeReady: string;
+  hostBridgeUnavailable: string;
+  hostBridgeDisconnected: string;
+  hostBridgeExiting: string;
+  hostBridgeExited: string;
+  hostBridgeError: string;
+  hostBridgeClient: string;
+  hostBridgeServer: string;
+  hostBridgeCode: string;
+  hostBridgeCodePlaceholder: string;
+  hostBridgeExecute: string;
+  hostBridgeExecuting: string;
+  hostBridgeResult: string;
+  hostBridgeNoResult: string;
+  hostBridgeRefresh: string;
+  hostBridgeClear: string;
+  hostBridgeRequestFailed: string;
+  hostBridgeMethodUnavailable: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -122,6 +150,8 @@ export const i18n: Record<string, I18nText> = {
     runGameTooltip: 'Start Minecraft with mcdk',
     startDebug: 'Start Debug',
     startDebugTooltip: 'Start Minecraft with Python debugger attached',
+    openGameDebugger: 'Open Game Debugger',
+    openGameDebuggerTooltip: 'Open game debugger',
     modDirectories: 'Mod Directories',
     addModDirectory: 'Add Mod Directory',
     browse: 'Browse...',
@@ -233,6 +263,32 @@ export const i18n: Record<string, I18nText> = {
     getMcpAssistant: 'MC Assistant MCP',
     mcpAssistantBadge: 'RAG',
     mcpAssistantDescription: 'MODSDK knowledge-base MCP, independent of the game itself.',
+    hostBridgeTitle: 'Game Debugger',
+    hostBridgeCodeTab: 'Code Execution',
+    hostBridgeSession: 'Game Session',
+    hostBridgeTarget: 'Execution Target',
+    hostBridgeIdle: 'Not started',
+    hostBridgeWaiting: 'Waiting for MCDK',
+    hostBridgeStarting: 'Starting',
+    hostBridgeProcessStarted: 'Game is starting',
+    hostBridgeReady: 'In world',
+    hostBridgeUnavailable: 'World is unavailable',
+    hostBridgeDisconnected: 'Reconnecting',
+    hostBridgeExiting: 'Game is exiting',
+    hostBridgeExited: 'Game exited',
+    hostBridgeError: 'Host Bridge unavailable',
+    hostBridgeClient: 'Client',
+    hostBridgeServer: 'Server',
+    hostBridgeCode: 'Python Code',
+    hostBridgeCodePlaceholder: "print('hello')",
+    hostBridgeExecute: 'Run',
+    hostBridgeExecuting: 'Running...',
+    hostBridgeResult: 'Result',
+    hostBridgeNoResult: 'No executions yet',
+    hostBridgeRefresh: 'Refresh sessions',
+    hostBridgeClear: 'Clear results',
+    hostBridgeRequestFailed: 'Execution failed',
+    hostBridgeMethodUnavailable: 'Code execution is unavailable',
 
   },
   zh: {
@@ -240,6 +296,8 @@ export const i18n: Record<string, I18nText> = {
     runGameTooltip: '使用 mcdk 启动 Minecraft',
     startDebug: '启动调试',
     startDebugTooltip: '启动 Minecraft 并附加 Python 调试器',
+    openGameDebugger: '打开游戏调试',
+    openGameDebuggerTooltip: '打开独立游戏调试分页',
     modDirectories: 'Mod 目录',
     addModDirectory: '添加 Mod 目录',
     browse: '浏览...',
@@ -351,5 +409,31 @@ export const i18n: Record<string, I18nText> = {
     getMcpAssistant: 'MC 助理 MCP',
     mcpAssistantBadge: 'RAG',
     mcpAssistantDescription: 'MODSDK资料库，不依赖游戏本身。',
+    hostBridgeTitle: '游戏调试',
+    hostBridgeCodeTab: '代码执行',
+    hostBridgeSession: '游戏会话',
+    hostBridgeTarget: '执行目标',
+    hostBridgeIdle: '尚未启动',
+    hostBridgeWaiting: '等待 MCDK 连接',
+    hostBridgeStarting: '正在启动',
+    hostBridgeProcessStarted: '游戏正在启动',
+    hostBridgeReady: '已进入存档',
+    hostBridgeUnavailable: '存档当前不可用',
+    hostBridgeDisconnected: '正在重新连接',
+    hostBridgeExiting: '游戏正在退出',
+    hostBridgeExited: '游戏已退出',
+    hostBridgeError: 'Host Bridge 不可用',
+    hostBridgeClient: '客户端',
+    hostBridgeServer: '服务端',
+    hostBridgeCode: 'Python 代码',
+    hostBridgeCodePlaceholder: "print('hello')",
+    hostBridgeExecute: '执行',
+    hostBridgeExecuting: '正在执行...',
+    hostBridgeResult: '执行结果',
+    hostBridgeNoResult: '暂无执行记录',
+    hostBridgeRefresh: '刷新会话',
+    hostBridgeClear: '清空结果',
+    hostBridgeRequestFailed: '执行失败',
+    hostBridgeMethodUnavailable: '当前版本不支持代码执行',
   },
 };

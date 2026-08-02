@@ -12,6 +12,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as net from 'net';
+import { HostBridgeManager, PreparedHostBridgeLaunch } from '../../hostBridge';
 import {
     PtvsdDebugSession,
     PtvsdDebugConfig,
@@ -190,7 +191,8 @@ async function waitForDebugPort(
  */
 export async function launchPtvsdDebugSession(
     launchConfig: vscode.DebugConfiguration,
-    extensionPath: string
+    extensionPath: string,
+    hostBridgeManager: HostBridgeManager
 ): Promise<vscode.DebugConfiguration | undefined> {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
@@ -238,6 +240,11 @@ export async function launchPtvsdDebugSession(
         MCDEV_OUTPUT_MODE: '1'
     };
 
+    const bridgeLaunch = await prepareHostBridgeLaunch(hostBridgeManager, workspaceFolder.uri.fsPath);
+    if (bridgeLaunch) {
+        Object.assign(env, bridgeLaunch.environment);
+    }
+
     // 如果已有 Minecraft 进程，启用子进程模式
     if (mcRunning) {
         console.log('检测到已存在的 Minecraft 进程，启用子进程模式');
@@ -245,12 +252,24 @@ export async function launchPtvsdDebugSession(
     }
 
     // 使用 Terminal 启动 MCDK（保留颜色和实时输出）
-    const terminal = vscode.window.createTerminal({
-        name: `Minecraft Debug (Port: ${session.debugPort})`,
-        shellPath: mcdkPath,
-        cwd: workspaceFolder.uri.fsPath,
-        env: env
-    });
+    let terminal: vscode.Terminal;
+    try {
+        terminal = vscode.window.createTerminal({
+            name: `Minecraft Debug (Port: ${session.debugPort})`,
+            shellPath: mcdkPath,
+            cwd: workspaceFolder.uri.fsPath,
+            env: env
+        });
+    } catch (error) {
+        if (bridgeLaunch) {
+            hostBridgeManager.releaseLaunch(bridgeLaunch.registrationId);
+        }
+        removeSession(session.debugPort);
+        throw error;
+    }
+    if (bridgeLaunch) {
+        hostBridgeManager.trackTerminal(bridgeLaunch.registrationId, terminal);
+    }
     terminal.show(true);
 
     // 等待调试端口就绪
@@ -271,6 +290,9 @@ export async function launchPtvsdDebugSession(
 
         if (token.isCancellationRequested) {
             terminal.dispose();
+            if (bridgeLaunch) {
+                hostBridgeManager.releaseLaunch(bridgeLaunch.registrationId);
+            }
             removeSession(session.debugPort);
             vscode.window.showWarningMessage('调试已取消');
             return undefined;
@@ -311,7 +333,8 @@ export async function launchPtvsdDebugSession(
  * 如果已有 Minecraft 运行，这将启动 sub 客户端（使用新端口）
  */
 export async function launchNewInstance(
-    extensionPath: string
+    extensionPath: string,
+    hostBridgeManager: HostBridgeManager
 ): Promise<vscode.DebugConfiguration | undefined> {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
@@ -353,6 +376,11 @@ export async function launchNewInstance(
         MCDEV_OUTPUT_MODE: '1'
     };
 
+    const bridgeLaunch = await prepareHostBridgeLaunch(hostBridgeManager, workspaceFolder.uri.fsPath);
+    if (bridgeLaunch) {
+        Object.assign(env, bridgeLaunch.environment);
+    }
+
     // 如果已有 Minecraft 进程，启用子客户端模式
     if (mcRunning) {
         console.log('检测到已存在的 Minecraft 进程，启用 sub 客户端模式');
@@ -365,12 +393,24 @@ export async function launchNewInstance(
         ? `Minecraft Sub (Port: ${session.debugPort})`
         : `Minecraft Debug (Port: ${session.debugPort})`;
     
-    const terminal = vscode.window.createTerminal({
-        name: terminalName,
-        shellPath: mcdkPath,
-        cwd: workspaceFolder.uri.fsPath,
-        env: env
-    });
+    let terminal: vscode.Terminal;
+    try {
+        terminal = vscode.window.createTerminal({
+            name: terminalName,
+            shellPath: mcdkPath,
+            cwd: workspaceFolder.uri.fsPath,
+            env: env
+        });
+    } catch (error) {
+        if (bridgeLaunch) {
+            hostBridgeManager.releaseLaunch(bridgeLaunch.registrationId);
+        }
+        removeSession(session.debugPort);
+        throw error;
+    }
+    if (bridgeLaunch) {
+        hostBridgeManager.trackTerminal(bridgeLaunch.registrationId, terminal);
+    }
     terminal.show(true);
 
     // 等待调试端口就绪
@@ -391,6 +431,9 @@ export async function launchNewInstance(
 
         if (token.isCancellationRequested) {
             terminal.dispose();
+            if (bridgeLaunch) {
+                hostBridgeManager.releaseLaunch(bridgeLaunch.registrationId);
+            }
             removeSession(session.debugPort);
             vscode.window.showWarningMessage('调试已取消');
             return undefined;
@@ -421,4 +464,17 @@ export async function launchNewInstance(
     });
 
     return result;
+}
+
+async function prepareHostBridgeLaunch(
+    manager: HostBridgeManager,
+    workspacePath: string
+): Promise<PreparedHostBridgeLaunch | undefined> {
+    try {
+        return await manager.prepareLaunch(workspacePath);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        vscode.window.showWarningMessage(`Host Bridge 启动失败，本次游戏将不启用代码控制台: ${message}`);
+        return undefined;
+    }
 }

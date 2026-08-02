@@ -4,10 +4,7 @@ import * as path from 'path';
 import { isMinecraftAddonWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
 import { dynamicLibraryManager } from './native/dynamicLibraryManager';
-import {
-    getGameExecutablePaths,
-    isGameExecutableDiscoverySupported
-} from './native/gameDiscovery';
+import { GameDebuggerPanel, HostBridgeManager, PreparedHostBridgeLaunch } from './hostBridge';
 import { 
     McDevToolsDebugConfigurationProvider,
     McdbgDebugConfigurationProvider,
@@ -15,10 +12,17 @@ import {
 } from './debugger';
 
 let extensionContext: vscode.ExtensionContext;
+let hostBridgeManager: HostBridgeManager | undefined;
+let gameDebuggerPanel: GameDebuggerPanel | undefined;
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
     console.log('Minecraft ModPC Debug 插件已激活');
     extensionContext = context;
+
+    hostBridgeManager = await HostBridgeManager.create(context);
+    context.subscriptions.push(hostBridgeManager);
+    gameDebuggerPanel = new GameDebuggerPanel(context.extensionUri, hostBridgeManager);
+    context.subscriptions.push(gameDebuggerPanel);
 
     // 初始化 ptvsd 持久化存储
     ptvsd.initStorage(context);
@@ -38,7 +42,7 @@ export function activate(context: vscode.ExtensionContext): void {
     if (pluginEnabled) {
         const sidebarProvider = new McDevToolsSidebarProvider(context.extensionUri);
         const sidebarDisp = vscode.window.registerWebviewViewProvider('mcdev-tools.sidebar', sidebarProvider);
-        context.subscriptions.push(sidebarDisp);
+        context.subscriptions.push(sidebarProvider, sidebarDisp);
         console.log('McDevToolsSidebarProvider 已注册');
     }
 
@@ -71,7 +75,11 @@ function registerCommands(context: vscode.ExtensionContext): void {
         await runMcdk();
     });
 
-    context.subscriptions.push(startDebugCmd, panelCmd, runCmd);
+    const openGameDebuggerCmd = vscode.commands.registerCommand('mcdev-tools.openGameDebugger', () => {
+        gameDebuggerPanel?.show();
+    });
+
+    context.subscriptions.push(startDebugCmd, panelCmd, runCmd, openGameDebuggerCmd);
 }
 
 /**
@@ -79,7 +87,10 @@ function registerCommands(context: vscode.ExtensionContext): void {
  */
 function registerDebugProviders(context: vscode.ExtensionContext): void {
     // ptvsd 模式 provider（推荐）
-    const ptvsdProvider = new McDevToolsDebugConfigurationProvider(context.extensionPath);
+    if (!hostBridgeManager) {
+        throw new Error('Host Bridge manager is not initialized');
+    }
+    const ptvsdProvider = new McDevToolsDebugConfigurationProvider(context.extensionPath, hostBridgeManager);
     const ptvsdProviderDisposable = vscode.debug.registerDebugConfigurationProvider(
         'mcdev-tools',
         ptvsdProvider
@@ -140,7 +151,10 @@ async function startDebugSession(): Promise<void> {
     }
 
     // 使用 launchNewInstance 直接启动，不走 provider 的重新附加逻辑
-    const config = await ptvsd.launchNewInstance(extensionContext.extensionPath);
+    if (!hostBridgeManager) {
+        throw new Error('Host Bridge manager is not initialized');
+    }
+    const config = await ptvsd.launchNewInstance(extensionContext.extensionPath, hostBridgeManager);
     if (config) {
         await vscode.debug.startDebugging(workspaceFolder, config);
     }
@@ -150,7 +164,6 @@ async function startDebugSession(): Promise<void> {
  * 显示侧边栏面板（回退方案）
  */
 async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void> {
-    const wf = vscode.workspace.workspaceFolders?.[0];
     const panel = vscode.window.createWebviewPanel(
         'mcdevSidebarPanel', 
         'Minecraft (.mcdev.json)', 
@@ -158,87 +171,12 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
         { enableScripts: true }
     );
     
+    if (!hostBridgeManager) {
+        throw new Error('Host Bridge manager is not initialized');
+    }
     const provider = new McDevToolsSidebarProvider(context.extensionUri);
-    panel.webview.html = provider.getHtmlForWebview(panel.webview);
-
-    panel.webview.onDidReceiveMessage(async (msg) => {
-        if (msg?.type === 'ready') {
-            if (!wf) {
-                panel.webview.postMessage({
-                    type: 'init',
-                    content: '{}',
-                    gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                });
-                return;
-            }
-            const mcdevPath = path.join(wf.uri.fsPath, '.mcdev.json');
-            try {
-                if (fs.existsSync(mcdevPath)) {
-                    const content = fs.readFileSync(mcdevPath, 'utf8');
-                    panel.webview.postMessage({
-                        type: 'init',
-                        content,
-                        gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                    });
-                } else {
-                    panel.webview.postMessage({
-                        type: 'init',
-                        content: '{}',
-                        gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                    });
-                }
-            } catch {
-                panel.webview.postMessage({
-                    type: 'init',
-                    content: '{}',
-                    gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                });
-            }
-        } else if (msg?.type === 'save') {
-            if (!wf) {
-                vscode.window.showErrorMessage('请先打开工作区以保存 .mcdev.json');
-                return;
-            }
-            const mcdevPath = path.join(wf.uri.fsPath, '.mcdev.json');
-            try {
-                fs.writeFileSync(mcdevPath, msg.content, 'utf8');
-                vscode.window.showInformationMessage('.mcdev.json 已保存');
-            } catch (e) {
-                vscode.window.showErrorMessage(`保存 .mcdev.json 失败: ${e}`);
-            }
-        } else if (msg?.type === 'browseFolder') {
-            const result = await vscode.window.showOpenDialog({
-                canSelectFiles: false,
-                canSelectFolders: true,
-                canSelectMany: false,
-                openLabel: '选择 MOD 目录',
-                title: '选择 MOD 目录'
-            });
-            if (result && result.length > 0) {
-                panel.webview.postMessage({
-                    type: 'folderSelected',
-                    index: msg.index,
-                    path: result[0].fsPath
-                });
-            }
-        } else if (msg?.type === 'getGameExecutablePaths') {
-            if (isGameExecutableDiscoverySupported) {
-                try {
-                    const paths = await getGameExecutablePaths(context.extensionPath);
-                    await panel.webview.postMessage({ type: 'gameExecutablePaths', paths });
-                } catch (error) {
-                    console.error('Failed to discover game executable paths:', error);
-                    await panel.webview.postMessage({ type: 'gameExecutablePaths', paths: [] });
-                }
-            }
-        } else if (msg?.type === 'openExternal') {
-            const url = typeof msg.url === 'string' ? msg.url : '';
-            const uri = vscode.Uri.parse(url);
-            if (uri.scheme === 'https' || uri.scheme === 'http') {
-                await vscode.env.openExternal(uri);
-            }
-        }
-    }, undefined, context.subscriptions);
+    provider.resolveWebviewPanel(panel);
+    context.subscriptions.push(provider);
 }
 
 /**
@@ -275,6 +213,17 @@ async function runMcdk(): Promise<void> {
         MCDEV_OUTPUT_MODE: '1'
     };
 
+    let bridgeLaunch: PreparedHostBridgeLaunch | undefined;
+    if (hostBridgeManager) {
+        try {
+            bridgeLaunch = await hostBridgeManager.prepareLaunch(workspaceFolder.uri.fsPath);
+            Object.assign(env, bridgeLaunch.environment);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            vscode.window.showWarningMessage(`Host Bridge 启动失败，本次游戏将不启用代码控制台: ${message}`);
+        }
+    }
+
     // 如果已有 Minecraft 进程，启用子进程模式
     if (mcRunning) {
         console.log('检测到已存在的 Minecraft 进程，启用子进程模式');
@@ -282,12 +231,23 @@ async function runMcdk(): Promise<void> {
     }
 
     // 使用 Terminal 直接执行 exe（支持颜色和实时输出）
-    const terminal = vscode.window.createTerminal({
-        name: 'Minecraft ModPC (mcdk)',
-        shellPath: mcdkPath,
-        cwd: workspaceFolder.uri.fsPath,
-        env: env
-    });
+    let terminal: vscode.Terminal;
+    try {
+        terminal = vscode.window.createTerminal({
+            name: 'Minecraft ModPC (mcdk)',
+            shellPath: mcdkPath,
+            cwd: workspaceFolder.uri.fsPath,
+            env: env
+        });
+    } catch (error) {
+        if (bridgeLaunch && hostBridgeManager) {
+            hostBridgeManager.releaseLaunch(bridgeLaunch.registrationId);
+        }
+        throw error;
+    }
+    if (bridgeLaunch && hostBridgeManager) {
+        hostBridgeManager.trackTerminal(bridgeLaunch.registrationId, terminal);
+    }
 
     terminal.show(true);
     vscode.window.showInformationMessage('Minecraft ModPC 已启动（无调试）');
@@ -297,5 +257,9 @@ export async function deactivate(): Promise<void> {
     ptvsd.cleanupAllSessions();
     vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', false);
     vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', false);
+    gameDebuggerPanel?.dispose();
+    gameDebuggerPanel = undefined;
+    await hostBridgeManager?.disposeAsync();
+    hostBridgeManager = undefined;
     await dynamicLibraryManager.unloadAll();
 }

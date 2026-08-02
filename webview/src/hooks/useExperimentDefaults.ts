@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNestedDefaultValues } from '../hooks/useDefaultValues';
 
 interface ExperimentOptions {
