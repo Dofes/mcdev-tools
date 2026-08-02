@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { I18nText } from '../i18n';
 import { useDefaultValues } from '../hooks/useDefaultValues';
+import { vscode } from '../vscode';
 
 interface McdevData {
   reset_world?: boolean;
@@ -15,6 +16,13 @@ interface McdevData {
   keep_inventory?: boolean;
   do_daylight_cycle?: boolean;
   do_weather_cycle?: boolean;
+  mcdev_tools?: {
+    game_debugger?: {
+      enabled?: boolean;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
 }
 
 interface Props {
@@ -59,6 +67,17 @@ export const GameOptions: FC<Props> = ({
     data.auto_hot_reload_materials ?? DEFAULT_VALUES.auto_hot_reload_materials,
     data.auto_hot_reload_particles ?? DEFAULT_VALUES.auto_hot_reload_particles,
   ].filter(Boolean).length;
+  const gameDebuggerEnabled = data.mcdev_tools?.game_debugger?.enabled === true;
+
+  const setGameDebuggerEnabled = (enabled: boolean) => {
+    onDataChange('mcdev_tools', {
+      ...data.mcdev_tools,
+      game_debugger: {
+        ...data.mcdev_tools?.game_debugger,
+        enabled,
+      },
+    });
+  };
 
   return (
     <>
@@ -223,6 +242,44 @@ export const GameOptions: FC<Props> = ({
             </div>
           </div>
         </details>
+
+        <div className={`game-debugger-entry${gameDebuggerEnabled ? ' enabled' : ''}`}>
+          <button
+            type="button"
+            className="game-debugger-open"
+            onClick={() => vscode.postMessage({ type: 'openGameDebugger' })}
+            title={t.openGameDebuggerTooltip}
+          >
+            <span className="game-debugger-entry-icon">
+              <span className="codicon codicon-debug-console" aria-hidden="true"></span>
+            </span>
+            <span className="game-debugger-entry-copy">
+              <strong>{t.hostBridgeTitle}</strong>
+              <small>
+                <span className="game-debugger-status-dot" aria-hidden="true"></span>
+                <span className="game-debugger-status-text">
+                  {gameDebuggerEnabled ? t.gameDebuggerEnabled : t.gameDebuggerDisabled}
+                </span>
+              </small>
+            </span>
+            <span className="game-debugger-open-action" aria-hidden="true">
+              <span className="codicon codicon-arrow-right"></span>
+            </span>
+          </button>
+          <span className="game-debugger-toggle-cell">
+            <label className="toggle-switch game-debugger-toggle" title={t.gameDebuggerToggle}>
+              <input
+                type="checkbox"
+                checked={gameDebuggerEnabled}
+                onChange={(event) => setGameDebuggerEnabled(event.target.checked)}
+                aria-label={t.gameDebuggerToggle}
+              />
+              <span className="toggle-switch-track" aria-hidden="true">
+                <span className="toggle-switch-thumb" />
+              </span>
+            </label>
+          </span>
+        </div>
       </div>
 
       <div className="section">

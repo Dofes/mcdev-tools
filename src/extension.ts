@@ -5,6 +5,7 @@ import { isMinecraftAddonWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
 import { dynamicLibraryManager } from './native/dynamicLibraryManager';
 import { GameDebuggerPanel, HostBridgeManager, PreparedHostBridgeLaunch } from './hostBridge';
+import { McdevConfigStore } from './config';
 import { 
     McDevToolsDebugConfigurationProvider,
     McdbgDebugConfigurationProvider,
@@ -12,6 +13,7 @@ import {
 } from './debugger';
 
 let extensionContext: vscode.ExtensionContext;
+let mcdevConfigStore: McdevConfigStore | undefined;
 let hostBridgeManager: HostBridgeManager | undefined;
 let gameDebuggerPanel: GameDebuggerPanel | undefined;
 
@@ -19,7 +21,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     console.log('Minecraft ModPC Debug 插件已激活');
     extensionContext = context;
 
-    hostBridgeManager = await HostBridgeManager.create(context);
+    mcdevConfigStore = new McdevConfigStore();
+    context.subscriptions.push(mcdevConfigStore);
+    hostBridgeManager = await HostBridgeManager.create(context, mcdevConfigStore);
     context.subscriptions.push(hostBridgeManager);
     gameDebuggerPanel = new GameDebuggerPanel(context.extensionUri, hostBridgeManager);
     context.subscriptions.push(gameDebuggerPanel);
@@ -40,7 +44,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // 只有启用时才注册侧边栏提供器
     if (pluginEnabled) {
-        const sidebarProvider = new McDevToolsSidebarProvider(context.extensionUri);
+        const sidebarProvider = new McDevToolsSidebarProvider(context.extensionUri, mcdevConfigStore);
         const sidebarDisp = vscode.window.registerWebviewViewProvider('mcdev-tools.sidebar', sidebarProvider);
         context.subscriptions.push(sidebarProvider, sidebarDisp);
         console.log('McDevToolsSidebarProvider 已注册');
@@ -174,7 +178,10 @@ async function showSidebarPanel(context: vscode.ExtensionContext): Promise<void>
     if (!hostBridgeManager) {
         throw new Error('Host Bridge manager is not initialized');
     }
-    const provider = new McDevToolsSidebarProvider(context.extensionUri);
+    if (!mcdevConfigStore) {
+        throw new Error('.mcdev.json configuration store is not initialized');
+    }
+    const provider = new McDevToolsSidebarProvider(context.extensionUri, mcdevConfigStore);
     provider.resolveWebviewPanel(panel);
     context.subscriptions.push(provider);
 }
@@ -217,7 +224,9 @@ async function runMcdk(): Promise<void> {
     if (hostBridgeManager) {
         try {
             bridgeLaunch = await hostBridgeManager.prepareLaunch(workspaceFolder.uri.fsPath);
-            Object.assign(env, bridgeLaunch.environment);
+            if (bridgeLaunch) {
+                Object.assign(env, bridgeLaunch.environment);
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             vscode.window.showWarningMessage(`Host Bridge 启动失败，本次游戏将不启用代码控制台: ${message}`);
@@ -261,5 +270,7 @@ export async function deactivate(): Promise<void> {
     gameDebuggerPanel = undefined;
     await hostBridgeManager?.disposeAsync();
     hostBridgeManager = undefined;
+    mcdevConfigStore?.dispose();
+    mcdevConfigStore = undefined;
     await dynamicLibraryManager.unloadAll();
 }

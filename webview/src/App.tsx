@@ -131,6 +131,13 @@ function App() {
     return {
       ...data,
       included_mod_dirs: includedModDirs,
+      mcdev_tools: {
+        ...data.mcdev_tools,
+        game_debugger: {
+          ...data.mcdev_tools?.game_debugger,
+          enabled: data.mcdev_tools?.game_debugger?.enabled === true,
+        },
+      },
     };
   }, [data, modDirs]);
 
@@ -332,19 +339,6 @@ function App() {
           title={t.startDebugTooltip}
         >
           <span className="codicon codicon-debug-alt"></span>
-        </button>
-      </div>
-
-      <div className="sidebar-tool-entry-row">
-        <button
-          type="button"
-          className="sidebar-tool-entry"
-          onClick={() => vscode.postMessage({ type: 'openGameDebugger' })}
-          title={t.openGameDebuggerTooltip}
-        >
-          <span className="codicon codicon-terminal" />
-          <span>{t.openGameDebugger}</span>
-          <span className="codicon codicon-chevron-right" />
         </button>
       </div>
 

@@ -51,6 +51,13 @@ export interface McdevData {
     server_ip?: string;
     server_port?: number;
   };
+  mcdev_tools?: {
+    game_debugger?: {
+      enabled?: boolean;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
   experiment_options?: {
     data_driven_biomes?: boolean;
     upcoming_creator_features?: boolean;

@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
 import * as vscode from 'vscode';
+import { McdevConfigStore } from '../config';
 import { HostBridgeRpcError, HostBridgeServer } from './server';
 import {
     DisposableLike,
@@ -26,6 +27,7 @@ export class HostBridgeManager implements vscode.Disposable {
 
     private constructor(
         private readonly context: vscode.ExtensionContext,
+        private readonly configStore: McdevConfigStore,
         instanceId: string,
         registrations: HostBridgeRegistration[]
     ) {
@@ -55,7 +57,10 @@ export class HostBridgeManager implements vscode.Disposable {
         this.pruneTimer.unref?.();
     }
 
-    public static async create(context: vscode.ExtensionContext): Promise<HostBridgeManager> {
+    public static async create(
+        context: vscode.ExtensionContext,
+        configStore: McdevConfigStore
+    ): Promise<HostBridgeManager> {
         let instanceId = context.workspaceState.get<string>(INSTANCE_ID_KEY);
         if (!instanceId) {
             instanceId = crypto.randomUUID();
@@ -63,9 +68,22 @@ export class HostBridgeManager implements vscode.Disposable {
         }
         const secretKey = `${CREDENTIALS_KEY_PREFIX}.${instanceId}`;
         const serialized = await context.secrets.get(secretKey);
-        const registrations = parseRegistrations(serialized);
-        const manager = new HostBridgeManager(context, instanceId, registrations);
+        const storedRegistrations = parseRegistrations(serialized);
+        const registrations: HostBridgeRegistration[] = [];
+        for (const registration of storedRegistrations) {
+            try {
+                if (await configStore.isGameDebuggerEnabled(registration.workspacePath)) {
+                    registrations.push(registration);
+                }
+            } catch (error) {
+                console.error(`[HostBridge] Could not restore configuration for ${registration.workspacePath}:`, error);
+            }
+        }
+        const manager = new HostBridgeManager(context, configStore, instanceId, registrations);
         await manager.restoreListener();
+        if (registrations.length !== storedRegistrations.length) {
+            await manager.persistRegistrations();
+        }
         return manager;
     }
 
@@ -77,8 +95,11 @@ export class HostBridgeManager implements vscode.Disposable {
         return this.server.getSnapshot();
     }
 
-    public async prepareLaunch(workspacePath: string): Promise<PreparedHostBridgeLaunch> {
+    public async prepareLaunch(workspacePath: string): Promise<PreparedHostBridgeLaunch | undefined> {
         this.assertNotDisposed();
+        if (!await this.configStore.isGameDebuggerEnabled(workspacePath)) {
+            return undefined;
+        }
         if (!this.server.isListening) {
             // Port 0 delegates collision-free ephemeral port selection to the OS.
             const port = await this.server.start(0);

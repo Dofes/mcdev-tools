@@ -5,6 +5,9 @@ export interface I18nText {
   startDebugTooltip: string;
   openGameDebugger: string;
   openGameDebuggerTooltip: string;
+  gameDebuggerEnabled: string;
+  gameDebuggerDisabled: string;
+  gameDebuggerToggle: string;
   modDirectories: string;
   addModDirectory: string;
   browse: string;
@@ -152,6 +155,9 @@ export const i18n: Record<string, I18nText> = {
     startDebugTooltip: 'Start Minecraft with Python debugger attached',
     openGameDebugger: 'Open Game Debugger',
     openGameDebuggerTooltip: 'Open game debugger',
+    gameDebuggerEnabled: 'Debug capability enabled',
+    gameDebuggerDisabled: 'Debug capability disabled',
+    gameDebuggerToggle: 'Enable game debugging',
     modDirectories: 'Mod Directories',
     addModDirectory: 'Add Mod Directory',
     browse: 'Browse...',
@@ -298,6 +304,9 @@ export const i18n: Record<string, I18nText> = {
     startDebugTooltip: '启动 Minecraft 并附加 Python 调试器',
     openGameDebugger: '打开游戏调试',
     openGameDebuggerTooltip: '打开独立游戏调试分页',
+    gameDebuggerEnabled: '调试能力已启用',
+    gameDebuggerDisabled: '调试能力未启用',
+    gameDebuggerToggle: '启用游戏调试能力',
     modDirectories: 'Mod 目录',
     addModDirectory: '添加 Mod 目录',
     browse: '浏览...',

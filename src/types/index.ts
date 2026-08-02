@@ -47,6 +47,10 @@ export interface McdevConfig {
     enable_cheats?: boolean;
     keep_inventory?: boolean;
     user_name?: string;
+    skin_info?: {
+        slim?: boolean;
+        skin?: string;
+    };
     window_style?: {
         always_on_top?: boolean;
         hide_title_bar?: boolean;
@@ -64,6 +68,13 @@ export interface McdevConfig {
         reload_shaders_key?: string;
         reload_key_global?: boolean;
         modpc_debugger?: unknown;
+        [key: string]: unknown;
+    };
+    mcdev_tools?: {
+        game_debugger?: {
+            enabled?: boolean;
+            [key: string]: unknown;
+        };
         [key: string]: unknown;
     };
     [key: string]: unknown;

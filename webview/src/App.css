@@ -156,53 +156,6 @@ button:focus-visible {
   padding: 0;
 }
 
-.sidebar-tool-entry-row {
-  margin: 0 calc(-1 * var(--container-padding));
-  padding: 6px var(--container-padding);
-  border-bottom: 1px solid var(--panel-border);
-}
-
-.sidebar-tool-entry {
-  width: 100%;
-  min-height: 34px;
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) 16px;
-  align-items: center;
-  gap: 7px;
-  padding: 0 8px;
-  overflow: hidden;
-  border: 0;
-  border-radius: var(--panel-radius);
-  color: var(--vscode-foreground);
-  background: transparent;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 550;
-  text-align: left;
-  cursor: pointer;
-}
-
-.sidebar-tool-entry:hover {
-  background-color: var(--vscode-list-hoverBackground);
-}
-
-.sidebar-tool-entry > span:nth-child(2) {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar-tool-entry .codicon {
-  color: var(--vscode-icon-foreground);
-  font-size: 14px;
-}
-
-.sidebar-tool-entry .codicon-chevron-right {
-  color: var(--vscode-descriptionForeground);
-  font-size: 12px;
-}
-
 .host-bridge-section {
   padding-top: 18px;
 }
@@ -1067,6 +1020,174 @@ body.vscode-high-contrast .control-group select {
   padding: 8px;
   border-top: 1px solid var(--panel-border);
   background-color: color-mix(in srgb, var(--vscode-sideBar-background) 42%, transparent);
+}
+
+.game-debugger-entry {
+  --game-debugger-accent: #8b7cff;
+  --game-debugger-accent-cool: #63adf2;
+  min-width: 0;
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 50px;
+  align-items: stretch;
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--panel-radius);
+  background-color: color-mix(in srgb, var(--panel-surface) 70%, var(--vscode-sideBar-background));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.game-debugger-entry:hover {
+  border-color: color-mix(in srgb, var(--vscode-focusBorder) 38%, var(--panel-border));
+  background-color: color-mix(in srgb, var(--vscode-list-hoverBackground) 36%, var(--panel-surface));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.11);
+}
+
+.game-debugger-open {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 7px 7px 11px;
+  overflow: hidden;
+  border: 0;
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.game-debugger-open:hover {
+  background-color: color-mix(in srgb, var(--vscode-list-hoverBackground) 28%, transparent);
+}
+
+.game-debugger-open:focus-visible {
+  outline-offset: -2px;
+}
+
+.game-debugger-entry-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-icon-foreground);
+}
+
+.game-debugger-entry.enabled .game-debugger-entry-icon .codicon {
+  color: transparent;
+  background: linear-gradient(135deg, var(--game-debugger-accent), var(--game-debugger-accent-cool));
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.game-debugger-entry-icon .codicon {
+  font-size: 17px;
+}
+
+.game-debugger-entry-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.game-debugger-entry-copy strong,
+.game-debugger-entry-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-debugger-entry-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.game-debugger-entry-copy small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.game-debugger-status-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background-color: var(--vscode-descriptionForeground);
+}
+
+.game-debugger-entry.enabled .game-debugger-status-dot {
+  background: linear-gradient(135deg, var(--game-debugger-accent), var(--game-debugger-accent-cool));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--game-debugger-accent-cool) 12%, transparent);
+}
+
+.game-debugger-status-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-debugger-open-action {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  color: var(--vscode-descriptionForeground);
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.game-debugger-open-action .codicon {
+  font-size: 14px;
+  transition: transform 120ms ease;
+}
+
+.game-debugger-open:hover .game-debugger-open-action {
+  color: var(--vscode-foreground);
+  background-color: color-mix(in srgb, var(--vscode-toolbar-hoverBackground) 74%, transparent);
+}
+
+.game-debugger-open:hover .game-debugger-open-action .codicon {
+  transform: translateX(2px);
+}
+
+.game-debugger-toggle-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-debugger-toggle-cell::before {
+  position: absolute;
+  top: 13px;
+  bottom: 13px;
+  left: 0;
+  width: 1px;
+  background-color: color-mix(in srgb, var(--panel-border) 72%, transparent);
+  content: '';
+}
+
+.game-debugger-toggle {
+  align-self: center;
+}
+
+.game-debugger-entry .game-debugger-toggle input:checked + .toggle-switch-track {
+  border-color: color-mix(in srgb, var(--game-debugger-accent-cool) 66%, var(--game-debugger-accent));
+  background: linear-gradient(90deg, var(--game-debugger-accent), var(--game-debugger-accent-cool));
 }
 
 .opacity-control {

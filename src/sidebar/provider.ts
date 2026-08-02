@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as cp from 'child_process';
-import * as jsonc from 'jsonc-parser';
 import { getNonce } from '../utils';
+import { McdevConfigSnapshot, McdevConfigStore } from '../config';
 import {
     getGameExecutablePaths,
     isGameExecutableDiscoverySupported
@@ -14,11 +14,14 @@ import {
  */
 export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vscode.Disposable {
     private _view?: vscode.WebviewView;
-    private _fileWatcher?: vscode.FileSystemWatcher;
+    private _configSubscription?: vscode.Disposable;
     private _reviewProcess?: cp.ChildProcess;
     private _messageSubscription?: vscode.Disposable;
     
-    constructor(private readonly _extensionUri: vscode.Uri) {}
+    constructor(
+        private readonly _extensionUri: vscode.Uri,
+        private readonly _configStore: McdevConfigStore
+    ) {}
 
     public resolveWebviewView(
         webviewView: vscode.WebviewView, 
@@ -42,7 +45,7 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
             }
 
             this.setupMessageHandler(webview);
-            this.setupFileWatcher(webview);
+            this.setupConfigSubscription(webview);
 
             // Clean up watcher when view is disposed
             webviewView.onDidDispose(() => {
@@ -58,15 +61,15 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
         this.configureWebview(webview);
         webview.html = this.getHtmlForWebview(webview);
         this.setupMessageHandler(webview);
-        this.setupFileWatcher(webview);
+        this.setupConfigSubscription(webview);
         panel.onDidDispose(() => this.dispose());
     }
 
     public dispose(): void {
         this._messageSubscription?.dispose();
         this._messageSubscription = undefined;
-        this._fileWatcher?.dispose();
-        this._fileWatcher = undefined;
+        this._configSubscription?.dispose();
+        this._configSubscription = undefined;
         if (this._reviewProcess && !this._reviewProcess.killed) {
             this._reviewProcess.kill();
         }
@@ -99,7 +102,7 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
             if (msg?.type === 'ready') {
                 await this.handleReady(webview);
             } else if (msg?.type === 'save') {
-                await this.handleSave(msg.content);
+                await this.handleSave(webview, msg.content);
             } else if (msg?.type === 'browseFolder') {
                 await this.handleBrowseFolder(webview, msg.index);
             } else if (msg?.type === 'browseSkin') {
@@ -152,41 +155,12 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
             return;
         }
 
-        const mcdevPath = path.join(workspaceFolder.uri.fsPath, '.mcdev.json');
         try {
-            if (fs.existsSync(mcdevPath)) {
-                const content = fs.readFileSync(mcdevPath, 'utf8');
-                const parsed = jsonc.parse(content) || {};
-                const jsonContent = JSON.stringify(parsed);
-
-                let skinPreviewUri: string | undefined;
-                const skinPath = parsed?.skin_info?.skin as string | undefined;
-                if (skinPath && skinPath.trim()) {
-                    let filePath = skinPath;
-                    if (!path.isAbsolute(filePath)) {
-                        filePath = path.join(workspaceFolder.uri.fsPath, filePath);
-                    }
-                    const fileUri = vscode.Uri.file(filePath);
-                    skinPreviewUri = webview.asWebviewUri(fileUri).toString();
-                }
-
-                webview.postMessage({
-                    type: 'init',
-                    content: jsonContent,
-                    language,
-                    skinPreviewUri,
-                    gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                });
-            } else {
-                // 文件不存在时，发送空配置并标记需要初始化
-                webview.postMessage({
-                    type: 'init',
-                    content: '{}',
-                    needsInitialSave: true,
-                    language,
-                    gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                });
-            }
+            const snapshot = await this._configStore.getSnapshot(workspaceFolder.uri.fsPath);
+            await this.postConfig(webview, workspaceFolder, snapshot, {
+                language,
+                needsInitialSave: !snapshot.exists
+            });
         } catch (e) {
             webview.postMessage({
                 type: 'init',
@@ -201,15 +175,15 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
     /**
      * 处理 save 消息
      */
-    private async handleSave(content: string): Promise<void> {
+    private async handleSave(webview: vscode.Webview, content: string): Promise<void> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             vscode.window.showErrorMessage('请先打开工作区以保存 .mcdev.json');
             return;
         }
-        const mcdevPath = path.join(workspaceFolder.uri.fsPath, '.mcdev.json');
         try {
-            fs.writeFileSync(mcdevPath, content, 'utf8');
+            await this._configStore.write(workspaceFolder.uri.fsPath, content);
+            await webview.postMessage({ type: 'saved' });
             vscode.window.showInformationMessage('.mcdev.json 已保存');
         } catch (e) {
             vscode.window.showErrorMessage(`保存 .mcdev.json 失败: ${e}`);
@@ -503,91 +477,50 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
         await vscode.window.showTextDocument(document, { preview: true });
     }
 
-    /**
-     * 设置文件监听器，当 .mcdev.json 被外部修改时自动重载
-     */
-    private setupFileWatcher(webview: vscode.Webview): void {
-        this._fileWatcher?.dispose();
-        this._fileWatcher = undefined;
+    private setupConfigSubscription(webview: vscode.Webview): void {
+        this._configSubscription?.dispose();
+        this._configSubscription = undefined;
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             return;
         }
 
-        const mcdevPath = path.join(workspaceFolder.uri.fsPath, '.mcdev.json');
-        const pattern = new vscode.RelativePattern(workspaceFolder, '.mcdev.json');
-        
-        this._fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
-
-        // 监听文件变化
-        this._fileWatcher.onDidChange(async () => {
+        const currentWorkspacePath = normalizeWorkspacePath(workspaceFolder.uri.fsPath);
+        this._configSubscription = this._configStore.onDidChange(async workspacePath => {
+            if (normalizeWorkspacePath(workspacePath) !== currentWorkspacePath) {
+                return;
+            }
             try {
-                if (fs.existsSync(mcdevPath)) {
-                    const content = fs.readFileSync(mcdevPath, 'utf8');
-                    const parsed = jsonc.parse(content) || {};
-                    const jsonContent = JSON.stringify(parsed);
-
-                    let skinPreviewUri: string | undefined;
-                    const skinPath = parsed?.skin_info?.skin as string | undefined;
-                    if (skinPath && skinPath.trim()) {
-                        let filePath = skinPath;
-                        if (!path.isAbsolute(filePath)) {
-                            filePath = path.join(workspaceFolder.uri.fsPath, filePath);
-                        }
-                        const fileUri = vscode.Uri.file(filePath);
-                        skinPreviewUri = webview.asWebviewUri(fileUri).toString();
-                    }
-
-                    webview.postMessage({
-                        type: 'init',
-                        content: jsonContent,
-                        skinPreviewUri,
-                        gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                    });
-                }
-            } catch (e) {
-                console.error('Error reading .mcdev.json after external change:', e);
+                const snapshot = await this._configStore.getSnapshot(workspaceFolder.uri.fsPath);
+                await this.postConfig(webview, workspaceFolder, snapshot);
+            } catch (error) {
+                console.error('Error refreshing shared .mcdev.json configuration:', error);
             }
         });
+    }
 
-        // 监听文件创建
-        this._fileWatcher.onDidCreate(async () => {
-            try {
-                if (fs.existsSync(mcdevPath)) {
-                    const content = fs.readFileSync(mcdevPath, 'utf8');
-                    const parsed = jsonc.parse(content) || {};
-                    const jsonContent = JSON.stringify(parsed);
+    private async postConfig(
+        webview: vscode.Webview,
+        workspaceFolder: vscode.WorkspaceFolder,
+        snapshot: McdevConfigSnapshot,
+        options: { language?: string; needsInitialSave?: boolean } = {}
+    ): Promise<void> {
+        const skinPath = snapshot.config.skin_info?.skin;
+        let skinPreviewUri: string | undefined;
+        if (typeof skinPath === 'string' && skinPath.trim()) {
+            const filePath = path.isAbsolute(skinPath)
+                ? skinPath
+                : path.join(workspaceFolder.uri.fsPath, skinPath);
+            skinPreviewUri = webview.asWebviewUri(vscode.Uri.file(filePath)).toString();
+        }
 
-                    let skinPreviewUri: string | undefined;
-                    const skinPath = parsed?.skin_info?.skin as string | undefined;
-                    if (skinPath && skinPath.trim()) {
-                        let filePath = skinPath;
-                        if (!path.isAbsolute(filePath)) {
-                            filePath = path.join(workspaceFolder.uri.fsPath, filePath);
-                        }
-                        const fileUri = vscode.Uri.file(filePath);
-                        skinPreviewUri = webview.asWebviewUri(fileUri).toString();
-                    }
-
-                    webview.postMessage({
-                        type: 'init',
-                        content: jsonContent,
-                        skinPreviewUri,
-                        gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-                    });
-                }
-            } catch (e) {
-                console.error('Error reading .mcdev.json after creation:', e);
-            }
-        });
-
-        // 监听文件删除
-        this._fileWatcher.onDidDelete(() => {
-            webview.postMessage({
-                type: 'init',
-                content: '{}',
-                gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
-            });
+        await webview.postMessage({
+            type: 'init',
+            content: JSON.stringify(snapshot.config),
+            language: options.language,
+            needsInitialSave: options.needsInitialSave,
+            skinPreviewUri,
+            gameExecutableDiscoverySupported: isGameExecutableDiscoverySupported
         });
     }
 
@@ -621,4 +554,9 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
 </body>
 </html>`;
     }
+}
+
+function normalizeWorkspacePath(workspacePath: string): string {
+    const normalized = path.normalize(workspacePath);
+    return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
