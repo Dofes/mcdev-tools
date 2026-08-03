@@ -88,6 +88,10 @@ test('UI debugger keeps picker polling and node details bounded', () => {
     assert.match(selectCode, /_mcdev_ui_find_path/);
     assert.match(selectCode, /GetClientModTimer\(\)\.addTimer\(0\.0,self\.apply_selection\)/);
     assert.match(selectCode, /self\.pending=p/);
+    assert.match(selectCode, /_mcdev_ui_resolve/);
+    assert.match(selectCode, /get_all_screen_fullnames/);
+    assert.match(selectCode, /for s in reversed\(ss\)/);
+    assert.match(selectCode, /_mcdev_ui_event=\[d,_mcdev_ui_resolve\(p\),p\]/);
     assert.doesNotMatch(selectCode, /_mcdev_ui_last_path/);
     assert.match(layoutCode, /UIDebuggerNotifyEvent/);
     const nodeCode = buildUiDebuggerNodeCode('hud.hud_screen', '/root/title');

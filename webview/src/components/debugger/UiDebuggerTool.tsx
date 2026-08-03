@@ -142,13 +142,14 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
       responseKey: string,
       rawEvent: unknown,
       screensOverride?: string[],
-      allowScreenRefresh = true
+      allowScreenRefresh = true,
+      resolvedSelection?: { screen: string; path: string }
     ) => {
       const current = contextsRef.current[responseKey];
       if (!current) {
         return;
       }
-      const selection = findPickerSelection(
+      const selection = resolvedSelection ?? findPickerSelection(
         rawEvent, screensOverride ?? current.screens
       );
       const activeSession = sessionRef.current;
@@ -273,7 +274,8 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
           })));
           return;
         }
-        applyPickerEvent(responseKey, message.event);
+        const resolvedSelection = parseResolvedPickerSelection(message.screen, message.path);
+        applyPickerEvent(responseKey, message.event, undefined, true, resolvedSelection);
         return;
       }
       if (
@@ -1725,12 +1727,19 @@ function findPickerSelection(
     if (segments.length < 2) {
       continue;
     }
-    const screen = screens.find(item => item === segments[0] || item.endsWith(`.${segments[0]}`));
-    if (screen) {
+    const screenCandidates = screens.filter(
+      item => item === segments[0] || item.endsWith(`.${segments[0]}`)
+    );
+    if (screenCandidates.length === 1) {
       return {
-        screen,
+        screen: screenCandidates[0],
         path: `/${segments.slice(1).join('/')}`,
       };
+    }
+    // A NUD root such as /screen is not enough to distinguish multiple *.screen instances.
+    // Ambiguous events must be resolved in the game on the same frame as the touch.
+    if (screenCandidates.length > 1) {
+      return { path: `/${segments.slice(1).join('/')}` };
     }
   }
   const unknown = candidates.find(candidate => candidate.value.split('/').filter(Boolean).length >= 2);
@@ -1741,6 +1750,33 @@ function findPickerSelection(
   return {
     path: `/${segments.slice(1).join('/')}`,
   };
+}
+
+function parseResolvedPickerSelection(
+  screen: unknown,
+  nudPath: unknown
+): { screen: string; path: string } | undefined {
+  if (
+    typeof screen !== 'string'
+    || screen.length === 0
+    || screen.length > 512
+    || screen.includes('\0')
+    || typeof nudPath !== 'string'
+    || !nudPath.startsWith('/')
+    || nudPath.length > 4096
+    || nudPath.includes('\0')
+  ) {
+    return undefined;
+  }
+  const segments = nudPath.split('/').filter(Boolean);
+  if (segments.length < 2) {
+    return undefined;
+  }
+  const screenRoot = screen.split('.').pop() || screen;
+  if (segments[0] !== screenRoot) {
+    return undefined;
+  }
+  return { screen, path: `/${segments.slice(1).join('/')}` };
 }
 
 function flattenNativeData(

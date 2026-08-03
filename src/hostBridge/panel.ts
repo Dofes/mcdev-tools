@@ -389,7 +389,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
                 sessionId, buildUiDebuggerPickerPollCode(includeScreens), true
             );
             picker.failures = 0;
-            const event = includeScreens && Array.isArray(result) ? result[0] : result;
+            const eventEnvelope = includeScreens && Array.isArray(result) ? result[0] : result;
             if (includeScreens && Array.isArray(result)) {
                 await picker.webview.postMessage({
                     type: 'uiDebuggerScreensEvent',
@@ -398,12 +398,25 @@ export class GameDebuggerPanel implements vscode.Disposable {
                     screens: parseUiDebuggerScreens(result[1])
                 });
             }
-            if (event !== null && event !== undefined) {
+            if (eventEnvelope !== null && eventEnvelope !== undefined) {
+                const isResolvedEnvelope = Array.isArray(eventEnvelope)
+                    && eventEnvelope.length === 3
+                    && typeof eventEnvelope[2] === 'string';
+                const event = isResolvedEnvelope ? eventEnvelope[0] : eventEnvelope;
+                const screen = isResolvedEnvelope && typeof eventEnvelope[1] === 'string'
+                    && eventEnvelope[1].length <= 512
+                    ? eventEnvelope[1]
+                    : undefined;
+                const pickerPath = isResolvedEnvelope && eventEnvelope[2].length <= 4096
+                    ? eventEnvelope[2]
+                    : undefined;
                 await picker.webview.postMessage({
                     type: 'uiDebuggerPickerEvent',
                     sessionId,
                     connectionGeneration: picker.connectionGeneration,
-                    event
+                    event,
+                    screen,
+                    path: pickerPath
                 });
             }
         } catch (error) {
