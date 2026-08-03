@@ -170,21 +170,6 @@ button:focus-visible {
   gap: 4px;
 }
 
-.host-bridge-count {
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--vscode-badge-foreground);
-  background-color: var(--vscode-badge-background);
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1;
-}
-
 .host-bridge-icon-button {
   width: 28px;
   height: 28px;

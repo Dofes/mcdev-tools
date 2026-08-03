@@ -338,7 +338,7 @@
         "watch": "tsc -watch -p ./",
         "watch:webview": "cd webview && npm run dev",
         "build": "npm run compile && npm run compile:webview",
-        "test:host-bridge": "npm run compile && node --test out/hostBridge/protocol.test.js",
+        "test:host-bridge": "npm run compile && node --test out/hostBridge/protocol.test.js out/hostBridge/uiDebugger.test.js out/hostBridge/latestOperationQueue.test.js",
         "lint": "eslint src --ext ts"
     },
     "dependencies": {

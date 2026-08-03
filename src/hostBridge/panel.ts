@@ -7,8 +7,34 @@ import {
 } from '../debugFunctions';
 import { getNonce } from '../utils';
 import { HostBridgeManager } from './manager';
+import { LatestOperationQueue } from './latestOperationQueue';
 import { HostBridgeRpcError } from './server';
 import { DisposableLike } from './types';
+import {
+    buildUiDebuggerChildrenCode,
+    buildUiDebuggerNodeCode,
+    buildUiDebuggerPickerDisableCode,
+    buildUiDebuggerPickerEnableCode,
+    buildUiDebuggerPickerPollCode,
+    buildUiDebuggerPickerSelectCode,
+    buildUiDebuggerRevealCode,
+    buildUiDebuggerScreensCode,
+    buildUiDebuggerVisibilityCode,
+    parseUiDebuggerChildren,
+    parseUiDebuggerNode,
+    parseUiDebuggerReveal,
+    parseUiDebuggerScreens,
+    UI_DEBUGGER_PAGE_SIZE
+} from './uiDebugger';
+
+interface UiPickerRuntime {
+    connectionGeneration: number;
+    timer: NodeJS.Timeout;
+    busy: boolean;
+    failures: number;
+    polls: number;
+    webview: vscode.Webview;
+}
 
 export class GameDebuggerPanel implements vscode.Disposable {
     private panel?: vscode.WebviewPanel;
@@ -16,6 +42,8 @@ export class GameDebuggerPanel implements vscode.Disposable {
     private messageSubscription?: vscode.Disposable;
     private panelDisposeSubscription?: vscode.Disposable;
     private debugFunctionService?: DebugFunctionService;
+    private readonly uiPickers = new Map<string, UiPickerRuntime>();
+    private readonly uiPickerQueue = new LatestOperationQueue();
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -47,6 +75,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
             void this.handleMessage(panel.webview, message);
         });
         this.bridgeSubscription = this.hostBridgeManager.onDidChange(snapshot => {
+            this.reconcileUiPickers(snapshot);
             void panel.webview.postMessage({ type: 'hostBridgeState', snapshot });
         });
         this.panelDisposeSubscription = panel.onDidDispose(() => this.releasePanel());
@@ -58,7 +87,15 @@ export class GameDebuggerPanel implements vscode.Disposable {
         panel?.dispose();
     }
 
+    public async disposeAsync(): Promise<void> {
+        const panel = this.panel;
+        await this.disposeUiPickersAsync();
+        this.releasePanel();
+        panel?.dispose();
+    }
+
     private releasePanel(): void {
+        this.disposeUiPickers();
         this.messageSubscription?.dispose();
         this.messageSubscription = undefined;
         this.bridgeSubscription?.dispose();
@@ -82,6 +119,10 @@ export class GameDebuggerPanel implements vscode.Disposable {
         }
         if (typeof message?.type === 'string' && message.type.startsWith('debugFunction')) {
             await this.handleDebugFunctionMessage(webview, message);
+            return;
+        }
+        if (typeof message?.type === 'string' && message.type.startsWith('uiDebugger')) {
+            await this.handleUiDebuggerMessage(webview, message);
             return;
         }
         if (message?.type !== 'hostBridgeExecute') {
@@ -125,6 +166,333 @@ export class GameDebuggerPanel implements vscode.Disposable {
                 }
             });
         }
+    }
+
+    private async handleUiDebuggerMessage(webview: vscode.Webview, message: any): Promise<void> {
+        const requestId = readBoundedString(message.requestId, 128);
+        const sessionId = readBoundedString(message.sessionId, 128);
+        const connectionGeneration = Number.isInteger(message.connectionGeneration)
+            ? Number(message.connectionGeneration)
+            : -1;
+        if (!requestId || !sessionId || connectionGeneration < 0) {
+            return;
+        }
+
+        const session = this.hostBridgeManager.getSnapshot().sessions.find(item => item.id === sessionId);
+        if (!session || session.connectionGeneration !== connectionGeneration) {
+            await this.postUiDebuggerError(
+                webview, requestId, message.type, sessionId, connectionGeneration,
+                'The selected game connection has changed'
+            );
+            return;
+        }
+
+        try {
+            switch (message.type) {
+                case 'uiDebuggerScreens': {
+                    const result = await this.hostBridgeManager.executeCode(
+                        sessionId, buildUiDebuggerScreensCode(), true
+                    );
+                    await webview.postMessage({
+                        type: 'uiDebuggerScreensResult', requestId, sessionId, connectionGeneration,
+                        screens: parseUiDebuggerScreens(result)
+                    });
+                    return;
+                }
+                case 'uiDebuggerChildren': {
+                    const screen = readBoundedString(message.screen, 512);
+                    const parentPath = readBoundedString(message.parentPath, 4096, true);
+                    const offset = Number.isInteger(message.offset) ? Number(message.offset) : 0;
+                    if (!screen || parentPath === undefined) {
+                        throw new Error('Invalid UI tree path');
+                    }
+                    const code = buildUiDebuggerChildrenCode(
+                        screen, parentPath, offset, UI_DEBUGGER_PAGE_SIZE
+                    );
+                    const result = await this.hostBridgeManager.executeCode(sessionId, code, true);
+                    await webview.postMessage({
+                        type: 'uiDebuggerChildrenResult', requestId, sessionId, connectionGeneration,
+                        screen, parentPath,
+                        ...parseUiDebuggerChildren(result, parentPath, offset)
+                    });
+                    return;
+                }
+                case 'uiDebuggerNode': {
+                    const screen = readBoundedString(message.screen, 512);
+                    const nodePath = readBoundedString(message.path, 4096);
+                    if (!screen || !nodePath) {
+                        throw new Error('Invalid UI node path');
+                    }
+                    const result = await this.hostBridgeManager.executeCode(
+                        sessionId, buildUiDebuggerNodeCode(screen, nodePath), true
+                    );
+                    await webview.postMessage({
+                        type: 'uiDebuggerNodeResult', requestId, sessionId, connectionGeneration,
+                        node: parseUiDebuggerNode(result, screen, nodePath)
+                    });
+                    return;
+                }
+                case 'uiDebuggerSetVisibility': {
+                    const screen = readBoundedString(message.screen, 512);
+                    const nodePath = readBoundedString(message.path, 4096);
+                    if (!screen || !nodePath || typeof message.visible !== 'boolean') {
+                        throw new Error('Invalid UI visibility update');
+                    }
+                    const result = await this.hostBridgeManager.executeCode(
+                        sessionId,
+                        buildUiDebuggerVisibilityCode(screen, nodePath, message.visible),
+                        true
+                    );
+                    await webview.postMessage({
+                        type: 'uiDebuggerVisibilityResult', requestId, sessionId, connectionGeneration,
+                        screen, path: nodePath, visible: result === true
+                    });
+                    return;
+                }
+                case 'uiDebuggerPickerMode': {
+                    const mode = message.mode === 'select' || message.mode === 'layout'
+                        ? message.mode
+                        : 'off';
+                    this.uiPickerQueue.invalidateLatest(sessionId);
+                    await this.uiPickerQueue.run(sessionId, async () => {
+                        try {
+                            this.assertUiPickerSession(sessionId, connectionGeneration);
+                            if (mode !== 'off') {
+                                const result = await this.hostBridgeManager.executeCode(
+                                    sessionId, buildUiDebuggerPickerEnableCode(mode === 'layout'), true
+                                );
+                                if (result !== true) {
+                                    throw new Error('The native UI picker is unavailable in this game build');
+                                }
+                                this.assertUiPickerSession(sessionId, connectionGeneration);
+                                this.startUiPicker(webview, sessionId, connectionGeneration);
+                            } else {
+                                await this.stopUiPicker(sessionId, true);
+                            }
+                        } catch (error) {
+                            await this.stopUiPicker(sessionId, true, true);
+                            throw error;
+                        }
+                    });
+                    await webview.postMessage({
+                        type: 'uiDebuggerPickerModeResult', requestId, sessionId, connectionGeneration,
+                        mode
+                    });
+                    return;
+                }
+                case 'uiDebuggerPickerSelect': {
+                    const screen = readBoundedString(message.screen, 512);
+                    const nodePath = readBoundedString(message.path, 4096);
+                    if (!screen || !nodePath) {
+                        throw new Error('Invalid UI node path');
+                    }
+                    await this.uiPickerQueue.runLatest(sessionId, async () => {
+                        this.assertUiPickerSession(sessionId, connectionGeneration);
+                        const picker = this.uiPickers.get(sessionId);
+                        if (picker?.connectionGeneration !== connectionGeneration) {
+                            throw new Error('Enable the native UI picker before selecting a node');
+                        }
+                        await this.hostBridgeManager.executeCode(
+                            sessionId,
+                            buildUiDebuggerPickerSelectCode(screen, nodePath),
+                            true
+                        );
+                    });
+                    await webview.postMessage({
+                        type: 'uiDebuggerPickerSelectResult', requestId, sessionId, connectionGeneration,
+                        screen, path: nodePath
+                    });
+                    return;
+                }
+                case 'uiDebuggerReveal': {
+                    const screen = readBoundedString(message.screen, 512);
+                    const nodePath = readBoundedString(message.path, 4096);
+                    if (!screen || !nodePath) {
+                        throw new Error('Invalid UI reveal path');
+                    }
+                    const result = await this.hostBridgeManager.executeCode(
+                        sessionId,
+                        buildUiDebuggerRevealCode(screen, nodePath),
+                        true
+                    );
+                    await webview.postMessage({
+                        type: 'uiDebuggerRevealResult', requestId, sessionId, connectionGeneration,
+                        screen, path: nodePath, pages: parseUiDebuggerReveal(result)
+                    });
+                    return;
+                }
+            }
+        } catch (error) {
+            await this.postUiDebuggerError(
+                webview, requestId, message.type, sessionId, connectionGeneration,
+                error instanceof Error ? error.message : String(error)
+            );
+        }
+    }
+
+    private startUiPicker(
+        webview: vscode.Webview,
+        sessionId: string,
+        connectionGeneration: number
+    ): void {
+        const existing = this.uiPickers.get(sessionId);
+        if (existing) {
+            clearInterval(existing.timer);
+        }
+        const picker: UiPickerRuntime = {
+            connectionGeneration,
+            timer: undefined as unknown as NodeJS.Timeout,
+            busy: false,
+            failures: 0,
+            polls: 0,
+            webview
+        };
+        picker.timer = setInterval(() => {
+            void this.pollUiPicker(sessionId, picker);
+        }, 60);
+        this.uiPickers.set(sessionId, picker);
+    }
+
+    private async pollUiPicker(sessionId: string, picker: UiPickerRuntime): Promise<void> {
+        if (picker.busy || this.uiPickers.get(sessionId) !== picker) {
+            return;
+        }
+        picker.busy = true;
+        try {
+            picker.polls += 1;
+            const includeScreens = picker.polls % 8 === 0;
+            const result = await this.hostBridgeManager.executeCode(
+                sessionId, buildUiDebuggerPickerPollCode(includeScreens), true
+            );
+            picker.failures = 0;
+            const event = includeScreens && Array.isArray(result) ? result[0] : result;
+            if (includeScreens && Array.isArray(result)) {
+                await picker.webview.postMessage({
+                    type: 'uiDebuggerScreensEvent',
+                    sessionId,
+                    connectionGeneration: picker.connectionGeneration,
+                    screens: parseUiDebuggerScreens(result[1])
+                });
+            }
+            if (event !== null && event !== undefined) {
+                await picker.webview.postMessage({
+                    type: 'uiDebuggerPickerEvent',
+                    sessionId,
+                    connectionGeneration: picker.connectionGeneration,
+                    event
+                });
+            }
+        } catch (error) {
+            picker.failures += 1;
+            if (picker.failures >= 3) {
+                await this.uiPickerQueue.run(
+                    sessionId, () => this.stopUiPicker(sessionId, true, true)
+                );
+                await picker.webview.postMessage({
+                    type: 'uiDebuggerPickerStopped',
+                    sessionId,
+                    connectionGeneration: picker.connectionGeneration,
+                    message: error instanceof Error ? error.message : String(error)
+                });
+            }
+        } finally {
+            picker.busy = false;
+        }
+    }
+
+    private async stopUiPicker(
+        sessionId: string,
+        cleanupGame: boolean,
+        suppressCleanupError = false
+    ): Promise<void> {
+        this.uiPickerQueue.invalidateLatest(sessionId);
+        const picker = this.uiPickers.get(sessionId);
+        if (picker) {
+            clearInterval(picker.timer);
+            this.uiPickers.delete(sessionId);
+        }
+        if (cleanupGame) {
+            const cleanup = this.hostBridgeManager.executeCode(
+                sessionId, buildUiDebuggerPickerDisableCode(), true
+            );
+            if (suppressCleanupError) {
+                await cleanup.catch(() => undefined);
+            } else {
+                await cleanup;
+            }
+        }
+    }
+
+    private reconcileUiPickers(snapshot: ReturnType<HostBridgeManager['getSnapshot']>): void {
+        for (const [sessionId, picker] of this.uiPickers) {
+            const session = snapshot.sessions.find(item => item.id === sessionId);
+            if (
+                !session?.connected
+                || session.state !== 'game_ready'
+                || session.connectionGeneration !== picker.connectionGeneration
+            ) {
+                clearInterval(picker.timer);
+                this.uiPickers.delete(sessionId);
+                this.uiPickerQueue.invalidateLatest(sessionId);
+                if (session?.connected) {
+                    void this.uiPickerQueue.run(sessionId, async () => {
+                        await this.hostBridgeManager.executeCode(
+                            sessionId, buildUiDebuggerPickerDisableCode(), true
+                        ).catch(() => undefined);
+                    });
+                }
+            }
+        }
+    }
+
+    private disposeUiPickers(): void {
+        void this.disposeUiPickersAsync();
+    }
+
+    private async disposeUiPickersAsync(): Promise<void> {
+        const cleanups: Promise<unknown>[] = [];
+        const sessionIds = new Set([
+            ...this.uiPickers.keys(),
+            ...this.uiPickerQueue.keys()
+        ]);
+        for (const sessionId of sessionIds) {
+            this.uiPickerQueue.invalidateLatest(sessionId);
+            const picker = this.uiPickers.get(sessionId);
+            if (picker) {
+                clearInterval(picker.timer);
+                this.uiPickers.delete(sessionId);
+            }
+            cleanups.push(this.uiPickerQueue.run(sessionId, async () => {
+                await this.hostBridgeManager.executeCode(
+                    sessionId, buildUiDebuggerPickerDisableCode(), true
+                ).catch(() => undefined);
+            }));
+        }
+        await Promise.all(cleanups);
+    }
+
+    private assertUiPickerSession(sessionId: string, connectionGeneration: number): void {
+        const session = this.hostBridgeManager.getSnapshot().sessions.find(item => item.id === sessionId);
+        if (
+            !session?.connected
+            || session.state !== 'game_ready'
+            || session.connectionGeneration !== connectionGeneration
+        ) {
+            throw new Error('The selected game connection has changed');
+        }
+    }
+
+    private async postUiDebuggerError(
+        webview: vscode.Webview,
+        requestId: string,
+        action: string,
+        sessionId: string,
+        connectionGeneration: number,
+        message: string
+    ): Promise<void> {
+        await webview.postMessage({
+            type: 'uiDebuggerError', requestId, action, sessionId, connectionGeneration, message
+        });
     }
 
     private async handleDebugFunctionMessage(webview: vscode.Webview, message: any): Promise<void> {
@@ -312,4 +680,11 @@ function isStringRecord(value: unknown): value is Record<string, string> {
         return false;
     }
     return Object.values(value).every(item => typeof item === 'string' && item.length <= 64 * 1024);
+}
+
+function readBoundedString(value: unknown, maxLength: number, allowEmpty = false): string | undefined {
+    if (typeof value !== 'string' || value.length > maxLength || value.includes('\0')) {
+        return undefined;
+    }
+    return allowEmpty || value.length > 0 ? value : undefined;
 }

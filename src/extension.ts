@@ -266,7 +266,7 @@ export async function deactivate(): Promise<void> {
     ptvsd.cleanupAllSessions();
     vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', false);
     vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', false);
-    gameDebuggerPanel?.dispose();
+    await gameDebuggerPanel?.disposeAsync();
     gameDebuggerPanel = undefined;
     await hostBridgeManager?.disposeAsync();
     hostBridgeManager = undefined;

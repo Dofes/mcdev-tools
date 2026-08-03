@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { CodeExecutionTool } from './components/debugger/CodeExecutionTool';
 import { DebugFunctionsTool } from './components/debugger/DebugFunctionsTool';
 import { SessionPicker } from './components/debugger/SessionPicker';
+import { UiDebuggerTool } from './components/debugger/UiDebuggerTool';
 import { I18nText, i18n } from './i18n';
 import { HostBridgeSessionSummary, HostBridgeSnapshot } from './types';
 import { vscode } from './vscode';
@@ -31,6 +32,12 @@ const DEBUG_TOOLS: DebugToolDefinition[] = [
     icon: 'codicon-symbol-function',
     label: t => t.debugFunctionsTab,
     render: ({ session, t }) => <DebugFunctionsTool session={session} t={t} />,
+  },
+  {
+    id: 'ui-debugger',
+    icon: 'codicon-inspect',
+    label: t => t.uiDebuggerTab,
+    render: ({ session, t }) => <UiDebuggerTool session={session} t={t} />,
   },
 ];
 
@@ -87,7 +94,6 @@ function DebugApp() {
             <span className="host-bridge-status-dot" />
             <span>{status.label}</span>
           </div>
-          {snapshot.sessions.length > 0 && <span className="host-bridge-count">{snapshot.sessions.length}</span>}
           <button
             type="button"
             className="btn-icon host-bridge-icon-button"

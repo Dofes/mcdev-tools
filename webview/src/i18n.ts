@@ -188,6 +188,41 @@ export interface I18nText {
   debugFunctionsConfirmDelete: string;
   debugFunctionsScrollLeft: string;
   debugFunctionsScrollRight: string;
+  uiDebuggerTab: string;
+  uiDebuggerScreen: string;
+  uiDebuggerRefresh: string;
+  uiDebuggerTree: string;
+  uiDebuggerDetails: string;
+  uiDebuggerNoScreens: string;
+  uiDebuggerNoNodes: string;
+  uiDebuggerSelectNode: string;
+  uiDebuggerLoading: string;
+  uiDebuggerLoadMore: string;
+  uiDebuggerLoadedNodes: string;
+  uiDebuggerUnavailable: string;
+  uiDebuggerRequestFailed: string;
+  uiDebuggerVisible: string;
+  uiDebuggerHidden: string;
+  uiDebuggerCopyPath: string;
+  uiDebuggerRuntime: string;
+  uiDebuggerSize: string;
+  uiDebuggerPosition: string;
+  uiDebuggerGlobalPosition: string;
+  uiDebuggerLayer: string;
+  uiDebuggerChildren: string;
+  uiDebuggerContent: string;
+  uiDebuggerValue: string;
+  uiDebuggerPickerMode: string;
+  uiDebuggerPickerOff: string;
+  uiDebuggerPickerOffHint: string;
+  uiDebuggerPickerSelect: string;
+  uiDebuggerPickerSelectHint: string;
+  uiDebuggerPickerLayout: string;
+  uiDebuggerPickerLayoutHint: string;
+  uiDebuggerLayout: string;
+  uiDebuggerTextProperties: string;
+  uiDebuggerControlState: string;
+  uiDebuggerNativeData: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -381,6 +416,41 @@ export const i18n: Record<string, I18nText> = {
     debugFunctionsConfirmDelete: 'Delete',
     debugFunctionsScrollLeft: 'Scroll functions left',
     debugFunctionsScrollRight: 'Scroll functions right',
+    uiDebuggerTab: 'UI Debugger',
+    uiDebuggerScreen: 'Screen',
+    uiDebuggerRefresh: 'Refresh UI tree',
+    uiDebuggerTree: 'Node Tree',
+    uiDebuggerDetails: 'Node Details',
+    uiDebuggerNoScreens: 'No UI screens are available',
+    uiDebuggerNoNodes: 'No child nodes were returned',
+    uiDebuggerSelectNode: 'Select a node to inspect it',
+    uiDebuggerLoading: 'Loading...',
+    uiDebuggerLoadMore: 'Load more',
+    uiDebuggerLoadedNodes: 'nodes loaded',
+    uiDebuggerUnavailable: 'UI debugger is unavailable',
+    uiDebuggerRequestFailed: 'UI query failed',
+    uiDebuggerVisible: 'Visible',
+    uiDebuggerHidden: 'Hidden',
+    uiDebuggerCopyPath: 'Copy node path',
+    uiDebuggerRuntime: 'Runtime Layout',
+    uiDebuggerSize: 'Size',
+    uiDebuggerPosition: 'Position',
+    uiDebuggerGlobalPosition: 'Global position',
+    uiDebuggerLayer: 'Layer',
+    uiDebuggerChildren: 'Direct children',
+    uiDebuggerContent: 'Control Value',
+    uiDebuggerValue: 'Value',
+    uiDebuggerPickerMode: 'Game selection mode',
+    uiDebuggerPickerOff: 'Off',
+    uiDebuggerPickerOffHint: 'Disable game selection and layout overlays',
+    uiDebuggerPickerSelect: 'Select',
+    uiDebuggerPickerSelectHint: 'Select and outline only the current control',
+    uiDebuggerPickerLayout: 'Layout',
+    uiDebuggerPickerLayoutHint: 'Show layout and stacking bounds for all controls',
+    uiDebuggerLayout: 'Layout Expressions',
+    uiDebuggerTextProperties: 'Text Properties',
+    uiDebuggerControlState: 'Control State',
+    uiDebuggerNativeData: 'Native Picker Data',
 
   },
   zh: {
@@ -573,5 +643,40 @@ export const i18n: Record<string, I18nText> = {
     debugFunctionsConfirmDelete: '确认删除',
     debugFunctionsScrollLeft: '向左滚动函数',
     debugFunctionsScrollRight: '向右滚动函数',
+    uiDebuggerTab: 'UI 调试器',
+    uiDebuggerScreen: '界面',
+    uiDebuggerRefresh: '刷新 UI 节点树',
+    uiDebuggerTree: '节点树',
+    uiDebuggerDetails: '节点详情',
+    uiDebuggerNoScreens: '当前没有可用界面',
+    uiDebuggerNoNodes: '没有返回子节点',
+    uiDebuggerSelectNode: '选择节点以查看详情',
+    uiDebuggerLoading: '正在加载...',
+    uiDebuggerLoadMore: '继续加载',
+    uiDebuggerLoadedNodes: '个已加载节点',
+    uiDebuggerUnavailable: 'UI 调试器当前不可用',
+    uiDebuggerRequestFailed: 'UI 查询失败',
+    uiDebuggerVisible: '可见',
+    uiDebuggerHidden: '隐藏',
+    uiDebuggerCopyPath: '复制节点路径',
+    uiDebuggerRuntime: '运行时布局',
+    uiDebuggerSize: '尺寸',
+    uiDebuggerPosition: '相对位置',
+    uiDebuggerGlobalPosition: '全局位置',
+    uiDebuggerLayer: '层级',
+    uiDebuggerChildren: '直接子节点',
+    uiDebuggerContent: '控件值',
+    uiDebuggerValue: '值',
+    uiDebuggerPickerMode: '游戏点选模式',
+    uiDebuggerPickerOff: '关闭',
+    uiDebuggerPickerOffHint: '关闭游戏点选与布局边界',
+    uiDebuggerPickerSelect: '控件点选',
+    uiDebuggerPickerSelectHint: '只选择并描边当前控件',
+    uiDebuggerPickerLayout: '布局透视',
+    uiDebuggerPickerLayoutHint: '显示所有控件的布局与堆叠边界',
+    uiDebuggerLayout: '布局表达式',
+    uiDebuggerTextProperties: '文本属性',
+    uiDebuggerControlState: '控件状态',
+    uiDebuggerNativeData: '原生点选数据',
   },
 };
