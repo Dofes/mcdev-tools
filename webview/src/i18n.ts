@@ -229,6 +229,7 @@ export interface I18nText {
   uiDebuggerLayout: string;
   uiDebuggerTextProperties: string;
   uiDebuggerControlState: string;
+  uiDebuggerVariables: string;
   uiDebuggerNativeData: string;
 }
 
@@ -464,6 +465,7 @@ export const i18n: Record<string, I18nText> = {
     uiDebuggerLayout: 'Layout Expressions',
     uiDebuggerTextProperties: 'Text Properties',
     uiDebuggerControlState: 'Control State',
+    uiDebuggerVariables: 'Variables and PropertyBag',
     uiDebuggerNativeData: 'Native Picker Data',
 
   },
@@ -698,6 +700,7 @@ export const i18n: Record<string, I18nText> = {
     uiDebuggerLayout: '布局表达式',
     uiDebuggerTextProperties: '文本属性',
     uiDebuggerControlState: '控件状态',
+    uiDebuggerVariables: '变量与 PropertyBag',
     uiDebuggerNativeData: '原生点选数据',
   },
 };

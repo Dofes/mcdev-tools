@@ -51,7 +51,7 @@ test('UI debugger parses a compact child page', () => {
 
 test('UI debugger normalizes screens and node details', () => {
     assert.deepEqual(parseUiDebuggerScreens(['hud.hud_screen', 'hud.hud_screen', null]), ['hud.hud_screen']);
-    const values: unknown[] = new Array(29).fill(null);
+    const values: unknown[] = new Array(30).fill(null);
     values[0] = 9;
     values[1] = 0;
     values[2] = true;
@@ -60,6 +60,7 @@ test('UI debugger normalizes screens and node details', () => {
     values[5] = [3, 4];
     values[6] = 5;
     values[17] = 'Hi';
+    values[29] = { '#title': 'Bound title', '#enabled': true };
     assert.deepEqual(
         parseUiDebuggerNode(values, 'hud.hud_screen', '/root/title'),
         {
@@ -70,7 +71,8 @@ test('UI debugger normalizes screens and node details', () => {
                     visible: true, size: [100, 20], position: [1, 2], globalPosition: [3, 4],
                     layer: 5, directChildren: 0
                 },
-                layout: {}, text: { text: 'Hi' }, control: {}
+                layout: {}, text: { text: 'Hi' }, control: {},
+                variables: { '#title': 'Bound title', '#enabled': true }
             }
         }
     );
@@ -88,12 +90,15 @@ test('UI debugger keeps picker polling and node details bounded', () => {
     assert.match(selectCode, /self\.pending=p/);
     assert.doesNotMatch(selectCode, /_mcdev_ui_last_path/);
     assert.match(layoutCode, /UIDebuggerNotifyEvent/);
+    const nodeCode = buildUiDebuggerNodeCode('hud.hud_screen', '/root/title');
+    assert.match(nodeCode, /get_property_bag_value/);
+    assert.match(nodeCode, /items\(\)\)\[:256\]/);
     const runtimeSelectCode = buildUiDebuggerPickerSelectCode('custom.overlay', '/root/button');
     assert.match(runtimeSelectCode, /overlay\/root\/button/);
     assert.match(runtimeSelectCode, /nud_get_controls_data/);
     assert.ok(buildUiDebuggerPickerPollCode().length < 80);
     assert.match(buildUiDebuggerPickerPollCode(true), /get_all_screen_fullnames/);
-    assert.ok(buildUiDebuggerNodeCode('hud.hud_screen', '/root/title').length < 1_200);
+    assert.ok(nodeCode.length < 1_200);
     assert.deepEqual(parseUiDebuggerReveal([
         ['', 400, 160, [['root', 10, undefined, 160]]],
         ['/root', 1, 0, [['panel', 10, 0, 0]]]

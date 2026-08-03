@@ -37,6 +37,7 @@ test('server authenticates and manages concurrent MCDK sessions', async t => {
     const port = await server.start(0);
     const firstLaunch = server.registerLaunch('D:/workspace/one');
     const secondLaunch = server.registerLaunch('D:/workspace/two');
+    assert.deepEqual(server.getSnapshot().sessions, []);
 
     const first = await connectMcdk(
         port,

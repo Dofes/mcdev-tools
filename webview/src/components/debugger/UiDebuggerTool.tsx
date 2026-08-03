@@ -80,6 +80,7 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
     path: string;
   }>();
   const treeRows = useRef(new Map<string, HTMLDivElement>());
+  const treeScrollContainer = useRef<HTMLDivElement>(null);
   const debuggerLayout = useRef<HTMLDivElement>(null);
   const resizingTreePane = useRef(false);
   const contextKey = session ? `${session.id}:${session.connectionGeneration}` : '';
@@ -592,7 +593,17 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
       return;
     }
     pendingGameSelectionScroll.current = undefined;
-    row.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    const container = treeScrollContainer.current;
+    if (!container) {
+      return;
+    }
+    const containerRect = container.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const centeredTop = container.scrollTop
+      + rowRect.top - containerRect.top
+      - (container.clientHeight - rowRect.height) / 2;
+    const maximumTop = Math.max(0, container.scrollHeight - container.clientHeight);
+    container.scrollTop = Math.max(0, Math.min(maximumTop, centeredTop));
   }, [contextKey, state.selectedPath, state.selectedScreen, visibleRows]);
 
   const refresh = () => {
@@ -945,7 +956,7 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
             <span className="codicon codicon-list-tree" />
             <span>{t.uiDebuggerTree}</span>
           </div>
-          <div className="ui-debugger-tree" role="tree">
+          <div className="ui-debugger-tree" role="tree" ref={treeScrollContainer}>
             {!state.selectedScreen ? (
               <div className="ui-debugger-pane-empty">{t.uiDebuggerNoScreens}</div>
             ) : state.loadingParents[treeKey(state.selectedScreen, '')] && visibleRows.length === 0 ? (
@@ -1043,8 +1054,10 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
             <NodeDetailsView
               node={selectedDetails}
               nativeData={selectedNativeData}
+              refreshing={Boolean(state.loadingDetails[selectedDetailKey])}
               visibilitySaving={Boolean(state.visibilitySaving[selectedDetailKey])}
               propertySaving={state.propertySaving}
+              onRefresh={() => refreshNode(selectedDetails)}
               onVisibilityChange={setVisibility}
               onPropertyChange={setProperty}
               contextKey={contextKey}
@@ -1272,43 +1285,58 @@ function UiTreeRow({
 }
 
 function NodeDetailsView({
-  node, nativeData, visibilitySaving, propertySaving, onVisibilityChange, onPropertyChange,
-  contextKey, t,
+  node, nativeData, refreshing, visibilitySaving, propertySaving, onRefresh,
+  onVisibilityChange, onPropertyChange, contextKey, t,
 }: {
   node: UiNodeDetails;
   nativeData?: Record<string, unknown>;
+  refreshing: boolean;
   visibilitySaving: boolean;
   propertySaving: Record<string, boolean>;
+  onRefresh(): void;
   onVisibilityChange(visible: boolean): void;
   onPropertyChange(property: string, value: unknown): void;
   contextKey: string;
   t: I18nText;
 }) {
   const propertyGroups = [
-    { key: 'runtime', title: t.uiDebuggerRuntime, values: node.properties.runtime },
-    { key: 'layout', title: t.uiDebuggerLayout, values: node.properties.layout },
-    { key: 'text', title: t.uiDebuggerTextProperties, values: node.properties.text },
-    { key: 'control', title: t.uiDebuggerControlState, values: node.properties.control },
-    { key: 'native', title: t.uiDebuggerNativeData, values: nativeData ?? {} },
+    { key: 'runtime', title: t.uiDebuggerRuntime, values: node.properties.runtime, readOnly: false },
+    { key: 'layout', title: t.uiDebuggerLayout, values: node.properties.layout, readOnly: false },
+    { key: 'text', title: t.uiDebuggerTextProperties, values: node.properties.text, readOnly: false },
+    { key: 'control', title: t.uiDebuggerControlState, values: node.properties.control, readOnly: false },
+    { key: 'variables', title: t.uiDebuggerVariables, values: node.properties.variables ?? {}, readOnly: true },
+    { key: 'native', title: t.uiDebuggerNativeData, values: nativeData ?? {}, readOnly: true },
   ].filter(group => Object.keys(group.values).length > 0);
 
   return (
     <div className="ui-node-details">
       <header className="ui-node-details-header">
-        <div>
+        <div className="ui-node-details-identity">
           <strong>{node.name}</strong>
           <span>{node.type}</span>
         </div>
-        <label className={`ui-node-visibility-toggle ${node.visible ? 'visible' : 'hidden'}`}>
-          <input
-            type="checkbox"
-            checked={node.visible === true}
-            disabled={visibilitySaving || node.visible === undefined}
-            onChange={event => onVisibilityChange(event.target.checked)}
-          />
-          <span className={`codicon ${visibilitySaving ? 'codicon-loading' : node.visible ? 'codicon-eye' : 'codicon-eye-closed'}`} />
-          <span>{node.visible ? t.uiDebuggerVisible : t.uiDebuggerHidden}</span>
-        </label>
+        <div className="ui-node-details-actions">
+          <button
+            type="button"
+            className="btn-icon host-bridge-icon-button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            title={t.uiDebuggerRefreshNode}
+            aria-label={t.uiDebuggerRefreshNode}
+          >
+            <span className={`codicon ${refreshing ? 'codicon-loading' : 'codicon-refresh'}`} />
+          </button>
+          <label className={`ui-node-visibility-toggle ${node.visible ? 'visible' : 'hidden'}`}>
+            <input
+              type="checkbox"
+              checked={node.visible === true}
+              disabled={visibilitySaving || node.visible === undefined}
+              onChange={event => onVisibilityChange(event.target.checked)}
+            />
+            <span className={`codicon ${visibilitySaving ? 'codicon-loading' : node.visible ? 'codicon-eye' : 'codicon-eye-closed'}`} />
+            <span>{node.visible ? t.uiDebuggerVisible : t.uiDebuggerHidden}</span>
+          </label>
+        </div>
       </header>
       <div className="ui-node-path-row">
         <code title={node.path}>{node.path}</code>
@@ -1328,6 +1356,7 @@ function NodeDetailsView({
             <PropertyRow
               label={getPropertyLabel(key)}
               value={value}
+              readOnly={group.readOnly}
               wide={(typeof value === 'object' && value !== null) || key === 'text' || key === 'editText'}
               property={key}
               saving={Boolean(propertySaving[propertyRequestKey(

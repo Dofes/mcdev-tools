@@ -117,25 +117,11 @@ export class HostBridgeServer {
     private serverPort?: number;
     private serverError?: string;
 
-    constructor(
-        private readonly hostInfo: HostBridgeHostInfo,
-        registrations: HostBridgeRegistration[] = []
-    ) {
-        for (const registration of registrations) {
-            if (isValidRegistration(registration)) {
-                this.registrations.set(registration.id, { ...registration });
-            }
-        }
-    }
+    constructor(private readonly hostInfo: HostBridgeHostInfo) {}
 
     public onDidChange(listener: (snapshot: HostBridgeSnapshot) => void): DisposableLike {
         this.events.on('change', listener);
         return { dispose: () => this.events.off('change', listener) };
-    }
-
-    public onDidChangeRegistrations(listener: () => void): DisposableLike {
-        this.events.on('registrationsChanged', listener);
-        return { dispose: () => this.events.off('registrationsChanged', listener) };
     }
 
     public get port(): number | undefined {
@@ -146,33 +132,9 @@ export class HostBridgeServer {
         return this.serverStatus === 'listening' && this.server !== undefined;
     }
 
-    public exportRegistrations(): HostBridgeRegistration[] {
-        return [...this.registrations.values()].map(registration => ({ ...registration }));
-    }
-
     public getSnapshot(): HostBridgeSnapshot {
-        const connectedSessions = [...this.sessions.values()].map(record => ({ ...record.summary }));
-        const boundIds = new Set(connectedSessions.map(session => session.registrationId));
-        const pendingSessions: HostBridgeSessionSummary[] = [];
-
-        for (const registration of this.registrations.values()) {
-            if (boundIds.has(registration.id)) {
-                continue;
-            }
-            pendingSessions.push({
-                id: `launch:${registration.id}`,
-                registrationId: registration.id,
-                connected: false,
-                state: 'starting',
-                stateSequence: 0,
-                connectionGeneration: 0,
-                projectRoot: registration.workspacePath,
-                gameIpcConnected: false,
-                debugCapabilityEnabled: false
-            });
-        }
-
-        const sessions = [...connectedSessions, ...pendingSessions].sort((left, right) => {
+        // A launch registration is an authentication credential, not a game session.
+        const sessions = [...this.sessions.values()].map(record => ({ ...record.summary })).sort((left, right) => {
             if (left.connected !== right.connected) {
                 return left.connected ? -1 : 1;
             }
@@ -218,7 +180,6 @@ export class HostBridgeServer {
             lastSeenAt: Date.now()
         };
         this.registrations.set(registration.id, registration);
-        this.emitRegistrationsChanged();
         this.emitChange();
         return {
             registrationId: registration.id,
@@ -245,7 +206,6 @@ export class HostBridgeServer {
             }
             this.sessions.delete(registration.sessionId);
         }
-        this.emitRegistrationsChanged();
         this.emitChange();
     }
 
@@ -268,7 +228,6 @@ export class HostBridgeServer {
             }
         }
         if (changed) {
-            this.emitRegistrationsChanged();
             this.emitChange();
         }
     }
@@ -575,7 +534,6 @@ export class HostBridgeServer {
         if (existing?.connection && existing.connection !== connection) {
             existing.connection.socket.destroy();
         }
-        this.emitRegistrationsChanged();
         this.emitChange();
 
         setImmediate(() => {
@@ -710,7 +668,6 @@ export class HostBridgeServer {
         if (state === 'exited') {
             this.retireExitedSession(record);
         }
-        this.emitRegistrationsChanged();
         this.emitChange();
     }
 
@@ -815,9 +772,7 @@ export class HostBridgeServer {
 
     private retireExitedSession(record: SessionRecord): void {
         const registrationId = record.summary.registrationId;
-        if (this.registrations.delete(registrationId)) {
-            this.emitRegistrationsChanged();
-        }
+        this.registrations.delete(registrationId);
         if (record.removalTimer) {
             clearTimeout(record.removalTimer);
         }
@@ -920,7 +875,6 @@ export class HostBridgeServer {
                 record.summary.connected = false;
                 if (connection.registration) {
                     connection.registration.lastSeenAt = Date.now();
-                    this.emitRegistrationsChanged();
                 }
                 this.emitChange();
             }
@@ -931,20 +885,8 @@ export class HostBridgeServer {
         this.events.emit('change', this.getSnapshot());
     }
 
-    private emitRegistrationsChanged(): void {
-        this.events.emit('registrationsChanged');
-    }
 }
 
 function isLoopbackAddress(address: string | undefined): boolean {
     return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
-}
-
-function isValidRegistration(value: HostBridgeRegistration): boolean {
-    return typeof value.id === 'string'
-        && value.id.length > 0
-        && /^[0-9a-fA-F]{64}$/.test(value.token)
-        && typeof value.workspacePath === 'string'
-        && Number.isFinite(value.createdAt)
-        && Number.isFinite(value.lastSeenAt);
 }

@@ -4,7 +4,6 @@ import { McdevConfigStore } from '../config';
 import { HostBridgeRpcError, HostBridgeServer } from './server';
 import {
     DisposableLike,
-    HostBridgeRegistration,
     HostBridgeSnapshot,
     PreparedHostBridgeLaunch
 } from './types';
@@ -16,34 +15,23 @@ const PRUNE_INTERVAL_MS = 10 * 60 * 1_000;
 
 export class HostBridgeManager implements vscode.Disposable {
     private readonly server: HostBridgeServer;
-    private readonly secretKey: string;
     private readonly terminalRegistrations = new Map<vscode.Terminal, string>();
-    private readonly serverSubscriptions: DisposableLike[] = [];
     private readonly terminalSubscription: vscode.Disposable;
     private readonly pruneTimer: NodeJS.Timeout;
-    private persistenceTail: Promise<void> = Promise.resolve();
     private disposePromise?: Promise<void>;
     private disposed = false;
 
     private constructor(
-        private readonly context: vscode.ExtensionContext,
+        context: vscode.ExtensionContext,
         private readonly configStore: McdevConfigStore,
-        instanceId: string,
-        registrations: HostBridgeRegistration[]
+        instanceId: string
     ) {
         const packageJson = context.extension.packageJSON as { name?: string; version?: string };
-        this.secretKey = `${CREDENTIALS_KEY_PREFIX}.${instanceId}`;
         this.server = new HostBridgeServer({
             name: packageJson.name ?? 'mcdev-tools',
             version: packageJson.version ?? '0.0.0',
             instanceId
-        }, registrations);
-
-        this.serverSubscriptions.push(this.server.onDidChangeRegistrations(() => {
-            void this.persistRegistrations().catch(error => {
-                console.error('[HostBridge] Failed to persist credentials:', error);
-            });
-        }));
+        });
         this.terminalSubscription = vscode.window.onDidCloseTerminal(terminal => {
             const registrationId = this.terminalRegistrations.get(terminal);
             if (!registrationId) {
@@ -66,25 +54,11 @@ export class HostBridgeManager implements vscode.Disposable {
             instanceId = crypto.randomUUID();
             await context.workspaceState.update(INSTANCE_ID_KEY, instanceId);
         }
-        const secretKey = `${CREDENTIALS_KEY_PREFIX}.${instanceId}`;
-        const serialized = await context.secrets.get(secretKey);
-        const storedRegistrations = parseRegistrations(serialized);
-        const registrations: HostBridgeRegistration[] = [];
-        for (const registration of storedRegistrations) {
-            try {
-                if (await configStore.isGameDebuggerEnabled(registration.workspacePath)) {
-                    registrations.push(registration);
-                }
-            } catch (error) {
-                console.error(`[HostBridge] Could not restore configuration for ${registration.workspacePath}:`, error);
-            }
-        }
-        const manager = new HostBridgeManager(context, configStore, instanceId, registrations);
-        await manager.restoreListener();
-        if (registrations.length !== storedRegistrations.length) {
-            await manager.persistRegistrations();
-        }
-        return manager;
+        await Promise.all([
+            context.workspaceState.update(PORT_KEY, undefined),
+            context.secrets.delete(`${CREDENTIALS_KEY_PREFIX}.${instanceId}`)
+        ]);
+        return new HostBridgeManager(context, configStore, instanceId);
     }
 
     public onDidChange(listener: (snapshot: HostBridgeSnapshot) => void): DisposableLike {
@@ -102,18 +76,9 @@ export class HostBridgeManager implements vscode.Disposable {
         }
         if (!this.server.isListening) {
             // Port 0 delegates collision-free ephemeral port selection to the OS.
-            const port = await this.server.start(0);
-            await this.context.workspaceState.update(PORT_KEY, port);
+            await this.server.start(0);
         }
-
-        const launch = this.server.registerLaunch(workspacePath);
-        try {
-            await this.persistRegistrations();
-            return launch;
-        } catch (error) {
-            this.server.releaseRegistration(launch.registrationId);
-            throw error;
-        }
+        return this.server.registerLaunch(workspacePath);
     }
 
     public trackTerminal(registrationId: string, terminal: vscode.Terminal): void {
@@ -156,72 +121,12 @@ export class HostBridgeManager implements vscode.Disposable {
         clearInterval(this.pruneTimer);
         this.terminalSubscription.dispose();
         this.terminalRegistrations.clear();
-        for (const subscription of this.serverSubscriptions) {
-            subscription.dispose();
-        }
-        this.serverSubscriptions.length = 0;
         await this.server.dispose();
-        await this.persistRegistrations().catch(error => {
-            console.error('[HostBridge] Failed to persist credentials during shutdown:', error);
-        });
-    }
-
-    private async restoreListener(): Promise<void> {
-        this.server.pruneRegistrations();
-        const registrations = this.server.exportRegistrations();
-        const port = this.context.workspaceState.get<number>(PORT_KEY);
-        if (registrations.length === 0) {
-            return;
-        }
-        if (!Number.isInteger(port) || port === undefined || port < 1 || port > 65_535) {
-            for (const registration of registrations) {
-                this.server.releaseRegistration(registration.id);
-            }
-            await this.persistRegistrations();
-            return;
-        }
-
-        try {
-            await this.server.start(port);
-        } catch (error) {
-            console.error(`[HostBridge] Could not restore listener on 127.0.0.1:${port}:`, error);
-            for (const registration of registrations) {
-                this.server.releaseRegistration(registration.id);
-            }
-            await this.context.workspaceState.update(PORT_KEY, undefined);
-            await this.persistRegistrations();
-        }
-    }
-
-    private persistRegistrations(): Promise<void> {
-        this.persistenceTail = this.persistenceTail
-            .catch(() => undefined)
-            .then(async () => {
-                const registrations = this.server.exportRegistrations();
-                if (registrations.length === 0) {
-                    await this.context.secrets.delete(this.secretKey);
-                    return;
-                }
-                await this.context.secrets.store(this.secretKey, JSON.stringify(registrations));
-            });
-        return this.persistenceTail;
     }
 
     private assertNotDisposed(): void {
         if (this.disposed) {
             throw new Error('Host Bridge manager has been disposed');
         }
-    }
-}
-
-function parseRegistrations(serialized: string | undefined): HostBridgeRegistration[] {
-    if (!serialized) {
-        return [];
-    }
-    try {
-        const parsed: unknown = JSON.parse(serialized);
-        return Array.isArray(parsed) ? parsed as HostBridgeRegistration[] : [];
-    } catch {
-        return [];
     }
 }

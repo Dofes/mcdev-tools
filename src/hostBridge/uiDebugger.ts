@@ -100,7 +100,8 @@ export function buildUiDebuggerNodeCode(screen: string, path: string): string {
         'def g(n):',
         ' try:return getattr(q,n)(s,p)',
         ' except:return None',
-        `_result=[t,len(q.get_children_name_from_parent(s,p) or [])]+[g(n) for n in ${pythonStringList(getters)}]`
+        "b=g('get_property_bag_value');b=dict(list(b.items())[:256]) if isinstance(b,dict) else b",
+        `_result=[t,len(q.get_children_name_from_parent(s,p) or [])]+[g(n) for n in ${pythonStringList(getters)}]+[b]`
     ].join('\n');
 }
 
@@ -348,7 +349,7 @@ export function parseUiDebuggerNode(
     screen: string,
     path: string
 ): UiDebuggerNodeDetails {
-    if (!Array.isArray(value) || value.length !== 29 || !Number.isInteger(value[0])) {
+    if (!Array.isArray(value) || value.length !== 30 || !Number.isInteger(value[0])) {
         throw new Error('The game returned invalid UI node details');
     }
     const typeId = Number(value[0]);
@@ -373,6 +374,7 @@ export function parseUiDebuggerNode(
         toggleState: typeId === 19 ? value[27] : undefined,
         sliderValue: typeId === 16 ? value[28] : undefined
     });
+    const variables = normalizePropertyBag(value[29]);
     return {
         screen,
         path,
@@ -381,7 +383,7 @@ export function parseUiDebuggerNode(
         type: getUiControlTypeName(typeId),
         visible: typeof value[2] === 'boolean' ? value[2] : undefined,
         childCount: Number.isInteger(value[1]) ? Number(value[1]) : undefined,
-        properties: { runtime, layout, text, control }
+        properties: { runtime, layout, text, control, variables }
     };
 }
 
@@ -425,6 +427,16 @@ function toNudPath(screen: string, path: string): string {
 
 function compactRecord(value: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== null && item !== undefined));
+}
+
+function normalizePropertyBag(value: unknown): Record<string, unknown> {
+    if (value === null || value === undefined) {
+        return {};
+    }
+    if (typeof value !== 'object' || Array.isArray(value)) {
+        return { value };
+    }
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).slice(0, 256));
 }
 
 function normalizeNumberArray(value: unknown, length: number): number[] {

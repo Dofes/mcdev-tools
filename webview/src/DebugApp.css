@@ -1,5 +1,12 @@
+html:has(.debug-workbench),
+body:has(.debug-workbench),
+body:has(.debug-workbench) #root {
+  height: 100%;
+  overflow: hidden;
+}
+
 .debug-workbench {
-  height: 100vh;
+  height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -251,9 +258,10 @@
 
 .debug-workbench-body {
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .debug-tool-nav {
@@ -323,9 +331,10 @@
 .debug-tool-page {
   min-width: 0;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background-color: var(--vscode-editor-background, var(--vscode-sideBar-background));
 }
 
@@ -353,8 +362,9 @@
   width: 100%;
   max-width: 1440px;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   display: flex;
+  overflow: hidden;
   margin: 0 auto;
   padding: 16px 18px 22px;
 }
@@ -1868,9 +1878,10 @@
 .ui-debugger-layout {
   min-width: 0;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   display: grid;
   grid-template-columns: minmax(260px, var(--ui-debugger-tree-width, 46%)) 5px minmax(260px, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -1878,6 +1889,7 @@
 .ui-debugger-details-pane {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2170,11 +2182,19 @@
   border-bottom: 1px solid var(--panel-border);
 }
 
-.ui-node-details-header > div {
+.ui-node-details-identity {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
+}
+
+.ui-node-details-actions {
+  min-width: 0;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .ui-node-details-header strong {
@@ -2184,7 +2204,7 @@
   white-space: nowrap;
 }
 
-.ui-node-details-header > div > span {
+.ui-node-details-identity > span {
   color: var(--vscode-descriptionForeground);
   font-size: 10px;
 }

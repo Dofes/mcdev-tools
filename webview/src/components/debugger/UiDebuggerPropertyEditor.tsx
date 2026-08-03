@@ -4,6 +4,7 @@ interface PropertyRowProps {
   label: string;
   value: unknown;
   wide?: boolean;
+  readOnly?: boolean;
   property: string;
   saving: boolean;
   onChange(property: string, value: unknown): void;
@@ -19,9 +20,9 @@ const EDITABLE_NUMBER_PROPERTIES = new Set([
 const EDITABLE_TEXT_PROPERTIES = new Set(['text', 'editText']);
 
 export function PropertyRow({
-  label, value, wide = false, property, saving, onChange,
+  label, value, wide = false, readOnly = false, property, saving, onChange,
 }: PropertyRowProps) {
-  const editable = isEditableProperty(property, value);
+  const editable = !readOnly && isEditableProperty(property, value);
   return (
     <div className={`${wide ? 'wide' : ''} ${editable ? 'editable' : ''}`}>
       <dt>{label}</dt>
