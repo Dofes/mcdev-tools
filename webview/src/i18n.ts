@@ -204,6 +204,13 @@ export interface I18nText {
   uiDebuggerVisible: string;
   uiDebuggerHidden: string;
   uiDebuggerCopyPath: string;
+  uiDebuggerCopyRuntimePath: string;
+  uiDebuggerExpandNode: string;
+  uiDebuggerCollapseSubtree: string;
+  uiDebuggerRefreshNode: string;
+  uiDebuggerRefreshSubtree: string;
+  uiDebuggerShowNode: string;
+  uiDebuggerHideNode: string;
   uiDebuggerRuntime: string;
   uiDebuggerSize: string;
   uiDebuggerPosition: string;
@@ -432,6 +439,13 @@ export const i18n: Record<string, I18nText> = {
     uiDebuggerVisible: 'Visible',
     uiDebuggerHidden: 'Hidden',
     uiDebuggerCopyPath: 'Copy node path',
+    uiDebuggerCopyRuntimePath: 'Copy runtime path',
+    uiDebuggerExpandNode: 'Expand node',
+    uiDebuggerCollapseSubtree: 'Collapse subtree',
+    uiDebuggerRefreshNode: 'Refresh node properties',
+    uiDebuggerRefreshSubtree: 'Refresh subtree',
+    uiDebuggerShowNode: 'Show node',
+    uiDebuggerHideNode: 'Hide node',
     uiDebuggerRuntime: 'Runtime Layout',
     uiDebuggerSize: 'Size',
     uiDebuggerPosition: 'Position',
@@ -659,6 +673,13 @@ export const i18n: Record<string, I18nText> = {
     uiDebuggerVisible: '可见',
     uiDebuggerHidden: '隐藏',
     uiDebuggerCopyPath: '复制节点路径',
+    uiDebuggerCopyRuntimePath: '复制运行时路径',
+    uiDebuggerExpandNode: '展开节点',
+    uiDebuggerCollapseSubtree: '折叠子树',
+    uiDebuggerRefreshNode: '刷新节点属性',
+    uiDebuggerRefreshSubtree: '刷新子树',
+    uiDebuggerShowNode: '显示节点',
+    uiDebuggerHideNode: '隐藏节点',
     uiDebuggerRuntime: '运行时布局',
     uiDebuggerSize: '尺寸',
     uiDebuggerPosition: '相对位置',

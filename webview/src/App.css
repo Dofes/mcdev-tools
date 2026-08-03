@@ -627,6 +627,11 @@ body.vscode-high-contrast .control-group select {
   color-scheme: dark;
 }
 
+body.vscode-dark .control-group input[type="number"],
+body.vscode-high-contrast .control-group input[type="number"] {
+  color-scheme: dark;
+}
+
 .control-group select option {
   color: var(--vscode-dropdown-foreground);
   background-color: var(--vscode-dropdown-background);

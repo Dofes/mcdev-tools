@@ -17,6 +17,7 @@ import {
     buildUiDebuggerPickerEnableCode,
     buildUiDebuggerPickerPollCode,
     buildUiDebuggerPickerSelectCode,
+    buildUiDebuggerPropertyCode,
     buildUiDebuggerRevealCode,
     buildUiDebuggerScreensCode,
     buildUiDebuggerVisibilityCode,
@@ -44,6 +45,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
     private debugFunctionService?: DebugFunctionService;
     private readonly uiPickers = new Map<string, UiPickerRuntime>();
     private readonly uiPickerQueue = new LatestOperationQueue();
+    private readonly uiPropertyQueue = new LatestOperationQueue();
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -249,6 +251,28 @@ export class GameDebuggerPanel implements vscode.Disposable {
                     });
                     return;
                 }
+                case 'uiDebuggerSetProperty': {
+                    const screen = readBoundedString(message.screen, 512);
+                    const nodePath = readBoundedString(message.path, 4096);
+                    const property = readBoundedString(message.property, 64);
+                    if (!screen || !nodePath || !property) {
+                        throw new Error('Invalid UI property update');
+                    }
+                    const code = buildUiDebuggerPropertyCode(screen, nodePath, property, message.value);
+                    const queueKey = JSON.stringify([
+                        sessionId, connectionGeneration, screen, nodePath, property
+                    ]);
+                    let value: unknown;
+                    await this.uiPropertyQueue.runLatest(queueKey, async () => {
+                        this.assertUiDebuggerSession(sessionId, connectionGeneration);
+                        value = await this.hostBridgeManager.executeCode(sessionId, code, true);
+                    });
+                    await webview.postMessage({
+                        type: 'uiDebuggerPropertyResult', requestId, sessionId, connectionGeneration,
+                        screen, path: nodePath, property, value
+                    });
+                    return;
+                }
                 case 'uiDebuggerPickerMode': {
                     const mode = message.mode === 'select' || message.mode === 'layout'
                         ? message.mode
@@ -256,7 +280,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
                     this.uiPickerQueue.invalidateLatest(sessionId);
                     await this.uiPickerQueue.run(sessionId, async () => {
                         try {
-                            this.assertUiPickerSession(sessionId, connectionGeneration);
+                            this.assertUiDebuggerSession(sessionId, connectionGeneration);
                             if (mode !== 'off') {
                                 const result = await this.hostBridgeManager.executeCode(
                                     sessionId, buildUiDebuggerPickerEnableCode(mode === 'layout'), true
@@ -264,7 +288,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
                                 if (result !== true) {
                                     throw new Error('The native UI picker is unavailable in this game build');
                                 }
-                                this.assertUiPickerSession(sessionId, connectionGeneration);
+                                this.assertUiDebuggerSession(sessionId, connectionGeneration);
                                 this.startUiPicker(webview, sessionId, connectionGeneration);
                             } else {
                                 await this.stopUiPicker(sessionId, true);
@@ -287,7 +311,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
                         throw new Error('Invalid UI node path');
                     }
                     await this.uiPickerQueue.runLatest(sessionId, async () => {
-                        this.assertUiPickerSession(sessionId, connectionGeneration);
+                        this.assertUiDebuggerSession(sessionId, connectionGeneration);
                         const picker = this.uiPickers.get(sessionId);
                         if (picker?.connectionGeneration !== connectionGeneration) {
                             throw new Error('Enable the native UI picker before selecting a node');
@@ -471,7 +495,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
         await Promise.all(cleanups);
     }
 
-    private assertUiPickerSession(sessionId: string, connectionGeneration: number): void {
+    private assertUiDebuggerSession(sessionId: string, connectionGeneration: number): void {
         const session = this.hostBridgeManager.getSnapshot().sessions.find(item => item.id === sessionId);
         if (
             !session?.connected

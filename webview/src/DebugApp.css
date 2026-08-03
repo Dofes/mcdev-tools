@@ -2054,6 +2054,56 @@
   opacity: 0.74;
 }
 
+.ui-debugger-context-menu {
+  position: fixed;
+  z-index: 100;
+  width: 220px;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid var(--vscode-menu-border, var(--vscode-widget-border, var(--panel-border)));
+  border-radius: 6px;
+  color: var(--vscode-menu-foreground, var(--vscode-foreground));
+  background-color: var(--vscode-menu-background, var(--vscode-editorWidget-background));
+  box-shadow: 0 8px 24px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.34));
+}
+
+.ui-debugger-context-menu button {
+  width: 100%;
+  height: 29px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ui-debugger-context-menu button:hover,
+.ui-debugger-context-menu button:focus-visible {
+  color: var(--vscode-menu-selectionForeground, var(--vscode-list-activeSelectionForeground));
+  background-color: var(--vscode-menu-selectionBackground, var(--vscode-list-activeSelectionBackground));
+  outline: none;
+}
+
+.ui-debugger-context-menu button > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-debugger-context-menu .separator {
+  height: 1px;
+  margin: 4px 6px;
+  background-color: var(--vscode-menu-separatorBackground, var(--panel-border));
+}
+
 .ui-debugger-load-more {
   width: max-content;
   min-width: 100%;
@@ -2241,6 +2291,142 @@
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px;
   line-height: 1.45;
+}
+
+.ui-node-property-section dl > div.editable {
+  min-height: 57px;
+}
+
+.ui-node-property-section dl > div.editable dd {
+  min-width: 0;
+}
+
+.ui-runtime-number,
+.ui-runtime-text,
+.ui-runtime-vector {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ui-runtime-number input,
+.ui-runtime-vector input,
+.ui-runtime-text textarea {
+  min-width: 0;
+  border: 1px solid var(--vscode-input-border, var(--panel-border));
+  border-radius: 3px;
+  color: var(--vscode-input-foreground);
+  background-color: var(--vscode-input-background);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  outline: none;
+}
+
+.ui-runtime-number input:focus,
+.ui-runtime-vector input:focus,
+.ui-runtime-text textarea:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+body.vscode-dark .ui-runtime-number input,
+body.vscode-dark .ui-runtime-vector input,
+body.vscode-high-contrast .ui-runtime-number input,
+body.vscode-high-contrast .ui-runtime-vector input {
+  color-scheme: dark;
+}
+
+.ui-runtime-number input {
+  width: 100%;
+  height: 25px;
+  padding: 0 6px;
+}
+
+.ui-runtime-vector input {
+  width: 0;
+  height: 25px;
+  flex: 1 1 0;
+  padding: 0 4px;
+}
+
+.ui-runtime-text textarea {
+  width: 100%;
+  min-height: 43px;
+  padding: 5px 6px;
+  resize: vertical;
+  line-height: 1.35;
+}
+
+.ui-runtime-number > .codicon,
+.ui-runtime-vector > .codicon,
+.ui-runtime-text > .codicon,
+.ui-runtime-boolean > .codicon {
+  flex: 0 0 auto;
+  color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
+  font-size: 12px;
+}
+
+.ui-runtime-color {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  border: 1px solid var(--vscode-contrastBorder, var(--panel-border));
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.ui-runtime-boolean {
+  width: max-content;
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.ui-runtime-boolean input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-runtime-boolean-track {
+  position: relative;
+  width: 30px;
+  height: 16px;
+  border: 1px solid var(--vscode-checkbox-border, var(--panel-border));
+  border-radius: 8px;
+  background-color: var(--vscode-checkbox-background, var(--vscode-input-background));
+  transition: background-color 100ms ease, border-color 100ms ease;
+}
+
+.ui-runtime-boolean-track > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--vscode-descriptionForeground);
+  transition: transform 100ms ease, background-color 100ms ease;
+}
+
+.ui-runtime-boolean.on .ui-runtime-boolean-track {
+  border-color: var(--vscode-focusBorder);
+  background-color: color-mix(in srgb, var(--vscode-focusBorder) 72%, #3159c6);
+}
+
+.ui-runtime-boolean.on .ui-runtime-boolean-track > span {
+  background-color: var(--vscode-button-foreground);
+  transform: translateX(14px);
+}
+
+.ui-runtime-boolean:focus-within .ui-runtime-boolean-track {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
 }
 
 @media (max-width: 700px) {

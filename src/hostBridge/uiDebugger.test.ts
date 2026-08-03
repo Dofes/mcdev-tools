@@ -6,6 +6,7 @@ import {
     buildUiDebuggerPickerEnableCode,
     buildUiDebuggerPickerSelectCode,
     buildUiDebuggerPickerPollCode,
+    buildUiDebuggerPropertyCode,
     buildUiDebuggerRevealCode,
     parseUiDebuggerChildren,
     parseUiDebuggerNode,
@@ -19,6 +20,22 @@ test('UI debugger code escapes Python input and never recursively scans', () => 
     assert.match(code, /\\u754c/);
     assert.doesNotMatch(code, /recurs|get_all_children/i);
     assert.match(code, /get_children_name_from_parent/);
+});
+
+test('UI debugger validates editable properties and emits compact readback code', () => {
+    const position = buildUiDebuggerPropertyCode('hud.hud_screen', '/root/panel', 'position', [12.5, -3]);
+    assert.match(position, /set_position\(s,p,tuple\(v\)\)/);
+    assert.match(position, /_result=q\.get_position\(s,p\)/);
+    const size = buildUiDebuggerPropertyCode('hud.hud_screen', '/root/panel', 'size', [120, 40]);
+    assert.match(size, /set_size\(s,p,tuple\(v\),True\)/);
+    const textCode = buildUiDebuggerPropertyCode('hud.hud_screen', '/root/title', 'text', "a'\\nb");
+    assert.match(textCode, /json\.loads/);
+    assert.match(textCode, /set_text\(s,p,v,True\)/);
+    assert.match(buildUiDebuggerPropertyCode('hud.hud_screen', '/root/toggle', 'toggleState', true), /bool\(v\)/);
+    assert.throws(() => buildUiDebuggerPropertyCode('screen', '/node', 'position', ['', 1]));
+    assert.throws(() => buildUiDebuggerPropertyCode('screen', '/node', 'scrollPercent', 101));
+    assert.throws(() => buildUiDebuggerPropertyCode('screen', '/node', 'layer', 1.5));
+    assert.throws(() => buildUiDebuggerPropertyCode('screen', '/node', 'unknown', 1));
 });
 
 test('UI debugger parses a compact child page', () => {

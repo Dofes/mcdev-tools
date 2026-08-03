@@ -30,6 +30,24 @@ export interface UiDebuggerRevealPage extends UiDebuggerChildrenResult {
     parentPath: string;
 }
 
+export type UiDebuggerEditableProperty =
+    | 'position'
+    | 'size'
+    | 'layer'
+    | 'order'
+    | 'minSize'
+    | 'maxSize'
+    | 'clipsChildren'
+    | 'text'
+    | 'editText'
+    | 'color'
+    | 'shadow'
+    | 'linePadding'
+    | 'scrollPosition'
+    | 'scrollPercent'
+    | 'toggleState'
+    | 'sliderValue';
+
 const TYPE_NAMES = [
     'Button', 'Custom', 'CollectionPanel', 'Dropdown', 'EditBox', 'Factory', 'Grid', 'Image',
     'InputPanel', 'Label', 'Panel', 'Screen', 'ScrollbarBox', 'ScrollTrack', 'ScrollView',
@@ -92,6 +110,78 @@ export function buildUiDebuggerVisibilityCode(screen: string, path: string, visi
         `s=${pythonUnicodeLiteral(screen)};p=${pythonUnicodeLiteral(path)}`,
         `q.set_visible(s,p,${visible ? 'True' : 'False'});_result=bool(q.get_visible(s,p))`
     ].join('\n');
+}
+
+export function buildUiDebuggerPropertyCode(
+    screen: string,
+    path: string,
+    property: string,
+    value: unknown
+): string {
+    const editableProperty = property as UiDebuggerEditableProperty;
+    const normalized = normalizeUiDebuggerPropertyValue(editableProperty, value);
+    const valueCode = `json.loads(${pythonUnicodeLiteral(JSON.stringify(normalized))})`;
+    const operations: Record<UiDebuggerEditableProperty, [string, string]> = {
+        position: ['q.set_position(s,p,tuple(v))', 'q.get_position(s,p)'],
+        size: ['q.set_size(s,p,tuple(v),True)', 'q.get_size(s,p)'],
+        layer: ['q.set_layer(s,p,int(v),True)', 'q.get_layer(s,p)'],
+        order: ['q.set_order(s,p,int(v))', 'q.get_order(s,p)'],
+        minSize: ['q.set_min_size(s,p,tuple(v))', 'q.get_min_size(s,p)'],
+        maxSize: ['q.set_max_size(s,p,tuple(v))', 'q.get_max_size(s,p)'],
+        clipsChildren: ['q.set_clips_children(s,p,bool(v))', 'q.get_clips_children(s,p)'],
+        text: ['q.set_text(s,p,v,True)', 'q.get_text(s,p)'],
+        editText: ['q.set_edit_text(s,p,v)', 'q.get_edit_text(s,p)'],
+        color: ['q.set_text_color(s,p,tuple(v))', 'q.get_text_color(s,p)'],
+        shadow: ['q.set_text_shadow(s,p,bool(v))', 'q.get_text_shadow(s,p)'],
+        linePadding: ['q.set_text_line_padding(s,p,v)', 'q.get_text_line_padding(s,p)'],
+        scrollPosition: ['q.set_scroll_view_pos(s,p,v)', 'q.get_scroll_view_pos(s,p)'],
+        scrollPercent: ['q.set_scroll_view_percent_value(s,p,int(v))', 'q.get_scroll_view_percent_value(s,p)'],
+        toggleState: ['q.set_toggle_state_new(s,p,bool(v))', 'q.get_toggle_state(s,p)'],
+        sliderValue: ['q.set_slider_value(s,p,v)', 'q.get_slider_value(s,p)']
+    };
+    const operation = operations[editableProperty];
+    if (!operation) {
+        throw new Error('Unsupported UI property');
+    }
+    return [
+        'import gui as q,json',
+        `s=${pythonUnicodeLiteral(screen)};p=${pythonUnicodeLiteral(path)};v=${valueCode}`,
+        `${operation[0]};_result=${operation[1]}`
+    ].join('\n');
+}
+
+export function normalizeUiDebuggerPropertyValue(
+    property: UiDebuggerEditableProperty,
+    value: unknown
+): string | number | boolean | number[] {
+    if (property === 'text' || property === 'editText') {
+        if (typeof value !== 'string' || value.length > 64 * 1024 || value.includes('\0')) {
+            throw new Error('Invalid UI text value');
+        }
+        return value;
+    }
+    if (property === 'clipsChildren' || property === 'shadow' || property === 'toggleState') {
+        if (typeof value !== 'boolean') {
+            throw new Error('Invalid UI boolean value');
+        }
+        return value;
+    }
+    if (property === 'position' || property === 'size' || property === 'minSize' || property === 'maxSize') {
+        return normalizeNumberArray(value, 2);
+    }
+    if (property === 'color') {
+        return normalizeNumberArray(value, 4);
+    }
+    if (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > 10_000_000) {
+        throw new Error('Invalid UI numeric value');
+    }
+    if ((property === 'layer' || property === 'order' || property === 'scrollPercent') && !Number.isInteger(value)) {
+        throw new Error('The UI property requires an integer');
+    }
+    if (property === 'scrollPercent' && (value < 0 || value > 100)) {
+        throw new Error('Scroll percent must be between 0 and 100');
+    }
+    return value;
 }
 
 export function buildUiDebuggerPickerEnableCode(showAllBounds: boolean): string {
@@ -335,6 +425,16 @@ function toNudPath(screen: string, path: string): string {
 
 function compactRecord(value: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== null && item !== undefined));
+}
+
+function normalizeNumberArray(value: unknown, length: number): number[] {
+    if (!Array.isArray(value) || value.length !== length) {
+        throw new Error(`The UI property requires ${length} numeric values`);
+    }
+    if (value.some(item => typeof item !== 'number' || !Number.isFinite(item) || Math.abs(item) > 10_000_000)) {
+        throw new Error('Invalid UI numeric values');
+    }
+    return value as number[];
 }
 
 function clampInteger(value: number, minimum: number, maximum: number): number {

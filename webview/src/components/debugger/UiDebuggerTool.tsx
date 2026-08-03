@@ -2,6 +2,7 @@ import { CSSProperties, ReactNode, useEffect, useMemo, useRef, useState } from '
 import { I18nText } from '../../i18n';
 import { HostBridgeSessionSummary } from '../../types';
 import { vscode } from '../../vscode';
+import { PropertyRow } from './UiDebuggerPropertyEditor';
 
 interface UiDebuggerToolProps {
   session?: HostBridgeSessionSummary;
@@ -38,6 +39,7 @@ interface UiContextState {
   details: Record<string, UiNodeDetails>;
   loadingDetails: Record<string, boolean>;
   visibilitySaving: Record<string, boolean>;
+  propertySaving: Record<string, boolean>;
   nativeData: Record<string, Record<string, unknown>>;
   pickerMode: UiPickerMode;
   pickerBusy: boolean;
@@ -45,12 +47,14 @@ interface UiContextState {
 }
 
 interface PendingRequest {
-  kind: 'screens' | 'children' | 'node' | 'visibility' | 'pickerMode' | 'pickerSelect' | 'reveal';
+  kind: 'screens' | 'children' | 'node' | 'visibility' | 'property' | 'pickerMode' | 'pickerSelect' | 'reveal';
   contextKey: string;
   screen?: string;
   parentPath?: string;
   path?: string;
   mode?: UiPickerMode;
+  property?: string;
+  version?: number;
 }
 
 interface VisibleTreeRow {
@@ -64,10 +68,12 @@ interface VisibleTreeRow {
 export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
   const [contexts, setContexts] = useState<Record<string, UiContextState>>({});
   const [treePaneWidth, setTreePaneWidth] = useState(46);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: UiNodeSummary }>();
   const pendingRequests = useRef(new Map<string, PendingRequest>());
   const pendingPickerEvents = useRef(new Map<string, unknown>());
   const pickerDetailTimers = useRef(new Map<string, number>());
   const activePickerContexts = useRef(new Set<string>());
+  const propertyVersions = useRef(new Map<string, number>());
   const pendingGameSelectionScroll = useRef<{
     contextKey: string;
     screen: string;
@@ -105,6 +111,11 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
     for (const [id, request] of pendingRequests.current) {
       if (request.contextKey.startsWith(sessionPrefix) && request.contextKey !== contextKey) {
         pendingRequests.current.delete(id);
+      }
+    }
+    for (const key of propertyVersions.current.keys()) {
+      if (key.startsWith(`${sessionPrefix}`) && !key.startsWith(`${contextKey}:`)) {
+        propertyVersions.current.delete(key);
       }
     }
   }, [contextKey, session]);
@@ -279,6 +290,14 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
       if (`${message.sessionId}:${message.connectionGeneration}` !== pending.contextKey) {
         return;
       }
+      if (pending.kind === 'property') {
+        const versionKey = propertyRequestKey(
+          pending.contextKey, pending.screen ?? '', pending.path ?? '', pending.property ?? ''
+        );
+        if (propertyVersions.current.get(versionKey) !== pending.version) {
+          return;
+        }
+      }
 
       const refreshedScreens = message.type === 'uiDebuggerScreensResult' && pending.kind === 'screens'
         ? (Array.isArray(message.screens)
@@ -346,6 +365,22 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
             visibilitySaving: { ...current.visibilitySaving, [key]: false },
             error: undefined,
           };
+        } else if (message.type === 'uiDebuggerPropertyResult' && pending.kind === 'property') {
+          const screen = typeof message.screen === 'string' ? message.screen : pending.screen ?? '';
+          const path = typeof message.path === 'string' ? message.path : pending.path ?? '';
+          const property = typeof message.property === 'string' ? message.property : pending.property ?? '';
+          const detailKey = treeKey(screen, path);
+          const savingKey = propertyRequestKey(pending.contextKey, screen, path, property);
+          const details = current.details[detailKey];
+          next = {
+            ...current,
+            details: details ? {
+              ...current.details,
+              [detailKey]: updateNodeProperty(details, property, message.value),
+            } : current.details,
+            propertySaving: { ...current.propertySaving, [savingKey]: false },
+            error: undefined,
+          };
         } else if (message.type === 'uiDebuggerPickerModeResult' && pending.kind === 'pickerMode') {
           const mode: UiPickerMode = message.mode === 'select' || message.mode === 'layout'
             ? message.mode
@@ -407,6 +442,12 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
           if (pending.kind === 'visibility') {
             visibilitySaving[treeKey(pending.screen ?? '', pending.path ?? '')] = false;
           }
+          const propertySaving = { ...current.propertySaving };
+          if (pending.kind === 'property') {
+            propertySaving[propertyRequestKey(
+              pending.contextKey, pending.screen ?? '', pending.path ?? '', pending.property ?? ''
+            )] = false;
+          }
           if (pending.kind === 'pickerMode') {
             activePickerContexts.current.delete(pending.contextKey);
           }
@@ -416,6 +457,7 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
             loadingParents,
             loadingDetails,
             visibilitySaving,
+            propertySaving,
             pickerBusy: pending.kind === 'pickerMode' ? false : current.pickerBusy,
             pickerMode: pending.kind === 'pickerMode' ? 'off' : current.pickerMode,
             error: typeof message.message === 'string' ? message.message : t.uiDebuggerRequestFailed,
@@ -440,6 +482,32 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
     }
     pickerDetailTimers.current.clear();
   }, []);
+
+  useEffect(() => {
+    if (!contextMenu) {
+      return;
+    }
+    const close = () => setContextMenu(undefined);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        close();
+      }
+    };
+    window.addEventListener('mousedown', close);
+    window.addEventListener('blur', close);
+    window.addEventListener('resize', close);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', close);
+      window.removeEventListener('blur', close);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [contextMenu]);
+
+  useEffect(() => setContextMenu(undefined), [contextKey, state.selectedScreen]);
 
   useEffect(() => {
     if (
@@ -614,6 +682,111 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
     }
   };
 
+  const refreshNode = (node: UiNodeSummary) => {
+    if (!session || !canQuery) {
+      return;
+    }
+    const screen = state.selectedScreen;
+    for (const [id, request] of pendingRequests.current) {
+      if (
+        request.contextKey === contextKey
+        && request.kind === 'node'
+        && request.screen === screen
+        && request.path === node.path
+      ) {
+        pendingRequests.current.delete(id);
+      }
+    }
+    const key = treeKey(screen, node.path);
+    setContexts(previous => updateContext(previous, contextKey, current => ({
+      ...current,
+      loadingDetails: {
+        ...pruneTreeBranch(current.loadingDetails, screen, node.path),
+        [key]: true,
+      },
+    })));
+    requestNode(session, contextKey, screen, node.path, pendingRequests.current);
+  };
+
+  const refreshSubtree = (node: UiNodeSummary) => {
+    if (!session || !canQuery) {
+      return;
+    }
+    const screen = state.selectedScreen;
+    const key = treeKey(screen, node.path);
+    for (const [id, request] of pendingRequests.current) {
+      const requestPath = request.parentPath ?? request.path ?? '';
+      if (
+        request.contextKey === contextKey
+        && request.screen === screen
+        && (requestPath === node.path || requestPath.startsWith(`${node.path}/`))
+        && (request.kind === 'children' || request.kind === 'node' || request.kind === 'reveal')
+      ) {
+        pendingRequests.current.delete(id);
+      }
+    }
+    setContexts(previous => updateContext(previous, contextKey, current => ({
+      ...current,
+      children: pruneTreeBranch(current.children, screen, node.path),
+      totals: pruneTreeBranch(current.totals, screen, node.path),
+      expanded: {
+        ...pruneTreeBranch(current.expanded, screen, node.path),
+        [key]: true,
+      },
+      loadingParents: {
+        ...pruneTreeBranch(current.loadingParents, screen, node.path),
+        [key]: true,
+      },
+      details: pruneTreeBranch(current.details, screen, node.path),
+      nativeData: pruneTreeBranch(current.nativeData, screen, node.path),
+      loadingDetails: {
+        ...pruneTreeBranch(current.loadingDetails, screen, node.path),
+        [key]: true,
+      },
+    })));
+    requestChildren(session, contextKey, screen, node.path, 0, pendingRequests.current);
+    requestNode(session, contextKey, screen, node.path, pendingRequests.current);
+  };
+
+  const collapseSubtree = (node: UiNodeSummary) => {
+    const screen = state.selectedScreen;
+    setContexts(previous => updateContext(previous, contextKey, current => ({
+      ...current,
+      expanded: Object.fromEntries(Object.entries(current.expanded).filter(([key]) => {
+        const [keyScreen, path] = parseTreeKey(key);
+        return keyScreen !== screen || (path !== node.path && !path.startsWith(`${node.path}/`));
+      })),
+    })));
+  };
+
+  const setNodeVisibility = (node: UiNodeSummary, visible: boolean) => {
+    if (!session) {
+      return;
+    }
+    const key = treeKey(state.selectedScreen, node.path);
+    setContexts(previous => updateContext(previous, contextKey, current => ({
+      ...current,
+      visibilitySaving: { ...current.visibilitySaving, [key]: true },
+    })));
+    requestVisibility(
+      session, contextKey, state.selectedScreen, node.path, visible, pendingRequests.current
+    );
+  };
+
+  const openContextMenu = (node: UiNodeSummary, clientX: number, clientY: number) => {
+    selectNode(node);
+    setContextMenu({
+      node,
+      x: Math.max(6, Math.min(clientX, window.innerWidth - 226)),
+      y: Math.max(6, Math.min(clientY, window.innerHeight - 252)),
+    });
+  };
+
+  const runContextAction = (action: () => void) => {
+    setContextMenu(undefined);
+    action();
+  };
+
   const setVisibility = (visible: boolean) => {
     if (!session || !selectedDetails || state.visibilitySaving[selectedDetailKey]) {
       return;
@@ -625,6 +798,23 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
     requestVisibility(
       session, contextKey, selectedDetails.screen, selectedDetails.path, visible,
       pendingRequests.current
+    );
+  };
+
+  const setProperty = (property: string, value: unknown) => {
+    if (!session || !selectedDetails) {
+      return;
+    }
+    const savingKey = propertyRequestKey(
+      contextKey, selectedDetails.screen, selectedDetails.path, property
+    );
+    setContexts(previous => updateContext(previous, contextKey, current => ({
+      ...current,
+      propertySaving: { ...current.propertySaving, [savingKey]: true },
+    })));
+    requestProperty(
+      session, contextKey, selectedDetails.screen, selectedDetails.path, property, value,
+      pendingRequests.current, propertyVersions.current
     );
   };
 
@@ -785,6 +975,7 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
                   }}
                   onToggle={() => toggleNode(row.node!)}
                   onSelect={() => selectNode(row.node!)}
+                  onContextMenu={(clientX, clientY) => openContextMenu(row.node!, clientX, clientY)}
                 />
               ) : (
                 <button
@@ -853,7 +1044,10 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
               node={selectedDetails}
               nativeData={selectedNativeData}
               visibilitySaving={Boolean(state.visibilitySaving[selectedDetailKey])}
+              propertySaving={state.propertySaving}
               onVisibilityChange={setVisibility}
+              onPropertyChange={setProperty}
+              contextKey={contextKey}
               t={t}
             />
           ) : (
@@ -861,6 +1055,67 @@ export function UiDebuggerTool({ session, t }: UiDebuggerToolProps) {
           )}
         </section>
       </div>
+      {contextMenu && (
+        <div
+          className="ui-debugger-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          role="menu"
+          onMouseDown={event => event.stopPropagation()}
+        >
+          <ContextMenuButton
+            icon={state.expanded[treeKey(state.selectedScreen, contextMenu.node.path)]
+              ? 'codicon-collapse-all' : 'codicon-expand-all'}
+            label={state.expanded[treeKey(state.selectedScreen, contextMenu.node.path)]
+              ? t.uiDebuggerCollapseSubtree : t.uiDebuggerExpandNode}
+            onSelect={() => runContextAction(() => {
+              if (state.expanded[treeKey(state.selectedScreen, contextMenu.node.path)]) {
+                collapseSubtree(contextMenu.node);
+              } else {
+                toggleNode(contextMenu.node);
+              }
+            })}
+          />
+          <div className="separator" />
+          <ContextMenuButton
+            icon="codicon-refresh"
+            label={t.uiDebuggerRefreshNode}
+            onSelect={() => runContextAction(() => refreshNode(contextMenu.node))}
+          />
+          <ContextMenuButton
+            icon="codicon-list-tree"
+            label={t.uiDebuggerRefreshSubtree}
+            onSelect={() => runContextAction(() => refreshSubtree(contextMenu.node))}
+          />
+          <div className="separator" />
+          <ContextMenuButton
+            icon="codicon-eye"
+            label={t.uiDebuggerShowNode}
+            onSelect={() => runContextAction(() => setNodeVisibility(contextMenu.node, true))}
+          />
+          <ContextMenuButton
+            icon="codicon-eye-closed"
+            label={t.uiDebuggerHideNode}
+            onSelect={() => runContextAction(() => setNodeVisibility(contextMenu.node, false))}
+          />
+          <div className="separator" />
+          <ContextMenuButton
+            icon="codicon-copy"
+            label={t.uiDebuggerCopyPath}
+            onSelect={() => runContextAction(() => {
+              void navigator.clipboard.writeText(contextMenu.node.path);
+            })}
+          />
+          <ContextMenuButton
+            icon="codicon-symbol-key"
+            label={t.uiDebuggerCopyRuntimePath}
+            onSelect={() => runContextAction(() => {
+              void navigator.clipboard.writeText(toRuntimeUiPath(
+                state.selectedScreen, contextMenu.node.path
+              ));
+            })}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -886,6 +1141,21 @@ function PickerModeButton({
       aria-pressed={active}
       title={hint}
     >
+      <span className={`codicon ${icon}`} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function ContextMenuButton({
+  icon, label, onSelect,
+}: {
+  icon: string;
+  label: string;
+  onSelect(): void;
+}) {
+  return (
+    <button type="button" role="menuitem" onClick={onSelect}>
       <span className={`codicon ${icon}`} />
       <span>{label}</span>
     </button>
@@ -955,7 +1225,7 @@ function ScreenPicker({
 }
 
 function UiTreeRow({
-  node, depth, selected, expanded, loading, knownLeaf, rowRef, onToggle, onSelect,
+  node, depth, selected, expanded, loading, knownLeaf, rowRef, onToggle, onSelect, onContextMenu,
 }: {
   node: UiNodeSummary;
   depth: number;
@@ -966,6 +1236,7 @@ function UiTreeRow({
   rowRef(element: HTMLDivElement | null): void;
   onToggle(): void;
   onSelect(): void;
+  onContextMenu(clientX: number, clientY: number): void;
 }) {
   return (
     <div
@@ -975,6 +1246,10 @@ function UiTreeRow({
       role="treeitem"
       aria-selected={selected}
       aria-expanded={knownLeaf ? undefined : expanded}
+      onContextMenu={event => {
+        event.preventDefault();
+        onContextMenu(event.clientX, event.clientY);
+      }}
     >
       <button
         type="button"
@@ -997,12 +1272,16 @@ function UiTreeRow({
 }
 
 function NodeDetailsView({
-  node, nativeData, visibilitySaving, onVisibilityChange, t,
+  node, nativeData, visibilitySaving, propertySaving, onVisibilityChange, onPropertyChange,
+  contextKey, t,
 }: {
   node: UiNodeDetails;
   nativeData?: Record<string, unknown>;
   visibilitySaving: boolean;
+  propertySaving: Record<string, boolean>;
   onVisibilityChange(visible: boolean): void;
+  onPropertyChange(property: string, value: unknown): void;
+  contextKey: string;
   t: I18nText;
 }) {
   const propertyGroups = [
@@ -1049,7 +1328,12 @@ function NodeDetailsView({
             <PropertyRow
               label={getPropertyLabel(key)}
               value={value}
-              wide={typeof value === 'object' && value !== null}
+              wide={(typeof value === 'object' && value !== null) || key === 'text' || key === 'editText'}
+              property={key}
+              saving={Boolean(propertySaving[propertyRequestKey(
+                contextKey, node.screen, node.path, key
+              )])}
+              onChange={onPropertyChange}
               key={key}
             />
           ))}
@@ -1068,20 +1352,11 @@ function PropertySection({ title, children }: { title: string; children: ReactNo
   );
 }
 
-function PropertyRow({ label, value, wide = false }: { label: string; value: unknown; wide?: boolean }) {
-  return (
-    <div className={wide ? 'wide' : ''}>
-      <dt>{label}</dt>
-      <dd>{formatValue(value)}</dd>
-    </div>
-  );
-}
-
 function createContextState(): UiContextState {
   return {
     screens: [], selectedScreen: '', screensLoading: false, children: {}, totals: {}, expanded: {},
     loadingParents: {}, selectedPath: '', details: {}, loadingDetails: {}, visibilitySaving: {},
-    nativeData: {}, pickerMode: 'off', pickerBusy: false,
+    nativeData: {}, pickerMode: 'off', pickerBusy: false, propertySaving: {},
   };
 }
 
@@ -1133,6 +1408,7 @@ function updateScreens(current: UiContextState, screens: string[]): UiContextSta
     details: filter(current.details),
     loadingDetails: filter(current.loadingDetails),
     visibilitySaving: filter(current.visibilitySaving),
+    propertySaving: {},
     nativeData: filter(current.nativeData),
     screensLoading: false,
     error: undefined,
@@ -1196,6 +1472,27 @@ function requestVisibility(
   vscode.postMessage({
     type: 'uiDebuggerSetVisibility', requestId, sessionId: session.id,
     connectionGeneration: session.connectionGeneration, screen, path, visible,
+  });
+}
+
+function requestProperty(
+  session: HostBridgeSessionSummary,
+  contextKey: string,
+  screen: string,
+  path: string,
+  property: string,
+  value: unknown,
+  pending: Map<string, PendingRequest>,
+  versions: Map<string, number>
+) {
+  const requestId = createRequestId();
+  const versionKey = propertyRequestKey(contextKey, screen, path, property);
+  const version = (versions.get(versionKey) ?? 0) + 1;
+  versions.set(versionKey, version);
+  pending.set(requestId, { kind: 'property', contextKey, screen, path, property, version });
+  vscode.postMessage({
+    type: 'uiDebuggerSetProperty', requestId, sessionId: session.id,
+    connectionGeneration: session.connectionGeneration, screen, path, property, value,
   });
 }
 
@@ -1314,6 +1611,42 @@ function hasPendingRequest(
 
 function treeKey(screen: string, path: string): string {
   return JSON.stringify([screen, path]);
+}
+
+function parseTreeKey(key: string): [string, string] {
+  try {
+    const value = JSON.parse(key);
+    return Array.isArray(value) && typeof value[0] === 'string' && typeof value[1] === 'string'
+      ? [value[0], value[1]]
+      : ['', ''];
+  } catch {
+    return ['', ''];
+  }
+}
+
+function pruneTreeBranch<T>(record: Record<string, T>, screen: string, path: string): Record<string, T> {
+  return Object.fromEntries(Object.entries(record).filter(([key]) => {
+    const [keyScreen, keyPath] = parseTreeKey(key);
+    return keyScreen !== screen || (keyPath !== path && !keyPath.startsWith(`${path}/`));
+  }));
+}
+
+function toRuntimeUiPath(screen: string, path: string): string {
+  const screenRoot = screen.split('.').pop() || screen;
+  return `/${screenRoot}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+function propertyRequestKey(contextKey: string, screen: string, path: string, property: string): string {
+  return `${contextKey}:${JSON.stringify([screen, path, property])}`;
+}
+
+function updateNodeProperty(node: UiNodeDetails, property: string, value: unknown): UiNodeDetails {
+  const properties = Object.fromEntries(Object.entries(node.properties).map(([group, values]) => (
+    [group, Object.prototype.hasOwnProperty.call(values, property)
+      ? { ...values, [property]: value }
+      : values]
+  )));
+  return { ...node, properties };
 }
 
 function expandedKeysForPath(screen: string, path: string): Record<string, boolean> {
@@ -1496,21 +1829,4 @@ function createRequestId(): string {
   return typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : `${Date.now()}:${Math.random().toString(16).slice(2)}`;
-}
-
-function formatValue(value: unknown): string {
-  if (value === undefined || value === null) {
-    return '-';
-  }
-  if (typeof value === 'string') {
-    return value || '""';
-  }
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
 }
