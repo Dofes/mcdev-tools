@@ -8,6 +8,8 @@ test('Native profiler removes DEBUG_ENV_SCRIPT frames and promotes visible desce
         name,
         sourceFile,
         sourceLine: 12,
+        threadId: '1',
+        threadName: 'Main',
         calls: 2,
         totalNanoseconds: 100,
         selfNanoseconds: 40,

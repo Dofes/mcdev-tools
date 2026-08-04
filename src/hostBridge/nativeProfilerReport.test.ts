@@ -28,6 +28,8 @@ test('Native profiler writes the trace, Markdown, and SVG visualization under .m
                     name: 'Parent <tick>',
                     sourceFile: 'engine/main.cpp',
                     sourceLine: 10,
+                    threadId: '7',
+                    threadName: 'Main Thread',
                     calls: 2,
                     totalNanoseconds: 800_000,
                     selfNanoseconds: 300_000,
@@ -39,6 +41,8 @@ test('Native profiler writes the trace, Markdown, and SVG visualization under .m
                     name: 'Child & work',
                     sourceFile: 'engine/work.cpp',
                     sourceLine: 20,
+                    threadId: '7',
+                    threadName: 'Main Thread',
                     calls: 4,
                     totalNanoseconds: 500_000,
                     selfNanoseconds: 500_000,
@@ -86,9 +90,11 @@ test('Native profiler writes the trace, Markdown, and SVG visualization under .m
     ]);
     assert.equal(trace, 'trace-data');
     assert.match(markdown, /## Call Hierarchy/);
+    assert.match(markdown, /\| Thread \| Source \|/);
     assert.match(markdown, /Parent <tick>/);
     assert.match(markdown, /Child & work/);
     assert.match(svg, /Native Performance Profile/);
+    assert.match(svg, /\[Main Thread\] Parent/);
     assert.match(svg, /Parent &lt;tick&gt;/);
     assert.match(svg, /Child &amp; work/);
     assert.doesNotMatch(svg, /Test & World/);

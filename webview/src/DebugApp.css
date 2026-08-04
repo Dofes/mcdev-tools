@@ -2551,14 +2551,17 @@ body[data-view="game-debugger"] #root {
 
 .native-profiler-table-header,
 .native-profiler-table button {
-  min-width: 720px;
+  min-width: 850px;
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(120px, 0.8fr) 58px 82px 82px;
+  grid-template-columns: minmax(210px, 1.3fr) minmax(125px, 0.75fr) minmax(110px, 0.65fr) 58px 82px 82px;
   align-items: center;
   gap: 8px;
 }
 
 .native-profiler-table-header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
   height: 30px;
   flex: 0 0 30px;
   padding: 0 12px;
@@ -2569,14 +2572,20 @@ body[data-view="game-debugger"] #root {
   font-weight: 600;
 }
 
-.native-profiler-table-header > span:nth-child(n + 3),
-.native-profiler-table button > span:nth-child(n + 3) { text-align: right; }
+.native-profiler-table-header > span:nth-child(n + 4),
+.native-profiler-table button > span:nth-child(n + 4) { text-align: right; }
 
-.native-profiler-table {
+.native-profiler-table-scroll,
+.native-profiler-calltree-scroll {
   min-width: 0;
   min-height: 0;
   flex: 1 1 auto;
   overflow: auto;
+}
+
+.native-profiler-table,
+.native-profiler-calltree {
+  min-width: 0;
 }
 
 .native-profiler-table button {
@@ -2608,7 +2617,26 @@ body[data-view="game-debugger"] #root {
 .native-profiler-zone-name small { color: var(--vscode-descriptionForeground); font-size: 8px; }
 .native-profiler-table button.selected .native-profiler-zone-name small { color: inherit; opacity: 0.76; }
 
+.native-profiler-zone-thread {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.native-profiler-zone-thread > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.native-profiler-zone-thread .codicon { flex: 0 0 auto; color: var(--vscode-descriptionForeground); font-size: 11px; }
+.native-profiler-table button.selected .native-profiler-zone-thread .codicon { color: inherit; opacity: 0.78; }
+
 .native-profiler-calltree-header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
   min-width: 620px;
   height: 30px;
   flex: 0 0 30px;
@@ -2625,13 +2653,6 @@ body[data-view="game-debugger"] #root {
 }
 
 .native-profiler-calltree-header > span:nth-child(n + 2) { text-align: right; }
-
-.native-profiler-calltree {
-  min-width: 0;
-  min-height: 0;
-  flex: 1 1 auto;
-  overflow: auto;
-}
 
 .native-profiler-calltree-row {
   width: max-content;

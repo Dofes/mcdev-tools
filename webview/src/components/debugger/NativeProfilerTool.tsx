@@ -268,23 +268,25 @@ function NativeProfilerResults({
         </header>
         {view === 'tree' ? (
           <>
-            <div className="native-profiler-calltree-header">
-              <span>{t.nativeProfilerThread} / {t.nativeProfilerZone}</span>
-              <span>{t.nativeProfilerCalls}</span>
-              <span>{t.nativeProfilerSelfTime}</span>
-              <span>{t.nativeProfilerTotalTime}</span>
-            </div>
-            <div className="native-profiler-calltree" role="tree">
-              {completed.result.threads.map(thread => (
-                <CallTreeThread
-                  key={thread.id}
-                  thread={thread}
-                  expanded={expanded}
-                  selectedNodeId={selectedNodeId}
-                  onToggle={toggleExpanded}
-                  onSelect={setSelectedNodeId}
-                />
-              ))}
+            <div className="native-profiler-calltree-scroll">
+              <div className="native-profiler-calltree-header">
+                <span>{t.nativeProfilerThread} / {t.nativeProfilerZone}</span>
+                <span>{t.nativeProfilerCalls}</span>
+                <span>{t.nativeProfilerSelfTime}</span>
+                <span>{t.nativeProfilerTotalTime}</span>
+              </div>
+              <div className="native-profiler-calltree" role="tree">
+                {completed.result.threads.map(thread => (
+                  <CallTreeThread
+                    key={thread.id}
+                    thread={thread}
+                    expanded={expanded}
+                    selectedNodeId={selectedNodeId}
+                    onToggle={toggleExpanded}
+                    onSelect={setSelectedNodeId}
+                  />
+                ))}
+              </div>
             </div>
             {completed.result.callTreeTruncated && (
               <small className="native-profiler-truncated">{t.nativeProfilerCallTreeTruncated}</small>
@@ -292,36 +294,43 @@ function NativeProfilerResults({
           </>
         ) : (
           <>
-            <div className="native-profiler-table-header">
-              <span>{t.nativeProfilerZone}</span>
-              <span />
-              <span>{t.nativeProfilerCalls}</span>
-              <span>{t.nativeProfilerSelfTime}</span>
-              <span>{t.nativeProfilerTotalTime}</span>
-            </div>
-            <div className="native-profiler-table" role="listbox">
-              {zones.map(zone => (
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={zone.id === selectedZoneId}
-                  className={zone.id === selectedZoneId ? 'selected' : ''}
-                  key={zone.id}
-                  onClick={() => setSelectedZoneId(zone.id)}
-                >
-                  <span className="native-profiler-zone-name">
-                    <strong>{zone.name}</strong>
-                    <small title={location(zone)}>{location(zone)}</small>
-                  </span>
-                  <span className="native-profiler-time-bar">
-                    <i className="total" style={{ width: `${zone.totalNanoseconds / maximum * 100}%` }} />
-                    <i className="self" style={{ width: `${zone.selfNanoseconds / maximum * 100}%` }} />
-                  </span>
-                  <span>{zone.calls}</span>
-                  <span>{formatNanoseconds(zone.selfNanoseconds)}</span>
-                  <span>{formatNanoseconds(zone.totalNanoseconds)}</span>
-                </button>
-              ))}
+            <div className="native-profiler-table-scroll">
+              <div className="native-profiler-table-header">
+                <span>{t.nativeProfilerZone}</span>
+                <span>{t.nativeProfilerThread}</span>
+                <span />
+                <span>{t.nativeProfilerCalls}</span>
+                <span>{t.nativeProfilerSelfTime}</span>
+                <span>{t.nativeProfilerTotalTime}</span>
+              </div>
+              <div className="native-profiler-table" role="listbox">
+                {zones.map(zone => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={zone.id === selectedZoneId}
+                    className={zone.id === selectedZoneId ? 'selected' : ''}
+                    key={zone.id}
+                    onClick={() => setSelectedZoneId(zone.id)}
+                  >
+                    <span className="native-profiler-zone-name">
+                      <strong>{zone.name}</strong>
+                      <small title={location(zone)}>{location(zone)}</small>
+                    </span>
+                    <span className="native-profiler-zone-thread" title={threadLabel(zone)}>
+                      <span className="codicon codicon-server-process" />
+                      <span>{threadLabel(zone)}</span>
+                    </span>
+                    <span className="native-profiler-time-bar">
+                      <i className="total" style={{ width: `${zone.totalNanoseconds / maximum * 100}%` }} />
+                      <i className="self" style={{ width: `${zone.selfNanoseconds / maximum * 100}%` }} />
+                    </span>
+                    <span>{zone.calls}</span>
+                    <span>{formatNanoseconds(zone.selfNanoseconds)}</span>
+                    <span>{formatNanoseconds(zone.totalNanoseconds)}</span>
+                  </button>
+                ))}
+              </div>
             </div>
             {completed.result.truncated && <small className="native-profiler-truncated">{t.nativeProfilerTruncated}</small>}
           </>
@@ -361,6 +370,7 @@ function NativeProfilerResults({
               <span className="codicon codicon-dashboard" />
               <strong>{selected.name}</strong>
             </div>
+            {'threadId' in selected && <Metric label={t.nativeProfilerThread} value={threadLabel(selected)} />}
             <Metric label={t.nativeProfilerCalls} value={String(selected.calls)} />
             <Metric label={t.nativeProfilerSelfTime} value={formatNanoseconds(selected.selfNanoseconds)} />
             <Metric label={t.nativeProfilerTotalTime} value={formatNanoseconds(selected.totalNanoseconds)} />
@@ -506,9 +516,13 @@ function isStatus(value: unknown): value is NativeProfilerState['status'] {
   return value === 'idle' || value === 'capturing' || value === 'analyzing';
 }
 
-function location(zone: NativeProfilerZone): string {
+function location(zone: NativeProfilerZone | NativeProfilerCallNode): string {
   if (!zone.sourceFile) return '-';
   return zone.sourceLine > 0 ? `${zone.sourceFile}:${zone.sourceLine}` : zone.sourceFile;
+}
+
+function threadLabel(zone: NativeProfilerZone): string {
+  return zone.threadName || `Thread ${zone.threadId}`;
 }
 
 function formatNanoseconds(value: number): string {

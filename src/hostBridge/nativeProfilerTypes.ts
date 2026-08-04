@@ -1,4 +1,4 @@
-export interface NativeProfilerZone {
+export interface NativeProfilerZoneMetrics {
     id: number;
     name: string;
     sourceFile: string;
@@ -10,7 +10,12 @@ export interface NativeProfilerZone {
     maximumNanoseconds: number;
 }
 
-export interface NativeProfilerCallNode extends NativeProfilerZone {
+export interface NativeProfilerZone extends NativeProfilerZoneMetrics {
+    threadId: string;
+    threadName: string;
+}
+
+export interface NativeProfilerCallNode extends NativeProfilerZoneMetrics {
     children: NativeProfilerCallNode[];
 }
 

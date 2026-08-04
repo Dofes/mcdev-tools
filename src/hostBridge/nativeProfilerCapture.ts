@@ -283,7 +283,11 @@ export function parseNativeProfilerResult(json: string): NativeProfilerResult {
         throw new Error('Native Tracy bridge returned invalid profile metadata');
     }
     for (const zone of result.zones) {
-        if (!validZone(zone)) {
+        if (
+            !validZone(zone)
+            || typeof zone.threadId !== 'string' || zone.threadId.length > 64
+            || typeof zone.threadName !== 'string' || zone.threadName.length > 4096
+        ) {
             throw new Error('Native Tracy bridge returned an invalid profile zone');
         }
     }

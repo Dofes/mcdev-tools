@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "TracyWorker.hpp"
@@ -21,6 +22,8 @@ struct ZoneResult {
     std::string name;
     std::string sourceFile;
     std::uint32_t sourceLine;
+    std::string threadId;
+    std::string threadName;
     std::uint64_t calls;
     std::int64_t total;
     std::int64_t self;
@@ -54,6 +57,13 @@ struct CallTreeState {
     std::size_t maximumNodes;
     std::uint32_t nextId = 0;
     bool truncated = false;
+};
+
+struct ZoneAggregate {
+    std::uint64_t calls = 0;
+    std::int64_t total = 0;
+    std::int64_t self = 0;
+    std::int64_t maximum = 0;
 };
 
 bool isIgnoredSourceFile(std::string_view sourceFile) {
@@ -96,6 +106,17 @@ void forEachZone(const tracy::Vector<tracy::short_ptr<tracy::ZoneEvent>>& zones,
     } else {
         for (const auto& zone : zones) callback(*zone);
     }
+}
+
+std::int64_t zoneSelfTime(tracy::Worker& worker, const tracy::ZoneEvent& zone, std::int64_t duration) {
+    std::int64_t childrenTotal = 0;
+    if (zone.HasChildren()) {
+        const auto& children = worker.GetZoneChildren(zone.Child());
+        forEachZone(children, [&](const tracy::ZoneEvent& child) {
+            childrenTotal += std::max<std::int64_t>(0, worker.GetZoneEnd(child) - child.Start());
+        });
+    }
+    return std::max<std::int64_t>(0, duration - childrenTotal);
 }
 
 CallNode* findOrAddCallNode(
@@ -268,10 +289,25 @@ std::string buildResultJson(
 ) {
     std::vector<ZoneResult> zones;
     const auto& sourceZones = worker.GetSourceLocationZones();
-    zones.reserve(std::min<std::size_t>(sourceZones.size(), maximumZones));
+    zones.reserve(maximumZones);
     std::uint64_t totalZones = 0;
     const auto smallestFirst = [](const ZoneResult& left, const ZoneResult& right) {
         return left.total > right.total;
+    };
+    const auto addZone = [&](ZoneResult result) {
+        if (result.total <= 0) return;
+        ++totalZones;
+        if (maximumZones == 0 || (zones.size() == maximumZones && result.total <= zones.front().total)) {
+            return;
+        }
+        if (zones.size() == maximumZones) {
+            std::pop_heap(zones.begin(), zones.end(), smallestFirst);
+            zones.back() = std::move(result);
+            std::push_heap(zones.begin(), zones.end(), smallestFirst);
+        } else {
+            zones.push_back(std::move(result));
+            std::push_heap(zones.begin(), zones.end(), smallestFirst);
+        }
     };
 
     for (const auto& entry : sourceZones) {
@@ -282,28 +318,46 @@ std::string buildResultJson(
         const char* file = worker.GetString(source.file);
         if (isIgnoredSourceFile(file ? file : "")) continue;
 
-        ++totalZones;
-        if (zones.size() == maximumZones && data.total <= zones.front().total) continue;
-
-        const auto calls = static_cast<std::uint64_t>(data.zones.size());
-        ZoneResult result{
-            name ? name : "",
-            file ? file : "",
-            source.line,
-            calls,
-            data.total,
-            data.selfTotal,
-            calls == 0 ? 0 : data.total / static_cast<std::int64_t>(calls),
-            data.max
+        const auto makeZone = [&](std::uint16_t compressedThread, const ZoneAggregate& aggregate) {
+            const auto threadId = worker.DecompressThread(compressedThread);
+            const char* threadName = worker.GetThreadName(threadId);
+            addZone(ZoneResult{
+                name ? name : "",
+                file ? file : "",
+                source.line,
+                std::to_string(threadId),
+                threadName ? threadName : "",
+                aggregate.calls,
+                aggregate.total,
+                aggregate.self,
+                aggregate.calls == 0 ? 0 : aggregate.total / static_cast<std::int64_t>(aggregate.calls),
+                aggregate.maximum
+            });
         };
-        if (zones.size() == maximumZones) {
-            std::pop_heap(zones.begin(), zones.end(), smallestFirst);
-            zones.back() = std::move(result);
-            std::push_heap(zones.begin(), zones.end(), smallestFirst);
-        } else {
-            zones.push_back(std::move(result));
-            std::push_heap(zones.begin(), zones.end(), smallestFirst);
+
+        if (data.threadCnt.size() == 1) {
+            makeZone(data.threadCnt.begin()->first, ZoneAggregate{
+                static_cast<std::uint64_t>(data.zones.size()),
+                data.total,
+                data.selfTotal,
+                data.max
+            });
+            continue;
         }
+
+        std::unordered_map<std::uint16_t, ZoneAggregate> threadAggregates;
+        threadAggregates.reserve(data.threadCnt.size());
+        for (const auto& zoneThread : data.zones) {
+            const auto* zone = zoneThread.Zone();
+            if (!zone) continue;
+            const auto duration = std::max<std::int64_t>(0, worker.GetZoneEnd(*zone) - zone->Start());
+            auto& aggregate = threadAggregates[zoneThread.Thread()];
+            ++aggregate.calls;
+            aggregate.total += duration;
+            aggregate.self += zoneSelfTime(worker, *zone, duration);
+            aggregate.maximum = std::max(aggregate.maximum, duration);
+        }
+        for (const auto& [thread, aggregate] : threadAggregates) makeZone(thread, aggregate);
     }
 
     std::sort(zones.begin(), zones.end(), [](const ZoneResult& left, const ZoneResult& right) {
@@ -326,8 +380,11 @@ std::string buildResultJson(
         appendJsonString(output, zone.name);
         output << ",\"sourceFile\":";
         appendJsonString(output, zone.sourceFile);
-        output << ",\"sourceLine\":" << zone.sourceLine
-               << ",\"calls\":" << zone.calls
+        output << ",\"sourceLine\":" << zone.sourceLine << ",\"threadId\":";
+        appendJsonString(output, zone.threadId);
+        output << ",\"threadName\":";
+        appendJsonString(output, zone.threadName);
+        output << ",\"calls\":" << zone.calls
                << ",\"totalNanoseconds\":" << std::max<std::int64_t>(0, zone.total)
                << ",\"selfNanoseconds\":" << std::max<std::int64_t>(0, zone.self)
                << ",\"meanNanoseconds\":" << std::max<std::int64_t>(0, zone.mean)

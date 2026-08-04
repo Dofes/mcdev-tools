@@ -52,11 +52,11 @@ function renderMarkdown(options: {
         '',
         '## Hot Zones',
         '',
-        '| # | Zone | Source | Calls | Self | Total | Mean | Max |',
-        '| -: | --- | --- | ---: | ---: | ---: | ---: | ---: |'
+        '| # | Zone | Thread | Source | Calls | Self | Total | Mean | Max |',
+        '| -: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |'
     ];
     options.result.zones.forEach((zone, index) => lines.push(
-        `| ${index + 1} | ${md(zone.name)} | ${md(location(zone.sourceFile, zone.sourceLine))} | ${zone.calls} | ${time(zone.selfNanoseconds)} | ${time(zone.totalNanoseconds)} | ${time(zone.meanNanoseconds)} | ${time(zone.maximumNanoseconds)} |`
+        `| ${index + 1} | ${md(zone.name)} | ${md(threadLabel(zone.threadId, zone.threadName))} | ${md(location(zone.sourceFile, zone.sourceLine))} | ${zone.calls} | ${time(zone.selfNanoseconds)} | ${time(zone.totalNanoseconds)} | ${time(zone.meanNanoseconds)} | ${time(zone.maximumNanoseconds)} |`
     ));
     lines.push('', '## Call Hierarchy', '');
     for (const thread of options.result.threads) {
@@ -149,9 +149,10 @@ function renderSvg(options: {
         const y = hotTop + 18 + index * 25;
         const totalWidth = Math.max(1, zone.totalNanoseconds / maximumZone * barWidth);
         const selfWidth = Math.max(0, zone.selfNanoseconds / maximumZone * barWidth);
-        const label = `${zone.name} (${location(zone.sourceFile, zone.sourceLine)})`;
+        const thread = threadLabel(zone.threadId, zone.threadName);
+        const label = `[${thread}] ${zone.name} (${location(zone.sourceFile, zone.sourceLine)})`;
         content.push(
-            `<g><title>${xml(`${label}\nCalls: ${zone.calls}\nSelf: ${time(zone.selfNanoseconds)}\nTotal: ${time(zone.totalNanoseconds)}`)}</title>`,
+            `<g><title>${xml(`${label}\nThread: ${thread}\nCalls: ${zone.calls}\nSelf: ${time(zone.selfNanoseconds)}\nTotal: ${time(zone.totalNanoseconds)}`)}</title>`,
             `<text x="20" y="${y + 16}" class="zone">${xml(shorten(label, 58))}</text>`,
             `<rect x="${barLeft}" y="${y + 3}" width="${totalWidth.toFixed(2)}" height="17" rx="2" fill="#4c8bd9"/>`,
             selfWidth > 0
@@ -244,6 +245,10 @@ function fileStamp(value: Date): string {
 
 function location(file: string, line: number): string {
     return line > 0 ? `${file}:${line}` : file;
+}
+
+function threadLabel(id: string, name: string): string {
+    return name || `Thread ${id}`;
 }
 
 function time(nanoseconds: number): string {
