@@ -171,4 +171,3 @@ void mcdev_tracy_shutdown_all(void) {
 }
 
 } // extern "C"
-

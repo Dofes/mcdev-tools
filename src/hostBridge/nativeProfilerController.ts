@@ -3,7 +3,6 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { HostBridgeManager } from './manager';
 import { NativeProfilerCapture } from './nativeProfilerCapture';
-import { openNativeProfilerSource } from './nativeProfilerNavigation';
 import { discoverTracyListeners, NativeProfilerEndpoint } from './nativeProfilerPortDiscovery';
 import { NativeProfilerReportFiles, writeNativeProfilerReport } from './nativeProfilerReport';
 import { NativeProfilerResult } from './nativeProfilerTypes';
@@ -114,11 +113,11 @@ export class NativeProfilerController implements vscode.Disposable {
                 case 'nativeProfilerOpenReport':
                     await this.openReport(key);
                     break;
+                case 'nativeProfilerOpenSvg':
+                    await this.openSvg(key);
+                    break;
                 case 'nativeProfilerReveal':
                     await this.reveal(key);
-                    break;
-                case 'nativeProfilerOpenSource':
-                    await this.openSource(key, sessionId, message.zoneId);
                     break;
             }
         } catch (error) {
@@ -335,22 +334,20 @@ export class NativeProfilerController implements vscode.Disposable {
         await vscode.window.showTextDocument(document, { preview: true });
     }
 
+    private async openSvg(key: string): Promise<void> {
+        const report = this.completed.get(key)?.report;
+        if (!report) {
+            throw new Error('Save the native profile before opening its visualization');
+        }
+        await vscode.commands.executeCommand('vscode.open', vscode.Uri.file(report.svgPath));
+    }
+
     private async reveal(key: string): Promise<void> {
         const report = this.completed.get(key)?.report;
         if (!report) {
             throw new Error('Save the native profile before revealing it');
         }
         await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(report.tracePath));
-    }
-
-    private async openSource(key: string, sessionId: string, rawZoneId: unknown): Promise<void> {
-        const zoneId = typeof rawZoneId === 'number' && Number.isInteger(rawZoneId) ? rawZoneId : -1;
-        const zone = this.completed.get(key)?.result.zones.find(item => item.id === zoneId);
-        const session = this.hostBridgeManager.getSnapshot().sessions.find(item => item.id === sessionId);
-        if (!zone || !session?.projectRoot || !zone.sourceFile) {
-            throw new Error('The selected native source location is unavailable');
-        }
-        await openNativeProfilerSource(session.projectRoot, zone.sourceFile, zone.sourceLine);
     }
 
     private ensureScanner(): void {

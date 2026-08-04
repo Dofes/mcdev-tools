@@ -166,7 +166,7 @@ void CaptureSession::run() noexcept {
         file->Finish();
 
         const double capturedSeconds = std::chrono::duration<double>(completedAt - capturedAt).count();
-        auto result = buildResultJson(worker, capturedSeconds, options_.maximumZones);
+        std::string result = buildResultJson(worker, capturedSeconds, options_.maximumZones);
         {
             std::lock_guard lock(valueMutex_);
             result_ = std::move(result);

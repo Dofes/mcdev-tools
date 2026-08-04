@@ -2,8 +2,10 @@ import { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { I18nText } from '../../i18n';
 import {
   HostBridgeSessionSummary,
+  NativeProfilerCallNode,
   NativeProfilerCompletedState,
   NativeProfilerState,
+  NativeProfilerThread,
   NativeProfilerZone,
 } from '../../types';
 import { vscode } from '../../vscode';
@@ -167,18 +169,17 @@ export function NativeProfilerTool({ session, t }: NativeProfilerToolProps) {
             <span>{t.nativeProfilerSave}</span>
           </button>
         )}
-        {completed && (
+        {completed?.report && (
           <div className="native-profiler-report-actions">
-            {completed.report && (
-              <>
-                <button type="button" onClick={() => action('nativeProfilerOpenReport')} title={t.nativeProfilerOpenReport}>
-                  <span className="codicon codicon-markdown" />
-                </button>
-                <button type="button" onClick={() => action('nativeProfilerReveal')} title={t.nativeProfilerReveal}>
-                  <span className="codicon codicon-folder-opened" />
-                </button>
-              </>
-            )}
+            <button type="button" onClick={() => action('nativeProfilerOpenReport')} title={t.nativeProfilerOpenReport}>
+              <span className="codicon codicon-markdown" />
+            </button>
+            <button type="button" onClick={() => action('nativeProfilerOpenSvg')} title={t.nativeProfilerOpenSvg}>
+              <span className="codicon codicon-graph" />
+            </button>
+            <button type="button" onClick={() => action('nativeProfilerReveal')} title={t.nativeProfilerReveal}>
+              <span className="codicon codicon-folder-opened" />
+            </button>
           </div>
         )}
       </div>
@@ -193,9 +194,7 @@ export function NativeProfilerTool({ session, t }: NativeProfilerToolProps) {
       {completed ? (
         <NativeProfilerResults
           completed={completed}
-          session={session}
           t={t}
-          onOpen={zone => send('nativeProfilerOpenSource', { zoneId: zone.id })}
         />
       ) : (
         <div className="native-profiler-empty">
@@ -209,16 +208,15 @@ export function NativeProfilerTool({ session, t }: NativeProfilerToolProps) {
 
 function NativeProfilerResults({
   completed,
-  session,
   t,
-  onOpen,
 }: {
   completed: NativeProfilerCompletedState;
-  session?: HostBridgeSessionSummary;
   t: I18nText;
-  onOpen(zone: NativeProfilerZone): void;
 }) {
-  const [selectedId, setSelectedId] = useState<number>();
+  const [view, setView] = useState<'tree' | 'hotspots'>('tree');
+  const [selectedNodeId, setSelectedNodeId] = useState<number>();
+  const [selectedZoneId, setSelectedZoneId] = useState<number>();
+  const [expanded, setExpanded] = useState<Set<string>>(() => initialExpanded(completed.result.threads));
   const [tableWidth, setTableWidth] = useState(68);
   const layout = useRef<HTMLDivElement>(null);
   const resizing = useRef(false);
@@ -226,11 +224,24 @@ function NativeProfilerResults({
     () => completed.result.zones.slice().sort((left, right) => right.totalNanoseconds - left.totalNanoseconds),
     [completed.result.zones]
   );
+  const callNodes = useMemo(() => indexCallNodes(completed.result.threads), [completed.result.threads]);
   const maximum = Math.max(1, ...zones.map(zone => zone.totalNanoseconds));
   useEffect(() => {
-    if (!zones.some(zone => zone.id === selectedId)) setSelectedId(zones[0]?.id);
-  }, [selectedId, zones]);
-  const selected = zones.find(zone => zone.id === selectedId);
+    if (!zones.some(zone => zone.id === selectedZoneId)) setSelectedZoneId(zones[0]?.id);
+  }, [selectedZoneId, zones]);
+  useEffect(() => {
+    setSelectedNodeId(firstCallNode(completed.result.threads)?.id);
+    setExpanded(initialExpanded(completed.result.threads));
+  }, [completed.result.threads]);
+  const selected = view === 'tree'
+    ? callNodes.get(selectedNodeId ?? -1)
+    : zones.find(zone => zone.id === selectedZoneId);
+  const toggleExpanded = (key: string) => setExpanded(previous => {
+    const next = new Set(previous);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    return next;
+  });
   const resize = (clientX: number) => {
     const bounds = layout.current?.getBoundingClientRect();
     if (!bounds) return;
@@ -244,42 +255,77 @@ function NativeProfilerResults({
     >
       <section className="native-profiler-zones">
         <header>
-          <h2>{t.nativeProfilerHotZones}</h2>
-          <span>{t.nativeProfilerDoubleClickHint}</span>
-        </header>
-        <div className="native-profiler-table-header">
-          <span>{t.nativeProfilerZone}</span>
-          <span />
-          <span>{t.nativeProfilerCalls}</span>
-          <span>{t.nativeProfilerSelfTime}</span>
-          <span>{t.nativeProfilerTotalTime}</span>
-        </div>
-        <div className="native-profiler-table" role="listbox">
-          {zones.map(zone => (
-            <button
-              type="button"
-              role="option"
-              aria-selected={zone.id === selectedId}
-              className={zone.id === selectedId ? 'selected' : ''}
-              key={zone.id}
-              onClick={() => setSelectedId(zone.id)}
-              onDoubleClick={() => onOpen(zone)}
-            >
-              <span className="native-profiler-zone-name">
-                <strong>{zone.name}</strong>
-                <small title={location(zone)}>{location(zone)}</small>
-              </span>
-              <span className="native-profiler-time-bar">
-                <i className="total" style={{ width: `${zone.totalNanoseconds / maximum * 100}%` }} />
-                <i className="self" style={{ width: `${zone.selfNanoseconds / maximum * 100}%` }} />
-              </span>
-              <span>{zone.calls}</span>
-              <span>{formatNanoseconds(zone.selfNanoseconds)}</span>
-              <span>{formatNanoseconds(zone.totalNanoseconds)}</span>
+          <div className="native-profiler-result-tabs">
+            <button type="button" className={view === 'tree' ? 'active' : ''} onClick={() => setView('tree')}>
+              <span className="codicon codicon-list-tree" />
+              <span>{t.nativeProfilerCallTree}</span>
             </button>
-          ))}
-        </div>
-        {completed.result.truncated && <small className="native-profiler-truncated">{t.nativeProfilerTruncated}</small>}
+            <button type="button" className={view === 'hotspots' ? 'active' : ''} onClick={() => setView('hotspots')}>
+              <span className="codicon codicon-flame" />
+              <span>{t.nativeProfilerHotZones}</span>
+            </button>
+          </div>
+        </header>
+        {view === 'tree' ? (
+          <>
+            <div className="native-profiler-calltree-header">
+              <span>{t.nativeProfilerThread} / {t.nativeProfilerZone}</span>
+              <span>{t.nativeProfilerCalls}</span>
+              <span>{t.nativeProfilerSelfTime}</span>
+              <span>{t.nativeProfilerTotalTime}</span>
+            </div>
+            <div className="native-profiler-calltree" role="tree">
+              {completed.result.threads.map(thread => (
+                <CallTreeThread
+                  key={thread.id}
+                  thread={thread}
+                  expanded={expanded}
+                  selectedNodeId={selectedNodeId}
+                  onToggle={toggleExpanded}
+                  onSelect={setSelectedNodeId}
+                />
+              ))}
+            </div>
+            {completed.result.callTreeTruncated && (
+              <small className="native-profiler-truncated">{t.nativeProfilerCallTreeTruncated}</small>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="native-profiler-table-header">
+              <span>{t.nativeProfilerZone}</span>
+              <span />
+              <span>{t.nativeProfilerCalls}</span>
+              <span>{t.nativeProfilerSelfTime}</span>
+              <span>{t.nativeProfilerTotalTime}</span>
+            </div>
+            <div className="native-profiler-table" role="listbox">
+              {zones.map(zone => (
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={zone.id === selectedZoneId}
+                  className={zone.id === selectedZoneId ? 'selected' : ''}
+                  key={zone.id}
+                  onClick={() => setSelectedZoneId(zone.id)}
+                >
+                  <span className="native-profiler-zone-name">
+                    <strong>{zone.name}</strong>
+                    <small title={location(zone)}>{location(zone)}</small>
+                  </span>
+                  <span className="native-profiler-time-bar">
+                    <i className="total" style={{ width: `${zone.totalNanoseconds / maximum * 100}%` }} />
+                    <i className="self" style={{ width: `${zone.selfNanoseconds / maximum * 100}%` }} />
+                  </span>
+                  <span>{zone.calls}</span>
+                  <span>{formatNanoseconds(zone.selfNanoseconds)}</span>
+                  <span>{formatNanoseconds(zone.totalNanoseconds)}</span>
+                </button>
+              ))}
+            </div>
+            {completed.result.truncated && <small className="native-profiler-truncated">{t.nativeProfilerTruncated}</small>}
+          </>
+        )}
       </section>
       <div
         className="native-profiler-splitter"
@@ -314,11 +360,6 @@ function NativeProfilerResults({
             <div className="native-profiler-selected-zone">
               <span className="codicon codicon-dashboard" />
               <strong>{selected.name}</strong>
-              {session && selected.sourceFile && (
-                <button type="button" onClick={() => onOpen(selected)} title={t.nativeProfilerOpenSource}>
-                  <span className="codicon codicon-go-to-file" />
-                </button>
-              )}
             </div>
             <Metric label={t.nativeProfilerCalls} value={String(selected.calls)} />
             <Metric label={t.nativeProfilerSelfTime} value={formatNanoseconds(selected.selfNanoseconds)} />
@@ -334,6 +375,118 @@ function NativeProfilerResults({
       </section>
     </div>
   );
+}
+
+function CallTreeThread({
+  thread,
+  expanded,
+  selectedNodeId,
+  onToggle,
+  onSelect,
+}: {
+  thread: NativeProfilerThread;
+  expanded: Set<string>;
+  selectedNodeId?: number;
+  onToggle(key: string): void;
+  onSelect(id: number): void;
+}) {
+  const key = `thread:${thread.id}`;
+  const open = expanded.has(key);
+  return (
+    <div className="native-profiler-calltree-thread" role="treeitem" aria-expanded={open}>
+      <div className="native-profiler-calltree-row thread">
+        <button type="button" className="toggle" onClick={() => onToggle(key)} aria-label={thread.name}>
+          <span className={`codicon codicon-chevron-${open ? 'down' : 'right'}`} />
+        </button>
+        <button type="button" className="values" onClick={() => onToggle(key)}>
+          <span className="name"><span className="codicon codicon-server-process" /><strong>{thread.name || thread.id}</strong></span>
+          <span>{thread.calls}</span>
+          <span>-</span>
+          <span>{formatNanoseconds(thread.totalNanoseconds)}</span>
+        </button>
+      </div>
+      {open && thread.roots.map(node => (
+        <CallTreeNode
+          key={node.id}
+          node={node}
+          depth={1}
+          expanded={expanded}
+          selectedNodeId={selectedNodeId}
+          onToggle={onToggle}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CallTreeNode({
+  node,
+  depth,
+  expanded,
+  selectedNodeId,
+  onToggle,
+  onSelect,
+}: {
+  node: NativeProfilerCallNode;
+  depth: number;
+  expanded: Set<string>;
+  selectedNodeId?: number;
+  onToggle(key: string): void;
+  onSelect(id: number): void;
+}) {
+  const key = `node:${node.id}`;
+  const open = expanded.has(key);
+  const hasChildren = node.children.length > 0;
+  return (
+    <div role="treeitem" aria-expanded={hasChildren ? open : undefined}>
+      <div
+        className={`native-profiler-calltree-row ${node.id === selectedNodeId ? 'selected' : ''}`}
+        style={{ '--native-profiler-call-depth': depth } as CSSProperties}
+      >
+        <button type="button" className="toggle" disabled={!hasChildren} onClick={() => onToggle(key)}>
+          {hasChildren && <span className={`codicon codicon-chevron-${open ? 'down' : 'right'}`} />}
+        </button>
+        <button type="button" className="values" onClick={() => onSelect(node.id)} title={location(node)}>
+          <span className="name"><strong>{node.name}</strong><small>{location(node)}</small></span>
+          <span>{node.calls}</span>
+          <span>{formatNanoseconds(node.selfNanoseconds)}</span>
+          <span>{formatNanoseconds(node.totalNanoseconds)}</span>
+        </button>
+      </div>
+      {open && node.children.map(child => (
+        <CallTreeNode
+          key={child.id}
+          node={child}
+          depth={depth + 1}
+          expanded={expanded}
+          selectedNodeId={selectedNodeId}
+          onToggle={onToggle}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
+}
+
+function indexCallNodes(threads: NativeProfilerThread[]): Map<number, NativeProfilerCallNode> {
+  const result = new Map<number, NativeProfilerCallNode>();
+  const pending = threads.flatMap(thread => thread.roots);
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (!node) continue;
+    result.set(node.id, node);
+    pending.push(...node.children);
+  }
+  return result;
+}
+
+function firstCallNode(threads: NativeProfilerThread[]): NativeProfilerCallNode | undefined {
+  return threads.find(thread => thread.roots.length > 0)?.roots[0];
+}
+
+function initialExpanded(threads: NativeProfilerThread[]): Set<string> {
+  return new Set(threads.map(thread => `thread:${thread.id}`));
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

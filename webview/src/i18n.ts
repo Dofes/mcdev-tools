@@ -288,13 +288,15 @@ export interface I18nText {
   nativeProfilerDetails: string;
   nativeProfilerSelectZone: string;
   nativeProfilerSource: string;
-  nativeProfilerOpenSource: string;
+  nativeProfilerCallTree: string;
+  nativeProfilerThread: string;
+  nativeProfilerCallTreeTruncated: string;
   nativeProfilerSave: string;
   nativeProfilerOpenReport: string;
+  nativeProfilerOpenSvg: string;
   nativeProfilerReveal: string;
   nativeProfilerSaved: string;
   nativeProfilerTruncated: string;
-  nativeProfilerDoubleClickHint: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -588,13 +590,15 @@ export const i18n: Record<string, I18nText> = {
     nativeProfilerDetails: 'Zone Details',
     nativeProfilerSelectZone: 'Select a zone to inspect its metrics',
     nativeProfilerSource: 'Source',
-    nativeProfilerOpenSource: 'Go to source',
+    nativeProfilerCallTree: 'Call Hierarchy',
+    nativeProfilerThread: 'Thread',
+    nativeProfilerCallTreeTruncated: 'Call hierarchy was bounded to keep the result responsive',
     nativeProfilerSave: 'Save capture and report',
     nativeProfilerOpenReport: 'Open Markdown report',
+    nativeProfilerOpenSvg: 'Open SVG visualization',
     nativeProfilerReveal: 'Show saved capture in folder',
     nativeProfilerSaved: 'Capture saved',
     nativeProfilerTruncated: 'Largest zones shown',
-    nativeProfilerDoubleClickHint: 'Double-click a zone to open its source',
 
   },
   zh: {
@@ -866,7 +870,7 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerRevealReport: '在文件夹中显示报告',
     pythonProfilerReportFailed: '采样成功，但报告文件写入失败',
     pythonProfilerTruncated: '仅显示耗时最高的函数',
-    nativeProfilerTab: 'Native性能分析',
+    nativeProfilerTab: 'Native 性能',
     nativeProfilerEndpoint: 'Tracy 端点',
     nativeProfilerDetecting: '正在探测游戏 Tracy 端点',
     nativeProfilerMaximumDuration: '最大采样时间',
@@ -887,12 +891,14 @@ export const i18n: Record<string, I18nText> = {
     nativeProfilerDetails: '区间详情',
     nativeProfilerSelectZone: '选择性能区间以查看详细指标',
     nativeProfilerSource: '源位置',
-    nativeProfilerOpenSource: '转到源代码',
+    nativeProfilerCallTree: '调用层级',
+    nativeProfilerThread: '线程',
+    nativeProfilerCallTreeTruncated: '调用层级已限制规模以保持结果流畅',
     nativeProfilerSave: '保存采样与报告',
     nativeProfilerOpenReport: '打开 Markdown 报告',
+    nativeProfilerOpenSvg: '打开 SVG 可视化',
     nativeProfilerReveal: '在文件夹中显示采样',
     nativeProfilerSaved: '采样已保存',
     nativeProfilerTruncated: '仅显示耗时最高的区间',
-    nativeProfilerDoubleClickHint: '双击性能区间可跳转到源代码',
   },
 };

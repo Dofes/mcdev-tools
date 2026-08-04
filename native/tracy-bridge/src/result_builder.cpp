@@ -1,8 +1,10 @@
 #include "result_builder.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <iomanip>
 #include <sstream>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -10,6 +12,9 @@
 
 namespace mcdev::tracy_bridge {
 namespace {
+
+constexpr std::size_t MaximumThreads = 64;
+constexpr std::size_t MaximumCallDepth = 64;
 
 struct ZoneResult {
     std::string name;
@@ -20,6 +25,34 @@ struct ZoneResult {
     std::int64_t self;
     std::int64_t mean;
     std::int64_t maximum;
+};
+
+struct CallNode {
+    std::uint32_t id;
+    std::int16_t sourceLocation;
+    std::string name;
+    std::string sourceFile;
+    std::uint32_t sourceLine;
+    std::uint64_t calls = 0;
+    std::int64_t total = 0;
+    std::int64_t self = 0;
+    std::int64_t maximum = 0;
+    std::vector<CallNode> children;
+};
+
+struct ThreadResult {
+    std::string id;
+    std::string name;
+    std::uint64_t calls = 0;
+    std::int64_t total = 0;
+    std::vector<CallNode> roots;
+};
+
+struct CallTreeState {
+    std::size_t nodes = 0;
+    std::size_t maximumNodes;
+    std::uint32_t nextId = 0;
+    bool truncated = false;
 };
 
 void appendJsonString(std::ostringstream& output, std::string_view value) {
@@ -45,10 +78,168 @@ void appendJsonString(std::ostringstream& output, std::string_view value) {
     output << '"';
 }
 
+template<typename Callback>
+void forEachZone(const tracy::Vector<tracy::short_ptr<tracy::ZoneEvent>>& zones, Callback&& callback) {
+    if (zones.is_magic()) {
+        const auto& direct = *reinterpret_cast<const tracy::Vector<tracy::ZoneEvent>*>(&zones);
+        for (const auto& zone : direct) callback(zone);
+    } else {
+        for (const auto& zone : zones) callback(*zone);
+    }
+}
+
+CallNode* findOrAddCallNode(
+    tracy::Worker& worker,
+    const tracy::ZoneEvent& zone,
+    std::vector<CallNode>& siblings,
+    CallTreeState& state
+) {
+    const auto sourceLocation = zone.SrcLoc();
+    const char* rawName = worker.GetZoneName(zone);
+    const std::string_view name = rawName ? rawName : "";
+    const auto found = std::find_if(siblings.begin(), siblings.end(), [&](const CallNode& node) {
+        return node.sourceLocation == sourceLocation && node.name == name;
+    });
+    if (found != siblings.end()) return &*found;
+    if (state.nodes >= state.maximumNodes) {
+        state.truncated = true;
+        return nullptr;
+    }
+
+    const auto& source = worker.GetSourceLocation(sourceLocation);
+    const char* rawFile = worker.GetString(source.file);
+    siblings.push_back(CallNode{
+        state.nextId++,
+        sourceLocation,
+        std::string(name),
+        rawFile ? rawFile : "",
+        source.line
+    });
+    ++state.nodes;
+    return &siblings.back();
+}
+
+std::int64_t collectCallTreeZone(
+    tracy::Worker& worker,
+    const tracy::ZoneEvent& zone,
+    std::vector<CallNode>* siblings,
+    ThreadResult& thread,
+    CallTreeState& state,
+    std::size_t depth
+) {
+    const auto duration = std::max<std::int64_t>(0, worker.GetZoneEnd(zone) - zone.Start());
+    ++thread.calls;
+    if (!siblings || depth >= MaximumCallDepth) {
+        state.truncated = true;
+        return duration;
+    }
+    CallNode* node = findOrAddCallNode(worker, zone, *siblings, state);
+    if (!node) return duration;
+
+    std::int64_t childrenTotal = 0;
+    if (zone.HasChildren()) {
+        const auto& children = worker.GetZoneChildren(zone.Child());
+        forEachZone(children, [&](const tracy::ZoneEvent& child) {
+            childrenTotal += collectCallTreeZone(
+                worker,
+                child,
+                &node->children,
+                thread,
+                state,
+                depth + 1
+            );
+        });
+    }
+
+    if (node) {
+        ++node->calls;
+        node->total += duration;
+        node->self += std::max<std::int64_t>(0, duration - childrenTotal);
+        node->maximum = std::max(node->maximum, duration);
+    }
+    return duration;
+}
+
+void sortCallNodes(std::vector<CallNode>& nodes) {
+    std::sort(nodes.begin(), nodes.end(), [](const CallNode& left, const CallNode& right) {
+        return left.total > right.total;
+    });
+    for (auto& node : nodes) sortCallNodes(node.children);
+}
+
+std::vector<ThreadResult> buildCallTree(
+    tracy::Worker& worker,
+    std::uint32_t maximumZones,
+    bool& truncated
+) {
+    std::vector<const tracy::ThreadData*> sourceThreads;
+    for (const auto* thread : worker.GetThreadData()) {
+        if (thread && !thread->timeline.empty()) sourceThreads.push_back(thread);
+    }
+    std::sort(sourceThreads.begin(), sourceThreads.end(), [](const auto* left, const auto* right) {
+        return left->count > right->count;
+    });
+    if (sourceThreads.size() > MaximumThreads) {
+        sourceThreads.resize(MaximumThreads);
+        truncated = true;
+    }
+
+    const auto maximumCallNodes = std::max<std::size_t>({
+        sourceThreads.size(),
+        maximumZones,
+        maximumZones * 8ull
+    });
+    std::size_t remainingNodes = maximumCallNodes;
+    std::uint32_t nextNodeId = 0;
+    std::vector<ThreadResult> threads;
+    threads.reserve(sourceThreads.size());
+    for (std::size_t threadIndex = 0; threadIndex < sourceThreads.size(); ++threadIndex) {
+        const auto* sourceThread = sourceThreads[threadIndex];
+        const auto remainingThreads = sourceThreads.size() - threadIndex;
+        // Reserve a fair share for every active thread instead of letting one busy pool exhaust the tree.
+        const auto threadNodeBudget = std::max<std::size_t>(1, remainingNodes / remainingThreads);
+        CallTreeState state{0, threadNodeBudget, nextNodeId, false};
+        const char* rawName = worker.GetThreadName(sourceThread->id);
+        ThreadResult thread{std::to_string(sourceThread->id), rawName ? rawName : ""};
+        forEachZone(sourceThread->timeline, [&](const tracy::ZoneEvent& zone) {
+            thread.total += collectCallTreeZone(worker, zone, &thread.roots, thread, state, 0);
+        });
+        nextNodeId = state.nextId;
+        remainingNodes -= state.nodes;
+        truncated = truncated || state.truncated;
+        if (thread.roots.empty()) continue;
+        sortCallNodes(thread.roots);
+        threads.push_back(std::move(thread));
+    }
+    std::sort(threads.begin(), threads.end(), [](const ThreadResult& left, const ThreadResult& right) {
+        return left.total > right.total;
+    });
+    return threads;
+}
+
+void appendCallNode(std::ostringstream& output, const CallNode& node) {
+    output << "{\"id\":" << node.id << ",\"name\":";
+    appendJsonString(output, node.name);
+    output << ",\"sourceFile\":";
+    appendJsonString(output, node.sourceFile);
+    output << ",\"sourceLine\":" << node.sourceLine
+           << ",\"calls\":" << node.calls
+           << ",\"totalNanoseconds\":" << std::max<std::int64_t>(0, node.total)
+           << ",\"selfNanoseconds\":" << std::max<std::int64_t>(0, node.self)
+           << ",\"meanNanoseconds\":" << (node.calls == 0 ? 0 : node.total / static_cast<std::int64_t>(node.calls))
+           << ",\"maximumNanoseconds\":" << std::max<std::int64_t>(0, node.maximum)
+           << ",\"children\":[";
+    for (std::size_t index = 0; index < node.children.size(); ++index) {
+        if (index != 0) output << ',';
+        appendCallNode(output, node.children[index]);
+    }
+    output << "]}";
+}
+
 } // namespace
 
 std::string buildResultJson(
-    const tracy::Worker& worker,
+    tracy::Worker& worker,
     double capturedSeconds,
     std::uint32_t maximumZones
 ) {
@@ -62,13 +253,10 @@ std::string buildResultJson(
 
     for (const auto& entry : sourceZones) {
         const auto& data = entry.second;
-        if (data.total == 0 || data.zones.empty()) {
-            continue;
-        }
+        if (data.total == 0 || data.zones.empty()) continue;
         ++totalZones;
-        if (zones.size() == maximumZones && data.total <= zones.front().total) {
-            continue;
-        }
+        if (zones.size() == maximumZones && data.total <= zones.front().total) continue;
+
         const auto& source = worker.GetSourceLocation(entry.first);
         const char* name = worker.GetString(source.name.active ? source.name : source.function);
         const char* file = worker.GetString(source.file);
@@ -97,11 +285,14 @@ std::string buildResultJson(
         return left.total > right.total;
     });
 
+    bool callTreeTruncated = false;
+    auto threads = buildCallTree(worker, maximumZones, callTreeTruncated);
     std::ostringstream output;
     output << std::setprecision(15)
            << "{\"capturedSeconds\":" << capturedSeconds
            << ",\"totalZones\":" << totalZones
            << ",\"truncated\":" << (totalZones > zones.size() ? "true" : "false")
+           << ",\"callTreeTruncated\":" << (callTreeTruncated ? "true" : "false")
            << ",\"zones\":[";
     for (std::size_t index = 0; index < zones.size(); ++index) {
         if (index != 0) output << ',';
@@ -117,6 +308,23 @@ std::string buildResultJson(
                << ",\"meanNanoseconds\":" << std::max<std::int64_t>(0, zone.mean)
                << ",\"maximumNanoseconds\":" << std::max<std::int64_t>(0, zone.maximum)
                << '}';
+    }
+    output << "],\"threads\":[";
+    for (std::size_t threadIndex = 0; threadIndex < threads.size(); ++threadIndex) {
+        if (threadIndex != 0) output << ',';
+        const auto& thread = threads[threadIndex];
+        output << "{\"id\":";
+        appendJsonString(output, thread.id);
+        output << ",\"name\":";
+        appendJsonString(output, thread.name);
+        output << ",\"calls\":" << thread.calls
+               << ",\"totalNanoseconds\":" << std::max<std::int64_t>(0, thread.total)
+               << ",\"roots\":[";
+        for (std::size_t rootIndex = 0; rootIndex < thread.roots.size(); ++rootIndex) {
+            if (rootIndex != 0) output << ',';
+            appendCallNode(output, thread.roots[rootIndex]);
+        }
+        output << "]}";
     }
     output << "]}";
     return output.str();

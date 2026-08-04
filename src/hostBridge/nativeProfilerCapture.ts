@@ -274,26 +274,59 @@ function parseNativeProfilerResult(json: string): NativeProfilerResult {
         || !Number.isSafeInteger(result.totalZones)
         || result.totalZones < 0
         || typeof result.truncated !== 'boolean'
+        || typeof result.callTreeTruncated !== 'boolean'
         || !Array.isArray(result.zones)
         || result.zones.length > 10_000
+        || !Array.isArray(result.threads)
+        || result.threads.length > 128
     ) {
         throw new Error('Native Tracy bridge returned invalid profile metadata');
     }
     for (const zone of result.zones) {
-        if (
-            !zone || typeof zone.name !== 'string' || typeof zone.sourceFile !== 'string'
-            || !Number.isSafeInteger(zone.id) || zone.id < 0
-            || !Number.isSafeInteger(zone.sourceLine) || zone.sourceLine < 0
-            || !Number.isSafeInteger(zone.calls) || zone.calls < 0
-            || !finiteNonNegative(zone.totalNanoseconds)
-            || !finiteNonNegative(zone.selfNanoseconds)
-            || !finiteNonNegative(zone.meanNanoseconds)
-            || !finiteNonNegative(zone.maximumNanoseconds)
-        ) {
+        if (!validZone(zone)) {
             throw new Error('Native Tracy bridge returned an invalid profile zone');
         }
     }
+    const callNodes = result.threads.flatMap(thread => {
+        if (
+            !thread || typeof thread.id !== 'string' || thread.id.length > 64
+            || typeof thread.name !== 'string' || thread.name.length > 4096
+            || !Number.isSafeInteger(thread.calls) || thread.calls < 0
+            || !finiteNonNegative(thread.totalNanoseconds)
+            || !Array.isArray(thread.roots)
+        ) {
+            throw new Error('Native Tracy bridge returned an invalid profile thread');
+        }
+        return thread.roots;
+    });
+    let callNodeCount = 0;
+    while (callNodes.length > 0) {
+        const node = callNodes.pop();
+        if (!node || !validZone(node) || !Array.isArray(node.children)) {
+            throw new Error('Native Tracy bridge returned an invalid call tree node');
+        }
+        callNodeCount += 1;
+        if (callNodeCount > 10_000) {
+            throw new Error('Native Tracy bridge returned too many call tree nodes');
+        }
+        callNodes.push(...node.children);
+    }
+    result.threads = result.threads.filter(thread => thread.roots.length > 0);
     return result;
+}
+
+function validZone(zone: any): boolean {
+    return Boolean(
+        zone && typeof zone.name === 'string' && zone.name.length <= 4096
+        && typeof zone.sourceFile === 'string' && zone.sourceFile.length <= 32 * 1024
+        && Number.isSafeInteger(zone.id) && zone.id >= 0
+        && Number.isSafeInteger(zone.sourceLine) && zone.sourceLine >= 0
+        && Number.isSafeInteger(zone.calls) && zone.calls >= 0
+        && finiteNonNegative(zone.totalNanoseconds)
+        && finiteNonNegative(zone.selfNanoseconds)
+        && finiteNonNegative(zone.meanNanoseconds)
+        && finiteNonNegative(zone.maximumNanoseconds)
+    );
 }
 
 function finiteNonNegative(value: unknown): value is number {
