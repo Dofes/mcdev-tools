@@ -251,6 +251,7 @@ export interface I18nText {
   pythonProfilerHotFunctions: string;
   pythonProfilerFunction: string;
   pythonProfilerCalls: string;
+  pythonProfilerDistribution: string;
   pythonProfilerSelfTime: string;
   pythonProfilerTotalTime: string;
   pythonProfilerCallDetails: string;
@@ -520,6 +521,7 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerHotFunctions: 'Hot Functions',
     pythonProfilerFunction: 'Function',
     pythonProfilerCalls: 'Calls',
+    pythonProfilerDistribution: 'Time Distribution',
     pythonProfilerSelfTime: 'Self',
     pythonProfilerTotalTime: 'Total',
     pythonProfilerCallDetails: 'Call Details',
@@ -788,6 +790,7 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerHotFunctions: '热点函数',
     pythonProfilerFunction: '函数',
     pythonProfilerCalls: '调用',
+    pythonProfilerDistribution: '耗时分布',
     pythonProfilerSelfTime: '自身耗时',
     pythonProfilerTotalTime: '总耗时',
     pythonProfilerCallDetails: '调用详情',

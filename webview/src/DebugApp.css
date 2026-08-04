@@ -805,7 +805,7 @@ body[data-view="game-debugger"] #root {
 .python-profiler-table-header,
 .python-profiler-table button {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 64px 88px 88px;
+  grid-template-columns: minmax(220px, 1.35fr) minmax(150px, 1fr) 58px 82px 82px;
   align-items: center;
   column-gap: 8px;
 }
@@ -821,9 +821,45 @@ body[data-view="game-debugger"] #root {
   font-weight: 600;
 }
 
-.python-profiler-table-header span:not(:first-child),
-.python-profiler-table button > span:not(:first-child) {
+.python-profiler-table-header > span:nth-child(n + 3),
+.python-profiler-table button > span:nth-child(n + 3) {
   text-align: right;
+}
+
+.python-profiler-distribution-header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.python-profiler-distribution-header > span {
+  margin-right: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.python-profiler-distribution-header i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 2px;
+}
+
+.python-profiler-distribution-header i.total {
+  background-color: #4c8bd9;
+}
+
+.python-profiler-distribution-header i.self {
+  background-color: #b27adf;
+}
+
+.python-profiler-distribution-header small {
+  color: var(--vscode-descriptionForeground);
+  font-size: 8px;
+  font-style: normal;
 }
 
 .python-profiler-table {
@@ -834,7 +870,7 @@ body[data-view="game-debugger"] #root {
 
 .python-profiler-table button {
   width: 100%;
-  min-width: 520px;
+  min-width: 760px;
   height: 46px;
   padding: 0 12px;
   border: 0;
@@ -845,6 +881,35 @@ body[data-view="game-debugger"] #root {
   font-size: 10px;
   text-align: left;
   cursor: pointer;
+}
+
+.python-profiler-time-bar {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  display: block;
+  overflow: hidden;
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--vscode-foreground) 7%, transparent);
+}
+
+.python-profiler-time-bar > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  border-radius: 3px;
+}
+
+.python-profiler-time-bar > span.total {
+  width: var(--python-profile-total);
+  background-color: #4c8bd9;
+}
+
+.python-profiler-time-bar > span.self {
+  width: var(--python-profile-self);
+  background-color: #b27adf;
 }
 
 .python-profiler-table button:hover {

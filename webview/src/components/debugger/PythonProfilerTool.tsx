@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, memo, useEffect, useMemo, useState } from 'react';
 import { I18nText } from '../../i18n';
 import {
   HostBridgeSessionSummary,
@@ -322,6 +322,7 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
     () => result.functions.slice().sort((left, right) => right.totalTime - left.totalTime),
     [result]
   );
+  const maximumTotalTime = Math.max(0, ...functions.map(item => item.totalTime));
   useEffect(() => {
     if (!functions.some(item => item.id === selectedFunctionId)) {
       setSelectedFunctionId(functions[0]?.id);
@@ -338,6 +339,13 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
         <header><h2>{t.pythonProfilerHotFunctions}</h2></header>
         <div className="python-profiler-table-header" aria-hidden="true">
           <span>{t.pythonProfilerFunction}</span>
+          <span className="python-profiler-distribution-header">
+            <span>{t.pythonProfilerDistribution}</span>
+            <i className="total" />
+            <small>{t.pythonProfilerTotalTime}</small>
+            <i className="self" />
+            <small>{t.pythonProfilerSelfTime}</small>
+          </span>
           <span>{t.pythonProfilerCalls}</span>
           <span>{t.pythonProfilerSelfTime}</span>
           <span>{t.pythonProfilerTotalTime}</span>
@@ -355,6 +363,14 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
               <span className="python-profiler-function-name">
                 <strong>{item.name}</strong>
                 <small title={formatLocation(item)}>{formatLocation(item)}</small>
+              </span>
+              <span
+                className="python-profiler-time-bar"
+                style={timeBarStyle(item, maximumTotalTime)}
+                title={`${t.pythonProfilerTotalTime}: ${formatTime(item.totalTime)} | ${t.pythonProfilerSelfTime}: ${formatTime(item.selfTime)}`}
+              >
+                <span className="total" />
+                <span className="self" />
               </span>
               <span>{item.calls}</span>
               <span>{formatTime(item.selfTime)}</span>
@@ -488,6 +504,14 @@ function formatTime(seconds: number): string {
 
 function formatLocation(item: PythonProfilerFunction): string {
   return item.line > 0 ? `${item.module}:${item.line}` : item.module;
+}
+
+function timeBarStyle(item: PythonProfilerFunction, maximum: number): CSSProperties {
+  const denominator = maximum > 0 ? maximum : 1;
+  return {
+    '--python-profile-total': `${Math.max(0, Math.min(100, item.totalTime / denominator * 100))}%`,
+    '--python-profile-self': `${Math.max(0, Math.min(100, item.selfTime / denominator * 100))}%`,
+  } as CSSProperties;
 }
 
 function isTarget(value: unknown): value is PythonProfilerTarget {
