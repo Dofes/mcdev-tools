@@ -1,4 +1,4 @@
-import { CSSProperties, memo, useEffect, useMemo, useState } from 'react';
+import { CSSProperties, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { I18nText } from '../../i18n';
 import {
   HostBridgeSessionSummary,
@@ -299,7 +299,7 @@ export function PythonProfilerTool({ session, t }: PythonProfilerToolProps) {
       )}
 
       {result ? (
-        <PythonProfilerResults result={result} t={t} />
+        <PythonProfilerResults result={result} session={session} target={target} t={t} />
       ) : (
         <div className="python-profiler-empty">
           <span className="codicon codicon-pulse" />
@@ -312,12 +312,19 @@ export function PythonProfilerTool({ session, t }: PythonProfilerToolProps) {
 
 const PythonProfilerResults = memo(function PythonProfilerResults({
   result,
+  session,
+  target,
   t,
 }: {
   result: NonNullable<PythonProfilerCompletedState['result']>;
+  session?: HostBridgeSessionSummary;
+  target: PythonProfilerTarget;
   t: I18nText;
 }) {
   const [selectedFunctionId, setSelectedFunctionId] = useState<number>();
+  const [functionsPaneWidth, setFunctionsPaneWidth] = useState(60);
+  const resultsLayout = useRef<HTMLDivElement>(null);
+  const resizingFunctionsPane = useRef(false);
   const functions = useMemo(
     () => result.functions.slice().sort((left, right) => right.totalTime - left.totalTime),
     [result]
@@ -333,10 +340,48 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
     () => getRelationships(selectedFunction, result.functions, result.calls),
     [result, selectedFunction]
   );
+  const openFunction = (item: PythonProfilerFunction) => {
+    if (!session) {
+      return;
+    }
+    vscode.postMessage({
+      type: 'pythonProfilerOpenFunction',
+      requestId: createRequestId(),
+      sessionId: session.id,
+      connectionGeneration: session.connectionGeneration,
+      target,
+      functionId: item.id,
+    });
+  };
+  const paneWidthLimits = () => {
+    const bounds = resultsLayout.current?.getBoundingClientRect();
+    if (!bounds || bounds.width <= 0) {
+      return { minimum: 24, maximum: 76 };
+    }
+    const minimum = Math.min(42, (280 / bounds.width) * 100);
+    const maximum = Math.max(minimum, 100 - ((280 + 5) / bounds.width) * 100);
+    return { minimum, maximum };
+  };
+  const resizeFunctionsPane = (clientX: number) => {
+    const bounds = resultsLayout.current?.getBoundingClientRect();
+    if (!bounds || bounds.width <= 0) {
+      return;
+    }
+    const { minimum, maximum } = paneWidthLimits();
+    const next = ((clientX - bounds.left) / bounds.width) * 100;
+    setFunctionsPaneWidth(Math.max(minimum, Math.min(maximum, next)));
+  };
   return (
-    <div className="python-profiler-results">
+    <div
+      className="python-profiler-results"
+      ref={resultsLayout}
+      style={{ '--python-profiler-functions-width': `${functionsPaneWidth}%` } as CSSProperties}
+    >
       <section className="python-profiler-functions" aria-label={t.pythonProfilerHotFunctions}>
-        <header><h2>{t.pythonProfilerHotFunctions}</h2></header>
+        <header>
+          <h2>{t.pythonProfilerHotFunctions}</h2>
+          <span className="python-profiler-navigation-hint">{t.pythonProfilerDoubleClickHint}</span>
+        </header>
         <div className="python-profiler-table-header" aria-hidden="true">
           <span>{t.pythonProfilerFunction}</span>
           <span className="python-profiler-distribution-header">
@@ -359,6 +404,7 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
               className={item.id === selectedFunctionId ? 'selected' : ''}
               key={item.id}
               onClick={() => setSelectedFunctionId(item.id)}
+              onDoubleClick={() => openFunction(item)}
             >
               <span className="python-profiler-function-name">
                 <strong>{item.name}</strong>
@@ -379,6 +425,44 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
           ))}
         </div>
       </section>
+      <div
+        className="python-profiler-splitter"
+        role="separator"
+        tabIndex={0}
+        aria-orientation="vertical"
+        aria-valuemin={24}
+        aria-valuemax={76}
+        aria-valuenow={Math.round(functionsPaneWidth)}
+        onDoubleClick={() => setFunctionsPaneWidth(60)}
+        onKeyDown={event => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+            return;
+          }
+          event.preventDefault();
+          const { minimum, maximum } = paneWidthLimits();
+          setFunctionsPaneWidth(value => Math.max(
+            minimum,
+            Math.min(maximum, value + (event.key === 'ArrowLeft' ? -2 : 2))
+          ));
+        }}
+        onPointerDown={event => {
+          resizingFunctionsPane.current = true;
+          event.currentTarget.setPointerCapture(event.pointerId);
+          resizeFunctionsPane(event.clientX);
+        }}
+        onPointerMove={event => {
+          if (resizingFunctionsPane.current) {
+            resizeFunctionsPane(event.clientX);
+          }
+        }}
+        onPointerUp={event => {
+          resizingFunctionsPane.current = false;
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }}
+        onPointerCancel={() => {
+          resizingFunctionsPane.current = false;
+        }}
+      />
       <section className="python-profiler-call-details" aria-label={t.pythonProfilerCallDetails}>
         <header><h2>{t.pythonProfilerCallDetails}</h2></header>
         {selectedFunction ? (
@@ -389,9 +473,30 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
                 <strong>{selectedFunction.name}</strong>
                 <small title={formatLocation(selectedFunction)}>{formatLocation(selectedFunction)}</small>
               </div>
+              <button
+                type="button"
+                className="python-profiler-open-function"
+                title={t.pythonProfilerOpenFunction}
+                aria-label={t.pythonProfilerOpenFunction}
+                onClick={() => openFunction(selectedFunction)}
+              >
+                <span className="codicon codicon-go-to-file" />
+              </button>
             </div>
-            <CallSection label={t.pythonProfilerCallers} relationships={relationships.callers} empty={t.pythonProfilerNoCalls} />
-            <CallSection label={t.pythonProfilerCallees} relationships={relationships.callees} empty={t.pythonProfilerNoCalls} />
+            <CallSection
+              label={t.pythonProfilerCallers}
+              relationships={relationships.callers}
+              empty={t.pythonProfilerNoCalls}
+              onSelect={setSelectedFunctionId}
+              onOpen={openFunction}
+            />
+            <CallSection
+              label={t.pythonProfilerCallees}
+              relationships={relationships.callees}
+              empty={t.pythonProfilerNoCalls}
+              onSelect={setSelectedFunctionId}
+              onOpen={openFunction}
+            />
           </div>
         ) : (
           <div className="python-profiler-detail-empty">{t.pythonProfilerSelectFunction}</div>
@@ -437,16 +542,34 @@ interface Relationship {
   call: PythonProfilerCall;
 }
 
-function CallSection({ label, relationships, empty }: { label: string; relationships: Relationship[]; empty: string }) {
+function CallSection({
+  label,
+  relationships,
+  empty,
+  onSelect,
+  onOpen,
+}: {
+  label: string;
+  relationships: Relationship[];
+  empty: string;
+  onSelect(functionId: number): void;
+  onOpen(item: PythonProfilerFunction): void;
+}) {
   return (
     <div className="python-profiler-call-section">
       <h3>{label}</h3>
       {relationships.length === 0 ? <p>{empty}</p> : relationships.map(relationship => (
-        <div className="python-profiler-call-row" key={`${relationship.call.callerId}:${relationship.call.calleeId}`}>
+        <button
+          type="button"
+          className="python-profiler-call-row"
+          key={`${relationship.call.callerId}:${relationship.call.calleeId}`}
+          onClick={() => onSelect(relationship.function.id)}
+          onDoubleClick={() => onOpen(relationship.function)}
+        >
           <span>{relationship.function.name}</span>
           <small>{relationship.call.calls} ×</small>
           <time>{formatTime(relationship.call.totalTime)}</time>
-        </div>
+        </button>
       ))}
     </div>
   );

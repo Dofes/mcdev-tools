@@ -24,3 +24,6 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# 本地临时目录
+/temps

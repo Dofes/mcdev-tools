@@ -766,7 +766,7 @@ body[data-view="game-debugger"] #root {
   min-height: 0;
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(480px, 3fr) minmax(300px, 2fr);
+  grid-template-columns: minmax(280px, var(--python-profiler-functions-width, 60%)) 5px minmax(280px, 1fr);
   grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
 }
@@ -781,8 +781,40 @@ body[data-view="game-debugger"] #root {
 }
 
 .python-profiler-call-details {
-  border-left: 1px solid var(--panel-border);
   background-color: var(--vscode-sideBar-background);
+}
+
+.python-profiler-splitter {
+  position: relative;
+  z-index: 2;
+  width: 5px;
+  min-height: 0;
+  border: 0;
+  border-right: 1px solid var(--panel-border);
+  border-left: 1px solid var(--panel-border);
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background));
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.python-profiler-splitter::after {
+  position: absolute;
+  top: 50%;
+  left: 1px;
+  width: 1px;
+  height: 34px;
+  border-radius: 1px;
+  background-color: var(--vscode-descriptionForeground);
+  content: '';
+  opacity: 0.34;
+  transform: translateY(-50%);
+}
+
+.python-profiler-splitter:hover,
+.python-profiler-splitter:focus-visible {
+  border-color: var(--vscode-focusBorder);
+  background-color: color-mix(in srgb, var(--vscode-focusBorder) 18%, transparent);
+  outline: none;
 }
 
 .python-profiler-functions > header,
@@ -800,6 +832,15 @@ body[data-view="game-debugger"] #root {
   margin: 0;
   font-size: 11px;
   font-weight: 600;
+}
+
+.python-profiler-navigation-hint {
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .python-profiler-table-header,
@@ -916,7 +957,8 @@ body[data-view="game-debugger"] #root {
   background-color: var(--vscode-list-hoverBackground);
 }
 
-.python-profiler-table button.selected {
+.python-profiler-table button.selected,
+.python-profiler-table button.selected:hover {
   color: var(--vscode-list-activeSelectionForeground);
   background-color: var(--vscode-list-activeSelectionBackground);
 }
@@ -964,11 +1006,29 @@ body[data-view="game-debugger"] #root {
 .python-profiler-selected-function {
   min-width: 0;
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr) 28px;
   align-items: center;
   gap: 7px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--panel-border);
+}
+
+.python-profiler-open-function {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-icon-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.python-profiler-open-function:hover {
+  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-background);
 }
 
 .python-profiler-selected-function > .codicon {
@@ -1016,6 +1076,7 @@ body[data-view="game-debugger"] #root {
 }
 
 .python-profiler-call-row {
+  width: 100%;
   min-width: 0;
   height: 32px;
   display: grid;
@@ -1023,7 +1084,17 @@ body[data-view="game-debugger"] #root {
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid color-mix(in srgb, var(--panel-border) 70%, transparent);
+  border-top: 0;
+  border-right: 0;
+  border-left: 0;
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-family: inherit;
   font-size: 10px;
+}
+
+.python-profiler-call-row:hover {
+  background-color: var(--vscode-list-hoverBackground);
 }
 
 .python-profiler-call-row span {
@@ -1067,7 +1138,10 @@ body[data-view="game-debugger"] #root {
 
   .python-profiler-call-details {
     border-top: 1px solid var(--panel-border);
-    border-left: 0;
+  }
+
+  .python-profiler-splitter {
+    display: none;
   }
 }
 

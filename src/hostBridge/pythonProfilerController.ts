@@ -15,6 +15,7 @@ import {
     PythonProfilerReportFiles,
     writePythonProfilerReport
 } from './pythonProfilerReport';
+import { openPythonProfilerSource } from './pythonProfilerNavigation';
 import { HostBridgeSnapshot } from './types';
 
 interface PythonProfilerRuntime {
@@ -101,6 +102,9 @@ export class PythonProfilerController implements vscode.Disposable {
                     return true;
                 case 'pythonProfilerRevealReport':
                     await this.revealReport(key);
+                    return true;
+                case 'pythonProfilerOpenFunction':
+                    await this.openFunction(key, sessionId, message.functionId);
                     return true;
             }
         } catch (error) {
@@ -362,6 +366,29 @@ export class PythonProfilerController implements vscode.Disposable {
             throw new Error('No generated profile report is available');
         }
         await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(report.markdownPath));
+    }
+
+    private async openFunction(key: string, sessionId: string, rawFunctionId: unknown): Promise<void> {
+        const completed = this.completed.get(key);
+        const functionId = typeof rawFunctionId === 'number' && Number.isInteger(rawFunctionId)
+            ? rawFunctionId
+            : undefined;
+        const profiledFunction = functionId !== undefined
+            ? completed?.result.functions.find(item => item.id === functionId)
+            : undefined;
+        if (!profiledFunction) {
+            throw new Error('The selected profiled function is no longer available');
+        }
+        const session = this.hostBridgeManager.getSnapshot().sessions.find(item => item.id === sessionId);
+        if (!session?.projectRoot) {
+            throw new Error('The selected game session has no project root');
+        }
+        await openPythonProfilerSource({
+            projectRoot: session.projectRoot,
+            module: profiledFunction.module,
+            line: profiledFunction.line,
+            functionName: profiledFunction.name
+        });
     }
 
     private async postAutomaticError(runtime: PythonProfilerRuntime, error: unknown): Promise<void> {

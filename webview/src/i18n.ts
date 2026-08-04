@@ -249,6 +249,7 @@ export interface I18nText {
   pythonProfilerIdle: string;
   pythonProfilerUnavailable: string;
   pythonProfilerHotFunctions: string;
+  pythonProfilerDoubleClickHint: string;
   pythonProfilerFunction: string;
   pythonProfilerCalls: string;
   pythonProfilerDistribution: string;
@@ -259,6 +260,7 @@ export interface I18nText {
   pythonProfilerCallers: string;
   pythonProfilerCallees: string;
   pythonProfilerNoCalls: string;
+  pythonProfilerOpenFunction: string;
   pythonProfilerOpenMarkdown: string;
   pythonProfilerSaveReport: string;
   pythonProfilerOpenSvg: string;
@@ -519,6 +521,7 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerIdle: 'Start a capture to inspect Python hotspots',
     pythonProfilerUnavailable: 'Python profiling is unavailable for this session',
     pythonProfilerHotFunctions: 'Hot Functions',
+    pythonProfilerDoubleClickHint: 'Double-click a function to open its source',
     pythonProfilerFunction: 'Function',
     pythonProfilerCalls: 'Calls',
     pythonProfilerDistribution: 'Time Distribution',
@@ -529,6 +532,7 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerCallers: 'Called By',
     pythonProfilerCallees: 'Calls Into',
     pythonProfilerNoCalls: 'No retained project call relationships',
+    pythonProfilerOpenFunction: 'Go to function',
     pythonProfilerOpenMarkdown: 'Open Markdown report',
     pythonProfilerSaveReport: 'Save reports',
     pythonProfilerOpenSvg: 'Open SVG profile',
@@ -788,6 +792,7 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerIdle: '开始一次采样以查看 Python 性能热点',
     pythonProfilerUnavailable: '当前会话无法使用 Python 性能分析',
     pythonProfilerHotFunctions: '热点函数',
+    pythonProfilerDoubleClickHint: '双击函数可跳转到代码',
     pythonProfilerFunction: '函数',
     pythonProfilerCalls: '调用',
     pythonProfilerDistribution: '耗时分布',
@@ -798,6 +803,7 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerCallers: '调用来源',
     pythonProfilerCallees: '下级调用',
     pythonProfilerNoCalls: '没有保留到项目内调用关系',
+    pythonProfilerOpenFunction: '转到函数',
     pythonProfilerOpenMarkdown: '打开 Markdown 报告',
     pythonProfilerSaveReport: '保存报告',
     pythonProfilerOpenSvg: '打开 SVG 图表',
