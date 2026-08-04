@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as cp from 'child_process';
 import { getNonce } from '../utils';
+import { ensureMcdevDirectory } from '../utils/mcdevDirectory';
 import { McdevConfigSnapshot, McdevConfigStore } from '../config';
 import {
     getGameExecutablePaths,
@@ -378,7 +379,7 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
             if (!fs.existsSync(targetPath) || !fs.statSync(targetPath).isDirectory()) {
                 throw new Error(`目标目录不存在: ${targetPath}`);
             }
-            fs.mkdirSync(reportDirectory, { recursive: true });
+            await ensureMcdevDirectory(workspacePath);
         } catch (error) {
             sendStatus('error');
             vscode.window.showErrorMessage(`无法启动代码诊断：${String(error)}`);

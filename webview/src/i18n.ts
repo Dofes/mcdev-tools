@@ -231,6 +231,39 @@ export interface I18nText {
   uiDebuggerControlState: string;
   uiDebuggerVariables: string;
   uiDebuggerNativeData: string;
+  pythonProfilerTab: string;
+  pythonProfilerTarget: string;
+  pythonProfilerAll: string;
+  pythonProfilerClock: string;
+  pythonProfilerCpu: string;
+  pythonProfilerWall: string;
+  pythonProfilerMode: string;
+  pythonProfilerTimed: string;
+  pythonProfilerManual: string;
+  pythonProfilerDuration: string;
+  pythonProfilerSeconds: string;
+  pythonProfilerStart: string;
+  pythonProfilerStop: string;
+  pythonProfilerRunning: string;
+  pythonProfilerCollecting: string;
+  pythonProfilerIdle: string;
+  pythonProfilerUnavailable: string;
+  pythonProfilerHotFunctions: string;
+  pythonProfilerFunction: string;
+  pythonProfilerCalls: string;
+  pythonProfilerSelfTime: string;
+  pythonProfilerTotalTime: string;
+  pythonProfilerCallDetails: string;
+  pythonProfilerSelectFunction: string;
+  pythonProfilerCallers: string;
+  pythonProfilerCallees: string;
+  pythonProfilerNoCalls: string;
+  pythonProfilerOpenMarkdown: string;
+  pythonProfilerSaveReport: string;
+  pythonProfilerOpenSvg: string;
+  pythonProfilerRevealReport: string;
+  pythonProfilerReportFailed: string;
+  pythonProfilerTruncated: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -467,6 +500,39 @@ export const i18n: Record<string, I18nText> = {
     uiDebuggerControlState: 'Control State',
     uiDebuggerVariables: 'Variables and PropertyBag',
     uiDebuggerNativeData: 'Native Picker Data',
+    pythonProfilerTab: 'Python Performance',
+    pythonProfilerTarget: 'Target',
+    pythonProfilerAll: 'All',
+    pythonProfilerClock: 'Clock',
+    pythonProfilerCpu: 'CPU',
+    pythonProfilerWall: 'Wall',
+    pythonProfilerMode: 'Capture Mode',
+    pythonProfilerTimed: 'Maximum',
+    pythonProfilerManual: 'Manual',
+    pythonProfilerDuration: 'Maximum capture time',
+    pythonProfilerSeconds: 'seconds',
+    pythonProfilerStart: 'Start profiling',
+    pythonProfilerStop: 'Stop and collect',
+    pythonProfilerRunning: 'Profiling',
+    pythonProfilerCollecting: 'Collecting result',
+    pythonProfilerIdle: 'Start a capture to inspect Python hotspots',
+    pythonProfilerUnavailable: 'Python profiling is unavailable for this session',
+    pythonProfilerHotFunctions: 'Hot Functions',
+    pythonProfilerFunction: 'Function',
+    pythonProfilerCalls: 'Calls',
+    pythonProfilerSelfTime: 'Self',
+    pythonProfilerTotalTime: 'Total',
+    pythonProfilerCallDetails: 'Call Details',
+    pythonProfilerSelectFunction: 'Select a function to inspect its call relationships',
+    pythonProfilerCallers: 'Called By',
+    pythonProfilerCallees: 'Calls Into',
+    pythonProfilerNoCalls: 'No retained project call relationships',
+    pythonProfilerOpenMarkdown: 'Open Markdown report',
+    pythonProfilerSaveReport: 'Save reports',
+    pythonProfilerOpenSvg: 'Open SVG profile',
+    pythonProfilerRevealReport: 'Show report in folder',
+    pythonProfilerReportFailed: 'The profile was captured, but report files could not be written',
+    pythonProfilerTruncated: 'Largest functions shown',
 
   },
   zh: {
@@ -702,5 +768,38 @@ export const i18n: Record<string, I18nText> = {
     uiDebuggerControlState: '控件状态',
     uiDebuggerVariables: '变量与 PropertyBag',
     uiDebuggerNativeData: '原生点选数据',
+    pythonProfilerTab: 'Python 性能',
+    pythonProfilerTarget: '采样目标',
+    pythonProfilerAll: '全部',
+    pythonProfilerClock: '计时方式',
+    pythonProfilerCpu: 'CPU',
+    pythonProfilerWall: '实际时间',
+    pythonProfilerMode: '采样方式',
+    pythonProfilerTimed: '最大时长',
+    pythonProfilerManual: '手动停止',
+    pythonProfilerDuration: '最大采样时间',
+    pythonProfilerSeconds: '秒',
+    pythonProfilerStart: '开始采样',
+    pythonProfilerStop: '停止并收集',
+    pythonProfilerRunning: '正在采样',
+    pythonProfilerCollecting: '正在整理结果',
+    pythonProfilerIdle: '开始一次采样以查看 Python 性能热点',
+    pythonProfilerUnavailable: '当前会话无法使用 Python 性能分析',
+    pythonProfilerHotFunctions: '热点函数',
+    pythonProfilerFunction: '函数',
+    pythonProfilerCalls: '调用',
+    pythonProfilerSelfTime: '自身耗时',
+    pythonProfilerTotalTime: '总耗时',
+    pythonProfilerCallDetails: '调用详情',
+    pythonProfilerSelectFunction: '选择函数以查看调用关系',
+    pythonProfilerCallers: '调用来源',
+    pythonProfilerCallees: '下级调用',
+    pythonProfilerNoCalls: '没有保留到项目内调用关系',
+    pythonProfilerOpenMarkdown: '打开 Markdown 报告',
+    pythonProfilerSaveReport: '保存报告',
+    pythonProfilerOpenSvg: '打开 SVG 图表',
+    pythonProfilerRevealReport: '在文件夹中显示报告',
+    pythonProfilerReportFailed: '采样成功，但报告文件写入失败',
+    pythonProfilerTruncated: '仅显示耗时最高的函数',
   },
 };

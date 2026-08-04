@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { ensureMcdevDirectory } from '../utils/mcdevDirectory';
 import { discoverDebugFunctions, PythonSourceFile } from './parser';
 import {
     DebugFunctionArgumentConfig,
@@ -150,7 +151,7 @@ export class DebugFunctionService implements vscode.Disposable {
             functions: functions.map(cloneSavedFunction)
         };
         cache.writeTail = cache.writeTail.catch(() => undefined).then(async () => {
-            const directory = vscode.Uri.file(path.join(workspacePath, '.mcdev'));
+            const directory = vscode.Uri.file(await ensureMcdevDirectory(workspacePath));
             const target = vscode.Uri.joinPath(directory, 'debug-functions.json');
             const temporary = vscode.Uri.joinPath(
                 directory,

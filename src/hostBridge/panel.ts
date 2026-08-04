@@ -10,6 +10,7 @@ import { HostBridgeManager } from './manager';
 import { LatestOperationQueue } from './latestOperationQueue';
 import { HostBridgeRpcError } from './server';
 import { DisposableLike } from './types';
+import { PythonProfilerController } from './pythonProfilerController';
 import {
     buildUiDebuggerChildrenCode,
     buildUiDebuggerNodeCode,
@@ -46,6 +47,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
     private readonly uiPickers = new Map<string, UiPickerRuntime>();
     private readonly uiPickerQueue = new LatestOperationQueue();
     private readonly uiPropertyQueue = new LatestOperationQueue();
+    private pythonProfilerController?: PythonProfilerController;
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -70,6 +72,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
             }
         );
         this.panel = panel;
+        this.pythonProfilerController = new PythonProfilerController(this.hostBridgeManager);
         panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'images', 'icon.png');
         panel.webview.html = this.getHtml(panel.webview);
 
@@ -78,6 +81,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
         });
         this.bridgeSubscription = this.hostBridgeManager.onDidChange(snapshot => {
             this.reconcileUiPickers(snapshot);
+            this.pythonProfilerController?.reconcile(snapshot);
             void panel.webview.postMessage({ type: 'hostBridgeState', snapshot });
         });
         this.panelDisposeSubscription = panel.onDidDispose(() => this.releasePanel());
@@ -91,13 +95,21 @@ export class GameDebuggerPanel implements vscode.Disposable {
 
     public async disposeAsync(): Promise<void> {
         const panel = this.panel;
-        await this.disposeUiPickersAsync();
+        const pythonProfilerController = this.pythonProfilerController;
+        this.pythonProfilerController = undefined;
+        await Promise.all([
+            this.disposeUiPickersAsync(),
+            pythonProfilerController?.disposeAsync()
+        ]);
         this.releasePanel();
         panel?.dispose();
     }
 
     private releasePanel(): void {
         this.disposeUiPickers();
+        const pythonProfilerController = this.pythonProfilerController;
+        this.pythonProfilerController = undefined;
+        void pythonProfilerController?.disposeAsync();
         this.messageSubscription?.dispose();
         this.messageSubscription = undefined;
         this.bridgeSubscription?.dispose();
@@ -125,6 +137,10 @@ export class GameDebuggerPanel implements vscode.Disposable {
         }
         if (typeof message?.type === 'string' && message.type.startsWith('uiDebugger')) {
             await this.handleUiDebuggerMessage(webview, message);
+            return;
+        }
+        if (typeof message?.type === 'string' && message.type.startsWith('pythonProfiler')) {
+            await this.pythonProfilerController?.handleMessage(webview, message);
             return;
         }
         if (message?.type !== 'hostBridgeExecute') {

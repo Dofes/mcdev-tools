@@ -98,6 +98,60 @@ export interface HostBridgeSnapshot {
   sessions: HostBridgeSessionSummary[];
 }
 
+export type PythonProfilerTarget = 'client' | 'server' | 'all';
+export type PythonProfilerClock = 'CPU' | 'WALL';
+
+export interface PythonProfilerFunction {
+  id: number;
+  module: string;
+  line: number;
+  name: string;
+  calls: number;
+  actualCalls: number;
+  selfTime: number;
+  totalTime: number;
+  contextId: number;
+  contextName: string;
+}
+
+export interface PythonProfilerCall {
+  callerId: number;
+  calleeId: number;
+  calls: number;
+  selfTime: number;
+  totalTime: number;
+}
+
+export interface PythonProfilerResult {
+  clock: PythonProfilerClock;
+  elapsedSeconds: number;
+  totalFunctions: number;
+  truncated: boolean;
+  functions: PythonProfilerFunction[];
+  calls: PythonProfilerCall[];
+}
+
+export interface PythonProfilerCompletedState {
+  target: PythonProfilerTarget;
+  clock: PythonProfilerClock;
+  capturedAt: string;
+  result: PythonProfilerResult;
+  report?: {
+    markdownPath: string;
+    svgPath: string;
+  };
+  reportError?: string;
+}
+
+export interface PythonProfilerTargetState {
+  target: PythonProfilerTarget;
+  status: 'idle' | 'running' | 'collecting';
+  clock: PythonProfilerClock;
+  durationSeconds?: number;
+  startedAt?: string;
+  completed?: PythonProfilerCompletedState;
+}
+
 export type DebugFunctionTarget = 'client' | 'server';
 export type DebugFunctionParameterKind = 'value' | 'varargs' | 'kwargs';
 export type DebugFunctionArgumentMode = 'fixed' | 'optional' | 'required';

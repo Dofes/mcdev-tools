@@ -3,6 +3,7 @@ import { CodeExecutionTool } from './components/debugger/CodeExecutionTool';
 import { DebugFunctionsTool } from './components/debugger/DebugFunctionsTool';
 import { SessionPicker } from './components/debugger/SessionPicker';
 import { UiDebuggerTool } from './components/debugger/UiDebuggerTool';
+import { PythonProfilerTool } from './components/debugger/PythonProfilerTool';
 import { I18nText, i18n } from './i18n';
 import { HostBridgeSessionSummary, HostBridgeSnapshot } from './types';
 import { vscode } from './vscode';
@@ -38,6 +39,12 @@ const DEBUG_TOOLS: DebugToolDefinition[] = [
     icon: 'codicon-inspect',
     label: t => t.uiDebuggerTab,
     render: ({ session, t }) => <UiDebuggerTool session={session} t={t} />,
+  },
+  {
+    id: 'python-profiler',
+    icon: 'codicon-pulse',
+    label: t => t.pythonProfilerTab,
+    render: ({ session, t }) => <PythonProfilerTool session={session} t={t} />,
   },
 ];
 
@@ -123,7 +130,7 @@ function DebugApp() {
           ))}
         </nav>
         <section className="debug-tool-page" aria-label={activeTool.label(t)}>
-          <div className="debug-tool-page-content">
+          <div className={`debug-tool-page-content debug-tool-page-content--${activeTool.id}`}>
             {activeTool.render({ session: selectedSession, t })}
           </div>
         </section>
