@@ -11,6 +11,7 @@ import { LatestOperationQueue } from './latestOperationQueue';
 import { HostBridgeRpcError } from './server';
 import { DisposableLike } from './types';
 import { PythonProfilerController } from './pythonProfilerController';
+import { NativeProfilerController } from './nativeProfilerController';
 import {
     buildUiDebuggerChildrenCode,
     buildUiDebuggerNodeCode,
@@ -43,11 +44,14 @@ export class GameDebuggerPanel implements vscode.Disposable {
     private bridgeSubscription?: DisposableLike;
     private messageSubscription?: vscode.Disposable;
     private panelDisposeSubscription?: vscode.Disposable;
+    private panelViewStateSubscription?: vscode.Disposable;
     private debugFunctionService?: DebugFunctionService;
     private readonly uiPickers = new Map<string, UiPickerRuntime>();
     private readonly uiPickerQueue = new LatestOperationQueue();
     private readonly uiPropertyQueue = new LatestOperationQueue();
     private pythonProfilerController?: PythonProfilerController;
+    private nativeProfilerController?: NativeProfilerController;
+    private releasePromise: Promise<void> = Promise.resolve();
 
     constructor(
         private readonly extensionUri: vscode.Uri,
@@ -82,43 +86,60 @@ export class GameDebuggerPanel implements vscode.Disposable {
         this.bridgeSubscription = this.hostBridgeManager.onDidChange(snapshot => {
             this.reconcileUiPickers(snapshot);
             this.pythonProfilerController?.reconcile(snapshot);
+            this.nativeProfilerController?.reconcile(snapshot);
             void panel.webview.postMessage({ type: 'hostBridgeState', snapshot });
         });
         this.panelDisposeSubscription = panel.onDidDispose(() => this.releasePanel());
+        this.panelViewStateSubscription = panel.onDidChangeViewState(event => {
+            this.nativeProfilerController?.setPanelVisible(event.webviewPanel.visible);
+        });
     }
 
     public dispose(): void {
         const panel = this.panel;
-        this.releasePanel();
+        void this.releasePanel();
         panel?.dispose();
     }
 
     public async disposeAsync(): Promise<void> {
         const panel = this.panel;
-        const pythonProfilerController = this.pythonProfilerController;
-        this.pythonProfilerController = undefined;
-        await Promise.all([
-            this.disposeUiPickersAsync(),
-            pythonProfilerController?.disposeAsync()
-        ]);
-        this.releasePanel();
+        const release = this.releasePanel();
         panel?.dispose();
+        await release;
+        await this.releasePromise;
     }
 
-    private releasePanel(): void {
-        this.disposeUiPickers();
+    private releasePanel(): Promise<void> {
+        const pickerCleanup = this.disposeUiPickersAsync();
         const pythonProfilerController = this.pythonProfilerController;
+        const nativeProfilerController = this.nativeProfilerController;
         this.pythonProfilerController = undefined;
-        void pythonProfilerController?.disposeAsync();
+        this.nativeProfilerController = undefined;
         this.messageSubscription?.dispose();
         this.messageSubscription = undefined;
         this.bridgeSubscription?.dispose();
         this.bridgeSubscription = undefined;
         this.panelDisposeSubscription?.dispose();
         this.panelDisposeSubscription = undefined;
+        this.panelViewStateSubscription?.dispose();
+        this.panelViewStateSubscription = undefined;
         this.debugFunctionService?.dispose();
         this.debugFunctionService = undefined;
         this.panel = undefined;
+
+        const cleanup = Promise.all([
+            pickerCleanup,
+            pythonProfilerController?.disposeAsync(),
+            nativeProfilerController?.disposeAsync()
+        ]).then(() => undefined);
+        this.releasePromise = Promise.allSettled([this.releasePromise, cleanup]).then(results => {
+            for (const result of results) {
+                if (result.status === 'rejected') {
+                    console.error('Failed to release the game debugger panel', result.reason);
+                }
+            }
+        });
+        return this.releasePromise;
     }
 
     private async handleMessage(webview: vscode.Webview, message: any): Promise<void> {
@@ -141,6 +162,15 @@ export class GameDebuggerPanel implements vscode.Disposable {
         }
         if (typeof message?.type === 'string' && message.type.startsWith('pythonProfiler')) {
             await this.pythonProfilerController?.handleMessage(webview, message);
+            return;
+        }
+        if (typeof message?.type === 'string' && message.type.startsWith('nativeProfiler')) {
+            const controller = this.nativeProfilerController ??= new NativeProfilerController(
+                this.extensionUri.fsPath,
+                this.hostBridgeManager
+            );
+            controller.setPanelVisible(this.panel?.visible ?? true);
+            await controller.handleMessage(webview, message);
             return;
         }
         if (message?.type !== 'hostBridgeExecute') {

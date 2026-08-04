@@ -436,6 +436,11 @@ body[data-view="game-debugger"] #root {
   padding: 0;
 }
 
+.debug-tool-page-content--native-profiler {
+  max-width: none;
+  padding: 0;
+}
+
 .python-profiler-workspace {
   min-width: 0;
   min-height: 0;
@@ -2237,6 +2242,459 @@ body[data-view="game-debugger"] #root {
   font-size: 9px;
 }
 
+.native-profiler-workspace {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.native-profiler-toolbar {
+  min-width: 0;
+  min-height: 70px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 16px 11px;
+  border-bottom: 1px solid var(--panel-border);
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background));
+}
+
+.native-profiler-endpoint,
+.native-profiler-duration {
+  min-width: max-content;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.native-profiler-endpoint > span:first-child,
+.native-profiler-duration > span:first-child {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.native-profiler-endpoint code {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 10px;
+  border-left: 2px solid var(--vscode-focusBorder);
+  color: var(--vscode-editor-foreground);
+  background-color: var(--vscode-input-background);
+  font-size: 11px;
+}
+
+.native-profiler-endpoint code small {
+  color: var(--vscode-descriptionForeground);
+  font-family: inherit;
+  font-size: 9px;
+}
+
+.native-profiler-endpoint .detecting {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+}
+
+.native-profiler-endpoint .detecting i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--vscode-descriptionForeground);
+  animation: native-profiler-pulse 1.3s ease-in-out infinite;
+}
+
+.native-profiler-number-field {
+  width: 154px;
+  height: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--vscode-input-border, var(--panel-border));
+  border-radius: 4px;
+  color: var(--vscode-input-foreground);
+  background-color: var(--vscode-input-background);
+}
+
+.native-profiler-number-field:focus-within {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.native-profiler-number-field input {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+
+.native-profiler-number-field small {
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-left: 1px solid var(--vscode-input-border, var(--panel-border));
+  color: var(--vscode-descriptionForeground);
+  background-color: var(--vscode-editorWidget-background, var(--vscode-input-background));
+  font-size: 9px;
+}
+
+.native-profiler-primary-action {
+  min-width: max-content;
+  margin-left: auto;
+}
+
+.native-profiler-start,
+.native-profiler-stop {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-background);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.native-profiler-stop {
+  border-color: color-mix(in srgb, var(--vscode-errorForeground) 55%, transparent);
+  color: var(--vscode-errorForeground);
+  background-color: color-mix(in srgb, var(--vscode-errorForeground) 9%, var(--vscode-button-secondaryBackground));
+}
+
+.native-profiler-start:hover:not(:disabled) { background-color: var(--vscode-button-hoverBackground); }
+.native-profiler-stop:hover:not(:disabled) { background-color: color-mix(in srgb, var(--vscode-errorForeground) 16%, var(--vscode-button-secondaryBackground)); }
+.native-profiler-start:disabled,
+.native-profiler-stop:disabled { cursor: default; opacity: 0.5; }
+
+.native-profiler-status {
+  min-height: 38px;
+  flex: 0 0 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--vscode-descriptionForeground);
+  background-color: var(--vscode-editor-background);
+  font-size: 10px;
+}
+
+.native-profiler-status.capturing > .codicon { color: var(--vscode-focusBorder); }
+.native-profiler-status.analyzing > .codicon { color: var(--vscode-editorWarning-foreground); }
+
+.native-profiler-status > button {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 0 9px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  color: var(--vscode-button-secondaryForeground);
+  background-color: var(--vscode-button-secondaryBackground);
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.native-profiler-status > button:hover:not(:disabled) { background-color: var(--vscode-button-secondaryHoverBackground); }
+
+.native-profiler-report-actions {
+  height: 26px;
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.native-profiler-status > button + .native-profiler-report-actions { margin-left: 0; }
+
+.native-profiler-report-actions button {
+  width: 27px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-icon-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.native-profiler-report-actions button:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+
+.native-profiler-error {
+  min-height: 34px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--vscode-errorForeground) 35%, var(--panel-border));
+  color: var(--vscode-errorForeground);
+  background-color: color-mix(in srgb, var(--vscode-errorForeground) 7%, var(--vscode-editor-background));
+  font-size: 10px;
+}
+
+.native-profiler-empty {
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.native-profiler-empty .codicon { color: var(--vscode-focusBorder); font-size: 17px; }
+
+.native-profiler-results {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(340px, var(--native-profiler-table-width, 68%)) 5px minmax(240px, 1fr);
+  overflow: hidden;
+}
+
+.native-profiler-zones,
+.native-profiler-details {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.native-profiler-details { background-color: var(--vscode-sideBar-background); }
+
+.native-profiler-zones > header,
+.native-profiler-details > header {
+  height: 40px;
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.native-profiler-zones h2,
+.native-profiler-details h2 { margin: 0; font-size: 11px; font-weight: 600; }
+
+.native-profiler-zones > header > span {
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.native-profiler-table-header,
+.native-profiler-table button {
+  min-width: 720px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(120px, 0.8fr) 58px 82px 82px;
+  align-items: center;
+  gap: 8px;
+}
+
+.native-profiler-table-header {
+  height: 30px;
+  flex: 0 0 30px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--vscode-descriptionForeground);
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background));
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.native-profiler-table-header > span:nth-child(n + 3),
+.native-profiler-table button > span:nth-child(n + 3) { text-align: right; }
+
+.native-profiler-table {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.native-profiler-table button {
+  width: 100%;
+  min-height: 43px;
+  padding: 5px 12px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--panel-border) 65%, transparent);
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-family: inherit;
+  font-size: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.native-profiler-table button:hover { background-color: var(--vscode-list-hoverBackground); }
+
+.native-profiler-table button.selected,
+.native-profiler-table button.selected:hover {
+  color: var(--vscode-list-activeSelectionForeground);
+  background-color: var(--vscode-list-activeSelectionBackground);
+}
+
+.native-profiler-zone-name { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.native-profiler-zone-name strong,
+.native-profiler-zone-name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.native-profiler-zone-name strong { font-size: 10px; font-weight: 600; }
+.native-profiler-zone-name small { color: var(--vscode-descriptionForeground); font-size: 8px; }
+.native-profiler-table button.selected .native-profiler-zone-name small { color: inherit; opacity: 0.76; }
+
+.native-profiler-time-bar {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 2px;
+  background-color: color-mix(in srgb, var(--vscode-descriptionForeground) 12%, transparent);
+}
+
+.native-profiler-time-bar i { position: absolute; inset: 0 auto 0 0; }
+.native-profiler-time-bar .total { background-color: color-mix(in srgb, var(--vscode-focusBorder) 72%, transparent); }
+.native-profiler-time-bar .self { background-color: color-mix(in srgb, var(--vscode-symbolIcon-functionForeground, #c586c0) 82%, transparent); }
+
+.native-profiler-truncated {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  border-top: 1px solid var(--panel-border);
+  color: var(--vscode-descriptionForeground);
+  font-size: 8px;
+}
+
+.native-profiler-splitter {
+  position: relative;
+  z-index: 2;
+  width: 5px;
+  min-height: 0;
+  border: 0;
+  border-right: 1px solid var(--panel-border);
+  border-left: 1px solid var(--panel-border);
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background));
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.native-profiler-splitter::after {
+  position: absolute;
+  top: 50%;
+  left: 1px;
+  width: 1px;
+  height: 34px;
+  background-color: var(--vscode-descriptionForeground);
+  content: '';
+  opacity: 0.34;
+  transform: translateY(-50%);
+}
+
+.native-profiler-splitter:hover,
+.native-profiler-splitter:focus-visible {
+  border-color: var(--vscode-focusBorder);
+  background-color: color-mix(in srgb, var(--vscode-focusBorder) 18%, transparent);
+  outline: none;
+}
+
+.native-profiler-detail-content { min-height: 0; overflow: auto; padding: 12px; }
+
+.native-profiler-selected-zone {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.native-profiler-selected-zone strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.native-profiler-selected-zone > .codicon { color: var(--vscode-focusBorder); }
+
+.native-profiler-selected-zone button {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-icon-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.native-profiler-selected-zone button:hover { background-color: var(--vscode-toolbar-hoverBackground); }
+
+.native-profiler-metric {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--panel-border) 70%, transparent);
+}
+
+.native-profiler-metric span,
+.native-profiler-source > span { color: var(--vscode-descriptionForeground); font-size: 9px; }
+.native-profiler-metric strong { font-family: var(--vscode-editor-font-family, monospace); font-size: 10px; font-weight: 500; }
+
+.native-profiler-source { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; }
+.native-profiler-source code { overflow-wrap: anywhere; color: var(--vscode-textLink-foreground); font-size: 9px; line-height: 1.45; }
+
+.native-profiler-detail-empty {
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  text-align: center;
+}
+
+@keyframes native-profiler-pulse { 50% { opacity: 0.3; } }
+
+
 @media (max-width: 860px) {
   .debug-workbench-header {
     grid-template-columns: minmax(0, 1fr);
@@ -2308,6 +2766,31 @@ body[data-view="game-debugger"] #root {
 
   .debug-tool-page-content--debug-functions {
     padding: 0;
+  }
+
+  .debug-tool-page-content--native-profiler {
+    padding: 0;
+  }
+
+  .native-profiler-results {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .native-profiler-zones {
+    min-height: 360px;
+    flex: 1 0 360px;
+  }
+
+  .native-profiler-splitter {
+    display: none;
+  }
+
+  .native-profiler-details {
+    min-height: 260px;
+    flex: 0 0 auto;
+    border-top: 1px solid var(--panel-border);
   }
 
   .debug-functions-layout {

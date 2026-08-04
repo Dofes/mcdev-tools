@@ -1,0 +1,3 @@
+# Local CMake output. Reviewed runtime artifacts are installed under ../../bin/.
+/build/
+/install/

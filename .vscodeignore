@@ -13,4 +13,7 @@ node_modules/**
 webview/**
 !out/webview/**
 docs/**
+native/**
+scripts/**
+temps/**
 WEBVIEW_REFACTOR.md

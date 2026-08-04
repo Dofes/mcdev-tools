@@ -5,6 +5,7 @@ import { isMinecraftAddonWorkspace } from './utils';
 import { McDevToolsSidebarProvider } from './sidebar';
 import { dynamicLibraryManager } from './native/dynamicLibraryManager';
 import { GameDebuggerPanel, HostBridgeManager, PreparedHostBridgeLaunch } from './hostBridge';
+import { shutdownAllNativeProfilerCaptures } from './hostBridge/nativeProfilerCapture';
 import { McdevConfigStore } from './config';
 import { 
     McDevToolsDebugConfigurationProvider,
@@ -263,14 +264,37 @@ async function runMcdk(): Promise<void> {
 }
 
 export async function deactivate(): Promise<void> {
-    ptvsd.cleanupAllSessions();
-    vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', false);
-    vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', false);
-    await gameDebuggerPanel?.disposeAsync();
+    const panel = gameDebuggerPanel;
+    const bridgeManager = hostBridgeManager;
+    const configStore = mcdevConfigStore;
     gameDebuggerPanel = undefined;
-    await hostBridgeManager?.disposeAsync();
     hostBridgeManager = undefined;
-    mcdevConfigStore?.dispose();
     mcdevConfigStore = undefined;
-    await dynamicLibraryManager.unloadAll();
+
+    try {
+        ptvsd.cleanupAllSessions();
+        vscode.commands.executeCommand('setContext', 'mcdev-tools:enabled', false);
+        vscode.commands.executeCommand('setContext', 'mcdev-tools:showSidebar', false);
+        try {
+            await panel?.disposeAsync();
+        } catch (error) {
+            console.error('Failed to dispose the game debugger panel', error);
+        }
+        try {
+            await bridgeManager?.disposeAsync();
+        } catch (error) {
+            console.error('Failed to dispose the Host Bridge manager', error);
+        }
+        try {
+            configStore?.dispose();
+        } catch (error) {
+            console.error('Failed to dispose the .mcdev.json configuration store', error);
+        }
+    } finally {
+        try {
+            await shutdownAllNativeProfilerCaptures(extensionContext.extensionPath);
+        } finally {
+            await dynamicLibraryManager.unloadAll();
+        }
+    }
 }

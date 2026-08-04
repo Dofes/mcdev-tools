@@ -152,6 +152,50 @@ export interface PythonProfilerTargetState {
   completed?: PythonProfilerCompletedState;
 }
 
+export interface NativeProfilerEndpoint {
+  pid: number;
+  port: number;
+}
+
+export interface NativeProfilerZone {
+  id: number;
+  name: string;
+  sourceFile: string;
+  sourceLine: number;
+  calls: number;
+  totalNanoseconds: number;
+  selfNanoseconds: number;
+  meanNanoseconds: number;
+  maximumNanoseconds: number;
+}
+
+export interface NativeProfilerResult {
+  capturedSeconds: number;
+  totalZones: number;
+  truncated: boolean;
+  zones: NativeProfilerZone[];
+}
+
+export interface NativeProfilerCompletedState {
+  pid: number;
+  port: number;
+  capturedAt: string;
+  result: NativeProfilerResult;
+  report?: {
+    tracePath: string;
+    markdownPath: string;
+  };
+  reportError?: string;
+}
+
+export interface NativeProfilerState {
+  endpoint?: NativeProfilerEndpoint;
+  status: 'idle' | 'capturing' | 'analyzing';
+  maximumSeconds?: number;
+  startedAt?: string;
+  completed?: NativeProfilerCompletedState;
+}
+
 export type DebugFunctionTarget = 'client' | 'server';
 export type DebugFunctionParameterKind = 'value' | 'varargs' | 'kwargs';
 export type DebugFunctionArgumentMode = 'fixed' | 'optional' | 'required';

@@ -267,6 +267,34 @@ export interface I18nText {
   pythonProfilerRevealReport: string;
   pythonProfilerReportFailed: string;
   pythonProfilerTruncated: string;
+  nativeProfilerTab: string;
+  nativeProfilerEndpoint: string;
+  nativeProfilerDetecting: string;
+  nativeProfilerMaximumDuration: string;
+  nativeProfilerSeconds: string;
+  nativeProfilerStart: string;
+  nativeProfilerStop: string;
+  nativeProfilerCapturing: string;
+  nativeProfilerAnalyzing: string;
+  nativeProfilerIdle: string;
+  nativeProfilerUnavailable: string;
+  nativeProfilerHotZones: string;
+  nativeProfilerZone: string;
+  nativeProfilerCalls: string;
+  nativeProfilerSelfTime: string;
+  nativeProfilerTotalTime: string;
+  nativeProfilerMeanTime: string;
+  nativeProfilerMaxTime: string;
+  nativeProfilerDetails: string;
+  nativeProfilerSelectZone: string;
+  nativeProfilerSource: string;
+  nativeProfilerOpenSource: string;
+  nativeProfilerSave: string;
+  nativeProfilerOpenReport: string;
+  nativeProfilerReveal: string;
+  nativeProfilerSaved: string;
+  nativeProfilerTruncated: string;
+  nativeProfilerDoubleClickHint: string;
 }
 
 export const i18n: Record<string, I18nText> = {
@@ -539,6 +567,34 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerRevealReport: 'Show report in folder',
     pythonProfilerReportFailed: 'The profile was captured, but report files could not be written',
     pythonProfilerTruncated: 'Largest functions shown',
+    nativeProfilerTab: 'Native Performance',
+    nativeProfilerEndpoint: 'Tracy endpoint',
+    nativeProfilerDetecting: 'Detecting game Tracy endpoint',
+    nativeProfilerMaximumDuration: 'Maximum capture time',
+    nativeProfilerSeconds: 'seconds',
+    nativeProfilerStart: 'Start capture',
+    nativeProfilerStop: 'Stop and analyze',
+    nativeProfilerCapturing: 'Capturing native zones',
+    nativeProfilerAnalyzing: 'Analyzing capture',
+    nativeProfilerIdle: 'Start a capture to inspect native performance zones',
+    nativeProfilerUnavailable: 'No Tracy endpoint detected for this game process',
+    nativeProfilerHotZones: 'Hot Zones',
+    nativeProfilerZone: 'Zone',
+    nativeProfilerCalls: 'Calls',
+    nativeProfilerSelfTime: 'Self',
+    nativeProfilerTotalTime: 'Total',
+    nativeProfilerMeanTime: 'Mean',
+    nativeProfilerMaxTime: 'Max',
+    nativeProfilerDetails: 'Zone Details',
+    nativeProfilerSelectZone: 'Select a zone to inspect its metrics',
+    nativeProfilerSource: 'Source',
+    nativeProfilerOpenSource: 'Go to source',
+    nativeProfilerSave: 'Save capture and report',
+    nativeProfilerOpenReport: 'Open Markdown report',
+    nativeProfilerReveal: 'Show saved capture in folder',
+    nativeProfilerSaved: 'Capture saved',
+    nativeProfilerTruncated: 'Largest zones shown',
+    nativeProfilerDoubleClickHint: 'Double-click a zone to open its source',
 
   },
   zh: {
@@ -810,5 +866,33 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerRevealReport: '在文件夹中显示报告',
     pythonProfilerReportFailed: '采样成功，但报告文件写入失败',
     pythonProfilerTruncated: '仅显示耗时最高的函数',
+    nativeProfilerTab: 'Native性能分析',
+    nativeProfilerEndpoint: 'Tracy 端点',
+    nativeProfilerDetecting: '正在探测游戏 Tracy 端点',
+    nativeProfilerMaximumDuration: '最大采样时间',
+    nativeProfilerSeconds: '秒',
+    nativeProfilerStart: '开始采样',
+    nativeProfilerStop: '停止并分析',
+    nativeProfilerCapturing: '正在采集原生性能区间',
+    nativeProfilerAnalyzing: '正在分析采样结果',
+    nativeProfilerIdle: '开始一次采样以查看原生性能热点',
+    nativeProfilerUnavailable: '未探测到当前游戏进程的 Tracy 端点',
+    nativeProfilerHotZones: '热点区间',
+    nativeProfilerZone: '性能区间',
+    nativeProfilerCalls: '调用',
+    nativeProfilerSelfTime: '自身耗时',
+    nativeProfilerTotalTime: '总耗时',
+    nativeProfilerMeanTime: '平均耗时',
+    nativeProfilerMaxTime: '最大耗时',
+    nativeProfilerDetails: '区间详情',
+    nativeProfilerSelectZone: '选择性能区间以查看详细指标',
+    nativeProfilerSource: '源位置',
+    nativeProfilerOpenSource: '转到源代码',
+    nativeProfilerSave: '保存采样与报告',
+    nativeProfilerOpenReport: '打开 Markdown 报告',
+    nativeProfilerReveal: '在文件夹中显示采样',
+    nativeProfilerSaved: '采样已保存',
+    nativeProfilerTruncated: '仅显示耗时最高的区间',
+    nativeProfilerDoubleClickHint: '双击性能区间可跳转到源代码',
   },
 };

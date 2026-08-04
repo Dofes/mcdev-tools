@@ -1,0 +1,62 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "windows-msvc-base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl.exe",
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            }
+        },
+        {
+            "name": "x64-msvc-debug",
+            "displayName": "x64 MSVC Debug",
+            "inherits": "windows-msvc-base",
+            "architecture": {
+                "value": "x64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "x64-msvc-release",
+            "displayName": "x64 MSVC Release",
+            "inherits": "x64-msvc-debug",
+            "installDir": "${sourceDir}/../../bin/native/windows/x64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "MCDEV_TRACY_BUILD_TESTS": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "x64-msvc-debug",
+            "configurePreset": "x64-msvc-debug"
+        },
+        {
+            "name": "x64-msvc-release",
+            "configurePreset": "x64-msvc-release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "x64-msvc-release",
+            "configurePreset": "x64-msvc-release",
+            "output": { "outputOnFailure": true }
+        }
+    ]
+}

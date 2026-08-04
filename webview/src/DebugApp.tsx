@@ -4,6 +4,7 @@ import { DebugFunctionsTool } from './components/debugger/DebugFunctionsTool';
 import { SessionPicker } from './components/debugger/SessionPicker';
 import { UiDebuggerTool } from './components/debugger/UiDebuggerTool';
 import { PythonProfilerTool } from './components/debugger/PythonProfilerTool';
+import { NativeProfilerTool } from './components/debugger/NativeProfilerTool';
 import { I18nText, i18n } from './i18n';
 import { HostBridgeSessionSummary, HostBridgeSnapshot } from './types';
 import { vscode } from './vscode';
@@ -45,6 +46,12 @@ const DEBUG_TOOLS: DebugToolDefinition[] = [
     icon: 'codicon-pulse',
     label: t => t.pythonProfilerTab,
     render: ({ session, t }) => <PythonProfilerTool session={session} t={t} />,
+  },
+  {
+    id: 'native-profiler',
+    icon: 'codicon-dashboard',
+    label: t => t.nativeProfilerTab,
+    render: ({ session, t }) => <NativeProfilerTool session={session} t={t} />,
   },
 ];
 
