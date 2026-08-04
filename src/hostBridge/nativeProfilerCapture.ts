@@ -263,7 +263,7 @@ function copyNativeString(size: number, copy: (buffer: Buffer) => number): strin
     return buffer.toString('utf8', 0, size - 1);
 }
 
-function parseNativeProfilerResult(json: string): NativeProfilerResult {
+export function parseNativeProfilerResult(json: string): NativeProfilerResult {
     const value: unknown = JSON.parse(json);
     if (!value || typeof value !== 'object') {
         throw new Error('Native Tracy bridge returned an invalid result');
@@ -311,8 +311,41 @@ function parseNativeProfilerResult(json: string): NativeProfilerResult {
         }
         callNodes.push(...node.children);
     }
-    result.threads = result.threads.filter(thread => thread.roots.length > 0);
+    result.zones = result.zones.filter(zone => !isIgnoredNativeSource(zone.sourceFile));
+    result.threads = result.threads.flatMap(thread => {
+        thread.roots = filterIgnoredCallNodes(thread.roots);
+        if (thread.roots.length === 0) return [];
+        thread.totalNanoseconds = thread.roots.reduce((total, root) => total + root.totalNanoseconds, 0);
+        thread.calls = countCallNodeInvocations(thread.roots);
+        return [thread];
+    });
     return result;
+}
+
+function filterIgnoredCallNodes(nodes: NativeProfilerResult['threads'][number]['roots']): NativeProfilerResult['threads'][number]['roots'] {
+    return nodes.flatMap(node => {
+        node.children = filterIgnoredCallNodes(node.children);
+        return isIgnoredNativeSource(node.sourceFile) ? node.children : [node];
+    });
+}
+
+function countCallNodeInvocations(nodes: NativeProfilerResult['threads'][number]['roots']): number {
+    let calls = 0;
+    const pending = nodes.slice();
+    while (pending.length > 0) {
+        const node = pending.pop();
+        if (!node) continue;
+        calls += node.calls;
+        pending.push(...node.children);
+    }
+    return calls;
+}
+
+function isIgnoredNativeSource(sourceFile: string): boolean {
+    const prefix = 'DEBUG_ENV_SCRIPT';
+    if (sourceFile === prefix) return true;
+    if (!sourceFile.startsWith(prefix) || sourceFile.length <= prefix.length) return false;
+    return ['.', '/', '\\'].includes(sourceFile[prefix.length]);
 }
 
 function validZone(zone: any): boolean {

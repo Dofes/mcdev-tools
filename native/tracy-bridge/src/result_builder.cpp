@@ -15,6 +15,7 @@ namespace {
 
 constexpr std::size_t MaximumThreads = 64;
 constexpr std::size_t MaximumCallDepth = 64;
+constexpr std::string_view DebugEnvironmentSource = "DEBUG_ENV_SCRIPT";
 
 struct ZoneResult {
     std::string name;
@@ -54,6 +55,15 @@ struct CallTreeState {
     std::uint32_t nextId = 0;
     bool truncated = false;
 };
+
+bool isIgnoredSourceFile(std::string_view sourceFile) {
+    if (sourceFile == DebugEnvironmentSource) return true;
+    if (!sourceFile.starts_with(DebugEnvironmentSource) || sourceFile.size() <= DebugEnvironmentSource.size()) {
+        return false;
+    }
+    const auto separator = sourceFile[DebugEnvironmentSource.size()];
+    return separator == '.' || separator == '/' || separator == '\\';
+}
 
 void appendJsonString(std::ostringstream& output, std::string_view value) {
     static constexpr char hex[] = "0123456789abcdef";
@@ -128,6 +138,18 @@ std::int64_t collectCallTreeZone(
     std::size_t depth
 ) {
     const auto duration = std::max<std::int64_t>(0, worker.GetZoneEnd(zone) - zone.Start());
+    const auto& source = worker.GetSourceLocation(zone.SrcLoc());
+    const char* rawSourceFile = worker.GetString(source.file);
+    if (isIgnoredSourceFile(rawSourceFile ? rawSourceFile : "")) {
+        if (siblings && zone.HasChildren()) {
+            const auto& children = worker.GetZoneChildren(zone.Child());
+            forEachZone(children, [&](const tracy::ZoneEvent& child) {
+                collectCallTreeZone(worker, child, siblings, thread, state, depth);
+            });
+        }
+        return duration;
+    }
+
     ++thread.calls;
     if (!siblings || depth >= MaximumCallDepth) {
         state.truncated = true;
@@ -202,13 +224,14 @@ std::vector<ThreadResult> buildCallTree(
         const char* rawName = worker.GetThreadName(sourceThread->id);
         ThreadResult thread{std::to_string(sourceThread->id), rawName ? rawName : ""};
         forEachZone(sourceThread->timeline, [&](const tracy::ZoneEvent& zone) {
-            thread.total += collectCallTreeZone(worker, zone, &thread.roots, thread, state, 0);
+            collectCallTreeZone(worker, zone, &thread.roots, thread, state, 0);
         });
         nextNodeId = state.nextId;
         remainingNodes -= state.nodes;
         truncated = truncated || state.truncated;
         if (thread.roots.empty()) continue;
         sortCallNodes(thread.roots);
+        for (const auto& root : thread.roots) thread.total += root.total;
         threads.push_back(std::move(thread));
     }
     std::sort(threads.begin(), threads.end(), [](const ThreadResult& left, const ThreadResult& right) {
@@ -254,12 +277,14 @@ std::string buildResultJson(
     for (const auto& entry : sourceZones) {
         const auto& data = entry.second;
         if (data.total == 0 || data.zones.empty()) continue;
-        ++totalZones;
-        if (zones.size() == maximumZones && data.total <= zones.front().total) continue;
-
         const auto& source = worker.GetSourceLocation(entry.first);
         const char* name = worker.GetString(source.name.active ? source.name : source.function);
         const char* file = worker.GetString(source.file);
+        if (isIgnoredSourceFile(file ? file : "")) continue;
+
+        ++totalZones;
+        if (zones.size() == maximumZones && data.total <= zones.front().total) continue;
+
         const auto calls = static_cast<std::uint64_t>(data.zones.size());
         ZoneResult result{
             name ? name : "",
