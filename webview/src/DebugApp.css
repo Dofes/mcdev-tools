@@ -270,7 +270,7 @@ body[data-view="game-debugger"] #root {
 .debug-tool-nav {
   min-width: 0;
   min-height: 40px;
-  flex: 0 0 40px;
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-end;
   gap: 2px;
@@ -283,8 +283,9 @@ body[data-view="game-debugger"] #root {
 
 .debug-tool-nav button {
   position: relative;
+  flex: 0 0 auto;
   width: auto;
-  min-width: 0;
+  min-width: max-content;
   height: 36px;
   display: inline-flex;
   align-items: center;
@@ -321,9 +322,6 @@ body[data-view="game-debugger"] #root {
 }
 
 .debug-tool-nav button > span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
