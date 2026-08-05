@@ -91,19 +91,28 @@ export function buildPythonProfilerMarkCode(target: PythonProfilerSide): string 
 }
 
 export function buildPythonProfilerCollectCode(target: PythonProfilerTarget): string {
-    const scriptListCode = target === 'all'
-        ? "(getattr(_mcdev_pp_instance,'clientScriptNameList',[]) or [])+(getattr(_mcdev_pp_instance,'serverScriptNameList',[]) or [])"
-        : `getattr(_mcdev_pp_instance,'${target === 'client' ? 'clientScriptNameList' : 'serverScriptNameList'}',[]) or []`;
     const contextSetup = target === 'all' ? [
-        ' _mcdev_pp_context_targets={}',
-        ' for _mcdev_pp_stat in _mcdev_pp_stats:',
-        "  if _mcdev_pp_stat.name=='_mcdev_pp_client_marker': _mcdev_pp_context_targets[int(_mcdev_pp_stat.ctx_id or 0)]='client'",
-        "  elif _mcdev_pp_stat.name=='_mcdev_pp_server_marker': _mcdev_pp_context_targets[int(_mcdev_pp_stat.ctx_id or 0)]='server'"
-    ] : [' _mcdev_pp_context_targets={}'];
-    const sideSelection = target === 'all' ? [
-        '  _mcdev_pp_side=_mcdev_pp_context_targets.get(int(_mcdev_pp_stat.ctx_id or 0))',
-        '  _mcdev_pp_project=_mcdev_pp_project and _mcdev_pp_side is not None'
-    ] : [`  _mcdev_pp_side='${target}'`];
+        ' _mcdev_pp_contexts={}',
+        ' _mcdev_pp_root=yappi.get_func_stats()',
+        ' for _mcdev_pp_stat in _mcdev_pp_root:',
+        "  if _mcdev_pp_stat.name=='_mcdev_pp_client_marker': _mcdev_pp_contexts['client']=int(_mcdev_pp_stat.ctx_id or 0)",
+        "  elif _mcdev_pp_stat.name=='_mcdev_pp_server_marker': _mcdev_pp_contexts['server']=int(_mcdev_pp_stat.ctx_id or 0)"
+    ] : [' _mcdev_pp_contexts={}'];
+    const scriptSetup = target === 'all' ? [
+        "  _mcdev_pp_side_scripts={'client':set(),'server':set()}",
+        "  _mcdev_pp_side_scripts['client']=set(_mcdev_pp_name for _mcdev_pp_name in (getattr(_mcdev_pp_instance,'clientScriptNameList',[]) or []) if _mcdev_pp_name)",
+        "  _mcdev_pp_side_scripts['server']=set(_mcdev_pp_name for _mcdev_pp_name in (getattr(_mcdev_pp_instance,'serverScriptNameList',[]) or []) if _mcdev_pp_name)",
+        " except: _mcdev_pp_side_scripts={'client':set(),'server':set()}",
+        ' _mcdev_pp_sources=[]',
+        " for _mcdev_pp_side in ('client','server'):",
+        '  _mcdev_pp_ctx=_mcdev_pp_contexts.get(_mcdev_pp_side)',
+        '  if _mcdev_pp_ctx is not None:',
+        "   _mcdev_pp_sources.append((_mcdev_pp_side,yappi.get_func_stats({'ctx_id':_mcdev_pp_ctx}),_mcdev_pp_side_scripts[_mcdev_pp_side]))"
+    ] : [
+        `  _mcdev_pp_scripts=set(_mcdev_pp_name for _mcdev_pp_name in (getattr(_mcdev_pp_instance,'${target === 'client' ? 'clientScriptNameList' : 'serverScriptNameList'}',[]) or []) if _mcdev_pp_name)`,
+        ' except: _mcdev_pp_scripts=set()',
+        ` _mcdev_pp_sources=[('${target}',yappi.get_func_stats(),_mcdev_pp_scripts)]`
+    ];
     return [
         'import yappi,time',
         "if not globals().get('_mcdev_pp_owned',False):",
@@ -114,38 +123,34 @@ export function buildPythonProfilerCollectCode(target: PythonProfilerTarget): st
         ' if yappi.is_running():',
         '  yappi.stop()',
         "  globals()['_mcdev_pp_stopped']=time.time()",
-        ' _mcdev_pp_stats=yappi.get_func_stats()',
-        " _mcdev_pp_stats.sort('ttot','desc')",
         ...contextSetup,
         ' try:',
         '  import common.minecraftMod as _mcdev_pp_mod',
         '  _mcdev_pp_instance=_mcdev_pp_mod.instance()',
-        `  _mcdev_pp_scripts=set(_mcdev_pp_name for _mcdev_pp_name in ${scriptListCode} if _mcdev_pp_name)`,
-        ' except: _mcdev_pp_scripts=[]',
+        ...scriptSetup,
         ' _mcdev_pp_all=[]',
-        ' _mcdev_pp_sides={}',
-        ' for _mcdev_pp_stat in _mcdev_pp_stats:',
-        "  _mcdev_pp_module=_mcdev_pp_stat.module or ''",
-        "  _mcdev_pp_parts=set(_mcdev_pp_module.replace('\\\\','/').split('/'))",
-        "  _mcdev_pp_project=any(_mcdev_pp_name in _mcdev_pp_parts or _mcdev_pp_module==_mcdev_pp_name or _mcdev_pp_module.startswith(_mcdev_pp_name+'.') for _mcdev_pp_name in _mcdev_pp_scripts)",
-        ...sideSelection,
-        "  if _mcdev_pp_project and not _mcdev_pp_stat.name.startswith('_mcdev_pp_'):",
-        '   _mcdev_pp_all.append(_mcdev_pp_stat)',
-        '   _mcdev_pp_sides[_mcdev_pp_stat.index]=_mcdev_pp_side',
+        ' for _mcdev_pp_side,_mcdev_pp_stats,_mcdev_pp_scripts in _mcdev_pp_sources:',
+        '  for _mcdev_pp_stat in _mcdev_pp_stats:',
+        "   _mcdev_pp_module=_mcdev_pp_stat.module or ''",
+        "   _mcdev_pp_parts=set(_mcdev_pp_module.replace('\\\\','/').split('/'))",
+        "   _mcdev_pp_project=any(_mcdev_pp_name in _mcdev_pp_parts or _mcdev_pp_module==_mcdev_pp_name or _mcdev_pp_module.startswith(_mcdev_pp_name+'.') for _mcdev_pp_name in _mcdev_pp_scripts)",
+        "   if _mcdev_pp_project and not _mcdev_pp_stat.name.startswith('_mcdev_pp_'): _mcdev_pp_all.append((_mcdev_pp_side,_mcdev_pp_stat))",
+        ' _mcdev_pp_all.sort(key=lambda _mcdev_pp_item:_mcdev_pp_item[1].ttot,reverse=True)',
         ` _mcdev_pp_keep=_mcdev_pp_all[:${MAX_FUNCTIONS}]`,
-        ' _mcdev_pp_ids=dict((_mcdev_pp_stat.index,_mcdev_pp_pos) for _mcdev_pp_pos,_mcdev_pp_stat in enumerate(_mcdev_pp_keep))',
+        ' _mcdev_pp_ids=dict(((_mcdev_pp_side,_mcdev_pp_stat.index),_mcdev_pp_pos) for _mcdev_pp_pos,(_mcdev_pp_side,_mcdev_pp_stat) in enumerate(_mcdev_pp_keep))',
         ' _mcdev_pp_nodes=[]',
-        ' for _mcdev_pp_pos,_mcdev_pp_stat in enumerate(_mcdev_pp_keep):',
-        "  _mcdev_pp_nodes.append([_mcdev_pp_pos,_mcdev_pp_stat.module or '',int(_mcdev_pp_stat.lineno or 0),_mcdev_pp_stat.name or '',int(_mcdev_pp_stat.ncall or 0),int(_mcdev_pp_stat.nactualcall or 0),float(_mcdev_pp_stat.tsub or 0),float(_mcdev_pp_stat.ttot or 0),int(_mcdev_pp_stat.ctx_id or 0),_mcdev_pp_stat.ctx_name or '',_mcdev_pp_sides.get(_mcdev_pp_stat.index)])",
+        ' for _mcdev_pp_pos,(_mcdev_pp_side,_mcdev_pp_stat) in enumerate(_mcdev_pp_keep):',
+        "  _mcdev_pp_nodes.append([_mcdev_pp_pos,_mcdev_pp_stat.module or '',int(_mcdev_pp_stat.lineno or 0),_mcdev_pp_stat.name or '',int(_mcdev_pp_stat.ncall or 0),int(_mcdev_pp_stat.nactualcall or 0),float(_mcdev_pp_stat.tsub or 0),float(_mcdev_pp_stat.ttot or 0),int(_mcdev_pp_stat.ctx_id or 0),_mcdev_pp_stat.ctx_name or '',_mcdev_pp_side])",
         ' _mcdev_pp_edges=[]',
-        ' for _mcdev_pp_parent in _mcdev_pp_keep:',
+        ' for _mcdev_pp_side,_mcdev_pp_parent in _mcdev_pp_keep:',
         '  for _mcdev_pp_child in _mcdev_pp_parent.children:',
-        '   if _mcdev_pp_child.index in _mcdev_pp_ids:',
-        '    _mcdev_pp_edges.append([_mcdev_pp_ids[_mcdev_pp_parent.index],_mcdev_pp_ids[_mcdev_pp_child.index],int(_mcdev_pp_child.ncall or 0),float(_mcdev_pp_child.tsub or 0),float(_mcdev_pp_child.ttot or 0)])',
+        '   _mcdev_pp_child_key=(_mcdev_pp_side,_mcdev_pp_child.index)',
+        '   if _mcdev_pp_child_key in _mcdev_pp_ids:',
+        '    _mcdev_pp_edges.append([_mcdev_pp_ids[(_mcdev_pp_side,_mcdev_pp_parent.index)],_mcdev_pp_ids[_mcdev_pp_child_key],int(_mcdev_pp_child.ncall or 0),float(_mcdev_pp_child.tsub or 0),float(_mcdev_pp_child.ttot or 0)])',
         `    if len(_mcdev_pp_edges)>=${MAX_CALLS}: break`,
         `  if len(_mcdev_pp_edges)>=${MAX_CALLS}: break`,
         " _mcdev_pp_end=globals().get('_mcdev_pp_stopped') or time.time()",
-        " _result={'ok':True,'clock':globals().get('_mcdev_pp_clock','CPU'),'elapsed':max(0,_mcdev_pp_end-globals().get('_mcdev_pp_started',_mcdev_pp_end)),'total':len(_mcdev_pp_all),'truncated':len(_mcdev_pp_all)>len(_mcdev_pp_keep),'targets':list(set(_mcdev_pp_context_targets.values())),'nodes':_mcdev_pp_nodes,'edges':_mcdev_pp_edges}",
+        " _result={'ok':True,'clock':globals().get('_mcdev_pp_clock','CPU'),'elapsed':max(0,_mcdev_pp_end-globals().get('_mcdev_pp_started',_mcdev_pp_end)),'total':len(_mcdev_pp_all),'truncated':len(_mcdev_pp_all)>len(_mcdev_pp_keep),'targets':list(_mcdev_pp_contexts.keys()),'nodes':_mcdev_pp_nodes,'edges':_mcdev_pp_edges}",
         ' yappi.clear_stats()',
         " globals()['_mcdev_pp_owned']=False",
         " globals()['_mcdev_pp_timer']=None",
@@ -199,9 +204,11 @@ export function parsePythonProfilerResult(
         }
     }
     const functions = nodes.slice(0, MAX_FUNCTIONS).map(value => parseFunctionRow(value, target)).filter(isDefined);
-    const ids = new Set(functions.map(item => item.id));
+    const functionsById = new Map(functions.map(item => [item.id, item]));
     const calls = edges.slice(0, MAX_CALLS).map(parseCallRow).filter(isDefined).filter(item => (
-        ids.has(item.callerId) && ids.has(item.calleeId)
+        functionsById.has(item.callerId)
+        && functionsById.has(item.calleeId)
+        && functionsById.get(item.callerId)?.target === functionsById.get(item.calleeId)?.target
     ));
     return {
         clock,

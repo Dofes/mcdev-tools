@@ -30,6 +30,9 @@ test('Python profiler scripts stay bounded and distinguish client and server pro
     assert.match(all, /serverScriptNameList/);
     assert.match(all, /_mcdev_pp_client_marker/);
     assert.match(all, /_mcdev_pp_server_marker/);
+    assert.match(all, /get_func_stats\(\{'ctx_id':_mcdev_pp_ctx\}\)/);
+    assert.match(all, /_mcdev_pp_side_scripts\[_mcdev_pp_side\]/);
+    assert.match(all, /\(_mcdev_pp_side,_mcdev_pp_child\.index\)/);
     assert.match(buildPythonProfilerMarkCode('client'), /def _mcdev_pp_client_marker/);
     assert.ok(timed.length < 2_000);
     assert.ok(buildPythonProfilerCollectCode('client').length < 4_500);
@@ -79,7 +82,11 @@ test('Python profiler keeps marked client and server contexts separate in an ALL
             [2, 'demo/server.py', 1, 'ServerRoot', 1, 1, 0.1, 0.4, 2, 'MainThread', 'server'],
             [3, 'demo/server_work.py', 2, 'ServerWork', 1, 1, 0.2, 0.3, 2, 'MainThread', 'server']
         ],
-        edges: [[0, 1, 1, 0.2, 0.3], [2, 3, 1, 0.2, 0.3]]
+        edges: [
+            [0, 1, 1, 0.2, 0.3],
+            [2, 3, 1, 0.2, 0.3],
+            [1, 2, 1, 0.1, 0.1]
+        ]
     }, 'all');
 
     assert.deepEqual(result.functions.map(item => [item.id, item.target, item.contextId]), [
