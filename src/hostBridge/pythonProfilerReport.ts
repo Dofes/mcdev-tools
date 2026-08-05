@@ -56,12 +56,12 @@ function renderMarkdown(
         '',
         '## Hot Functions',
         '',
-        '| # | Function | Location | Calls | Self | Total | Avg | Context |',
+        '| # | Function | Location | Calls | Self | Total | Avg | Runtime / Context |',
         '| -: | --- | --- | ---: | ---: | ---: | ---: | --- |'
     ];
     functions.forEach((item, index) => {
         const average = item.calls > 0 ? item.totalTime / item.calls : 0;
-        lines.push(`| ${index + 1} | ${md(item.name)} | ${md(formatLocation(item.module, item.line))} | ${item.calls} | ${formatSeconds(item.selfTime)} | ${formatSeconds(item.totalTime)} | ${formatSeconds(average)} | ${md(item.contextName || String(item.contextId))} |`);
+        lines.push(`| ${index + 1} | ${md(item.name)} | ${md(formatLocation(item.module, item.line))} | ${item.calls} | ${formatSeconds(item.selfTime, item.calls, result.clock)} | ${formatSeconds(item.totalTime, item.calls, result.clock)} | ${formatSeconds(average, item.calls, result.clock)} | ${md(formatContext(item))} |`);
     });
     lines.push('', '## Call Relationships', '');
     if (calls.length === 0) {
@@ -74,7 +74,7 @@ function renderMarkdown(
             if (!caller || !callee) {
                 continue;
             }
-            lines.push(`| ${md(caller.name)} | ${md(callee.name)} | ${call.calls} | ${formatSeconds(call.selfTime)} | ${formatSeconds(call.totalTime)} |`);
+            lines.push(`| ${md(`${caller.name} [${formatContext(caller)}]`)} | ${md(`${callee.name} [${formatContext(callee)}]`)} | ${call.calls} | ${formatSeconds(call.selfTime, call.calls, result.clock)} | ${formatSeconds(call.totalTime, call.calls, result.clock)} |`);
         }
     }
     lines.push(
@@ -107,14 +107,14 @@ function renderSvg(
         const y = top + index * rowHeight;
         const totalWidth = Math.max(1, item.totalTime / maximum * chartWidth);
         const selfWidth = Math.max(0, item.selfTime / maximum * chartWidth);
-        const label = `${item.name} (${formatLocation(item.module, item.line)})`;
-        const title = `${label}\nCalls: ${item.calls}\nSelf: ${formatSeconds(item.selfTime)}\nTotal: ${formatSeconds(item.totalTime)}`;
+        const label = `[${formatContext(item)}] ${item.name} (${formatLocation(item.module, item.line)})`;
+        const title = `${label}\nCalls: ${item.calls}\nSelf: ${formatSeconds(item.selfTime, item.calls, result.clock)}\nTotal: ${formatSeconds(item.totalTime, item.calls, result.clock)}`;
         return [
             `<g><title>${xml(title)}</title>`,
             `<text x="20" y="${y + 17}" class="fn">${xml(shorten(label, 58))}</text>`,
             `<rect x="${left}" y="${y + 4}" width="${totalWidth.toFixed(2)}" height="18" rx="3" fill="#4c8bd9"/>`,
             selfWidth > 0 ? `<rect x="${left}" y="${y + 4}" width="${selfWidth.toFixed(2)}" height="18" rx="3" fill="#b27adf"/>` : '',
-            `<text x="${width - 18}" y="${y + 17}" text-anchor="end" class="time">${xml(formatSeconds(item.totalTime))}</text>`,
+            `<text x="${width - 18}" y="${y + 17}" text-anchor="end" class="time">${xml(formatSeconds(item.totalTime, item.calls, result.clock))}</text>`,
             '</g>'
         ].join('');
     }).join('\n');
@@ -145,15 +145,28 @@ function formatFileTimestamp(value: Date): string {
     return iso.slice(0, 10).replace(/-/g, '') + '-' + iso.slice(11, 23).replace(/[:.]/g, '');
 }
 
-function formatSeconds(value: number): string {
+function formatSeconds(value: number, calls = 0, clock?: PythonProfilerResult['clock']): string {
+    if (clock === 'CPU' && calls > 0 && value <= 0) {
+        return '< clock resolution';
+    }
     if (value >= 1) {
         return `${value.toFixed(3)} s`;
     }
-    return `${(value * 1000).toFixed(3)} ms`;
+    if (value >= 0.001) {
+        return `${(value * 1000).toFixed(3)} ms`;
+    }
+    if (value > 0 && value < 0.000001) {
+        return '< 1 us';
+    }
+    return `${(value * 1_000_000).toFixed(2)} us`;
 }
 
 function formatLocation(module: string, line: number): string {
     return line > 0 ? `${module}:${line}` : module;
+}
+
+function formatContext(item: PythonProfilerResult['functions'][number]): string {
+    return `${item.target} / ${item.contextName || 'Thread'} #${item.contextId}`;
 }
 
 function shorten(value: string, maximum: number): string {

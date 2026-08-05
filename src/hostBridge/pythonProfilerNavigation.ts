@@ -1,8 +1,11 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-const PYTHON_EXCLUDE = '**/{.git,.mcdev,.venv,venv,env,node_modules,__pycache__,build,dist,out,QuModLibs}/**';
+// Navigation is an explicit, one-shot action. QuModLibs remains excluded from
+// background project analysis, but known profiler locations must stay openable.
+const PYTHON_NAVIGATION_EXCLUDE = '**/{.git,.mcdev,.venv,venv,env,node_modules,__pycache__,build,dist,out}/**';
 const MAX_SOURCE_MATCHES = 64;
+const MAX_EXACT_SOURCE_MATCHES = 8;
 
 export interface PythonProfilerSourceTarget {
     projectRoot: string;
@@ -37,12 +40,32 @@ async function resolveSourceUri(projectRoot: string, moduleName: string): Promis
         }
     }
 
+    // A profiler module is usually relative to an Addon package rather than
+    // the workspace root. Resolve that complete suffix before basename search
+    // so duplicate third-party filenames do not jump to an unrelated Addon.
+    const exactMatches: vscode.Uri[] = [];
+    for (const variant of variants) {
+        const suffix = globSuffix(variant);
+        if (!suffix) {
+            continue;
+        }
+        exactMatches.push(...await vscode.workspace.findFiles(
+            new vscode.RelativePattern(root, `**/${suffix}`),
+            PYTHON_NAVIGATION_EXCLUDE,
+            MAX_EXACT_SOURCE_MATCHES
+        ));
+    }
+    const exact = bestSourceMatch(exactMatches, variants);
+    if (exact) {
+        return exact;
+    }
+
     const basenames = [...new Set(variants.map(value => path.basename(value)).filter(Boolean))];
     const matches: vscode.Uri[] = [];
     for (const basename of basenames) {
         const found = await vscode.workspace.findFiles(
             new vscode.RelativePattern(root, `**/${escapeGlobSegment(basename)}`),
-            PYTHON_EXCLUDE,
+            PYTHON_NAVIGATION_EXCLUDE,
             MAX_SOURCE_MATCHES
         );
         matches.push(...found);
@@ -50,6 +73,10 @@ async function resolveSourceUri(projectRoot: string, moduleName: string): Promis
             break;
         }
     }
+    return bestSourceMatch(matches, variants);
+}
+
+function bestSourceMatch(matches: vscode.Uri[], variants: string[]): vscode.Uri | undefined {
     const unique = [...new Map(matches.map(uri => [uri.fsPath.toLowerCase(), uri])).values()];
     unique.sort((left, right) => (
         sourceMatchScore(right.fsPath, variants) - sourceMatchScore(left.fsPath, variants)
@@ -151,4 +178,12 @@ async function isFile(filePath: string): Promise<boolean> {
 
 function escapeGlobSegment(value: string): string {
     return value.replace(/[?*\[\]{}]/g, character => `[${character}]`);
+}
+
+function globSuffix(value: string): string | undefined {
+    if (path.isAbsolute(value)) {
+        return undefined;
+    }
+    const segments = value.replace(/\\/g, '/').split('/').filter(segment => segment && segment !== '.');
+    return segments.length > 1 ? segments.map(escapeGlobSegment).join('/') : undefined;
 }

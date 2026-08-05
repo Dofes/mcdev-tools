@@ -103,6 +103,7 @@ export type PythonProfilerClock = 'CPU' | 'WALL';
 
 export interface PythonProfilerFunction {
   id: number;
+  target: Exclude<PythonProfilerTarget, 'all'>;
   module: string;
   line: number;
   name: string;

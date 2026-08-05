@@ -4,6 +4,7 @@ import {
   HostBridgeSessionSummary,
   PythonProfilerCall,
   PythonProfilerCompletedState,
+  PythonProfilerClock,
   PythonProfilerFunction,
   PythonProfilerTarget,
   PythonProfilerTargetState,
@@ -19,7 +20,7 @@ type CaptureMode = 'timed' | 'manual';
 
 export function PythonProfilerTool({ session, t }: PythonProfilerToolProps) {
   const [target, setTarget] = useState<PythonProfilerTarget>('client');
-  const [clock, setClock] = useState<'CPU' | 'WALL'>('CPU');
+  const [clock, setClock] = useState<'CPU' | 'WALL'>('WALL');
   const [mode, setMode] = useState<CaptureMode>('timed');
   const [duration, setDuration] = useState('10');
   const [states, setStates] = useState<Partial<Record<PythonProfilerTarget, PythonProfilerTargetState>>>({});
@@ -103,6 +104,12 @@ export function PythonProfilerTool({ session, t }: PythonProfilerToolProps) {
     const timer = window.setInterval(() => setClockTick(value => value + 1), 250);
     return () => window.clearInterval(timer);
   }, [targetState?.status, targetState?.startedAt]);
+
+  useEffect(() => {
+    if (targetState?.status === 'running' || targetState?.status === 'collecting') {
+      setClock(targetState.clock);
+    }
+  }, [targetState?.clock, targetState?.status]);
 
   const statusLabel = getStatusLabel(targetState, t);
   const elapsed = getElapsed(targetState);
@@ -409,18 +416,22 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
               <span className="python-profiler-function-name">
                 <strong>{item.name}</strong>
                 <small title={formatLocation(item)}>{formatLocation(item)}</small>
+                <span className="python-profiler-function-context" title={formatContext(item, t)}>
+                  <span className={`codicon ${item.target === 'client' ? 'codicon-device-desktop' : 'codicon-server'}`} />
+                  <span>{formatContext(item, t)}</span>
+                </span>
               </span>
               <span
                 className="python-profiler-time-bar"
                 style={timeBarStyle(item, maximumTotalTime)}
-                title={`${t.pythonProfilerTotalTime}: ${formatTime(item.totalTime)} | ${t.pythonProfilerSelfTime}: ${formatTime(item.selfTime)}`}
+                title={`${t.pythonProfilerTotalTime}: ${formatProfileTime(item.totalTime, item.calls, result.clock, t)} | ${t.pythonProfilerSelfTime}: ${formatProfileTime(item.selfTime, item.calls, result.clock, t)}`}
               >
                 <span className="total" />
                 <span className="self" />
               </span>
               <span>{item.calls}</span>
-              <span>{formatTime(item.selfTime)}</span>
-              <span>{formatTime(item.totalTime)}</span>
+              <span>{formatProfileTime(item.selfTime, item.calls, result.clock, t)}</span>
+              <span>{formatProfileTime(item.totalTime, item.calls, result.clock, t)}</span>
             </button>
           ))}
         </div>
@@ -472,6 +483,7 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
               <div>
                 <strong>{selectedFunction.name}</strong>
                 <small title={formatLocation(selectedFunction)}>{formatLocation(selectedFunction)}</small>
+                <small title={formatContext(selectedFunction, t)}>{formatContext(selectedFunction, t)}</small>
               </div>
               <button
                 type="button"
@@ -487,6 +499,8 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
               label={t.pythonProfilerCallers}
               relationships={relationships.callers}
               empty={t.pythonProfilerNoCalls}
+              t={t}
+              clock={result.clock}
               onSelect={setSelectedFunctionId}
               onOpen={openFunction}
             />
@@ -494,6 +508,8 @@ const PythonProfilerResults = memo(function PythonProfilerResults({
               label={t.pythonProfilerCallees}
               relationships={relationships.callees}
               empty={t.pythonProfilerNoCalls}
+              t={t}
+              clock={result.clock}
               onSelect={setSelectedFunctionId}
               onOpen={openFunction}
             />
@@ -546,12 +562,16 @@ function CallSection({
   label,
   relationships,
   empty,
+  t,
+  clock,
   onSelect,
   onOpen,
 }: {
   label: string;
   relationships: Relationship[];
   empty: string;
+  t: I18nText;
+  clock: PythonProfilerClock;
   onSelect(functionId: number): void;
   onOpen(item: PythonProfilerFunction): void;
 }) {
@@ -566,9 +586,11 @@ function CallSection({
           onClick={() => onSelect(relationship.function.id)}
           onDoubleClick={() => onOpen(relationship.function)}
         >
-          <span>{relationship.function.name}</span>
+          <span title={`${relationship.function.name} · ${formatContext(relationship.function, t)}`}>
+            {relationship.function.name} · {formatContext(relationship.function, t)}
+          </span>
           <small>{relationship.call.calls} ×</small>
-          <time>{formatTime(relationship.call.totalTime)}</time>
+          <time>{formatProfileTime(relationship.call.totalTime, relationship.call.calls, clock, t)}</time>
         </button>
       ))}
     </div>
@@ -622,11 +644,23 @@ function getElapsed(state: PythonProfilerTargetState | undefined): number | unde
 function formatTime(seconds: number): string {
   if (seconds >= 1) return `${seconds.toFixed(3)} s`;
   if (seconds >= 0.001) return `${(seconds * 1000).toFixed(2)} ms`;
+  if (seconds > 0 && seconds < 0.000001) return '<1µs';
   return `${(seconds * 1_000_000).toFixed(0)} µs`;
+}
+
+function formatProfileTime(seconds: number, calls: number, clock: PythonProfilerClock, t: I18nText): string {
+  return clock === 'CPU' && calls > 0 && seconds <= 0
+    ? t.pythonProfilerBelowResolution
+    : formatTime(seconds);
 }
 
 function formatLocation(item: PythonProfilerFunction): string {
   return item.line > 0 ? `${item.module}:${item.line}` : item.module;
+}
+
+function formatContext(item: PythonProfilerFunction, t: I18nText): string {
+  const side = item.target === 'client' ? t.hostBridgeClient : t.hostBridgeServer;
+  return `${side} · ${item.contextName || 'Thread'} #${item.contextId}`;
 }
 
 function timeBarStyle(item: PythonProfilerFunction, maximum: number): CSSProperties {

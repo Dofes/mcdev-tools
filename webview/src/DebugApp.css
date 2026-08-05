@@ -917,8 +917,8 @@ body[data-view="game-debugger"] #root {
 .python-profiler-table button {
   width: 100%;
   min-width: 760px;
-  height: 46px;
-  padding: 0 12px;
+  min-height: 58px;
+  padding: 5px 12px;
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--panel-border) 70%, transparent);
   color: var(--vscode-foreground);
@@ -984,6 +984,25 @@ body[data-view="game-debugger"] #root {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.python-profiler-function-context {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  font-size: 8px;
+}
+
+.python-profiler-function-context > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.python-profiler-function-context .codicon { flex: 0 0 auto; font-size: 10px; }
+.python-profiler-table button.selected .python-profiler-function-context { color: inherit; opacity: 0.72; }
 
 .python-profiler-function-name strong {
   font-size: 11px;

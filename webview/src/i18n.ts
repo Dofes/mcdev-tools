@@ -237,6 +237,7 @@ export interface I18nText {
   pythonProfilerClock: string;
   pythonProfilerCpu: string;
   pythonProfilerWall: string;
+  pythonProfilerBelowResolution: string;
   pythonProfilerMode: string;
   pythonProfilerTimed: string;
   pythonProfilerManual: string;
@@ -438,7 +439,7 @@ export const i18n: Record<string, I18nText> = {
     hostBridgeClient: 'Client',
     hostBridgeServer: 'Server',
     hostBridgeCode: 'Python Code',
-    hostBridgeCodePlaceholder: "print('hello')",
+    hostBridgeCodePlaceholder: "print(\"hello\")",
     hostBridgeExecute: 'Run',
     hostBridgeExecuting: 'Running...',
     hostBridgeResult: 'Result',
@@ -538,7 +539,8 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerAll: 'All',
     pythonProfilerClock: 'Clock',
     pythonProfilerCpu: 'CPU',
-    pythonProfilerWall: 'Wall',
+    pythonProfilerWall: 'WALL',
+    pythonProfilerBelowResolution: '<1µs',
     pythonProfilerMode: 'Capture Mode',
     pythonProfilerTimed: 'Maximum',
     pythonProfilerManual: 'Manual',
@@ -739,7 +741,7 @@ export const i18n: Record<string, I18nText> = {
     hostBridgeClient: '客户端',
     hostBridgeServer: '服务端',
     hostBridgeCode: 'Python 代码',
-    hostBridgeCodePlaceholder: "print('hello')",
+    hostBridgeCodePlaceholder: "print(\"hello\")",
     hostBridgeExecute: '执行',
     hostBridgeExecuting: '正在执行...',
     hostBridgeResult: '执行结果',
@@ -839,7 +841,8 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerAll: '全部',
     pythonProfilerClock: '计时方式',
     pythonProfilerCpu: 'CPU',
-    pythonProfilerWall: '实际时间',
+    pythonProfilerWall: 'WALL',
+    pythonProfilerBelowResolution: '<1µs',
     pythonProfilerMode: '采样方式',
     pythonProfilerTimed: '最大时长',
     pythonProfilerManual: '手动停止',

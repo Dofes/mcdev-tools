@@ -4,6 +4,7 @@ import { HostBridgeManager } from './manager';
 import {
     buildPythonProfilerCleanupCode,
     buildPythonProfilerCollectCode,
+    buildPythonProfilerMarkCode,
     buildPythonProfilerStartCode,
     parsePythonProfilerResult,
     parsePythonProfilerStart,
@@ -84,7 +85,7 @@ export class PythonProfilerController implements vscode.Disposable {
                         sessionId,
                         connectionGeneration,
                         target,
-                        message.clock === 'WALL' ? 'WALL' : 'CPU',
+                        message.clock === 'CPU' ? 'CPU' : 'WALL',
                         readDuration(message.durationSeconds)
                     ));
                     await this.postState(webview, requestId, sessionId, connectionGeneration);
@@ -136,11 +137,7 @@ export class PythonProfilerController implements vscode.Disposable {
             this.removeRuntime(runtime);
             if (session?.connected && session.connectionGeneration === runtime.connectionGeneration) {
                 void this.runExclusive(key, async () => {
-                    await this.hostBridgeManager.executeCode(
-                        runtime.sessionId,
-                        buildPythonProfilerCleanupCode(),
-                        isClientExecution(runtime.target)
-                    );
+                    await this.cleanupTargets(runtime.sessionId, runtime.target);
                 }).catch(() => undefined);
             }
             this.completed.delete(key);
@@ -197,12 +194,19 @@ export class PythonProfilerController implements vscode.Disposable {
                 isClientExecution(target)
             );
             parsePythonProfilerStart(value);
+            if (target === 'all') {
+                // The bridge runs each request on its requested game thread, so
+                // these marker calls bind Yappi context ids to runtime sides.
+                await Promise.all((['client', 'server'] as const).map(side => (
+                    this.hostBridgeManager.executeCode(
+                        sessionId,
+                        buildPythonProfilerMarkCode(side),
+                        side === 'client'
+                    )
+                )));
+            }
         } catch (error) {
-            await this.hostBridgeManager.executeCode(
-                sessionId,
-                buildPythonProfilerCleanupCode(),
-                isClientExecution(target)
-            ).catch(() => undefined);
+            await this.cleanupTargets(sessionId, target);
             throw error;
         }
         const runtime: PythonProfilerRuntime = {
@@ -267,12 +271,18 @@ export class PythonProfilerController implements vscode.Disposable {
         );
         try {
             this.assertSession(runtime.sessionId, runtime.connectionGeneration);
-            const value = await this.hostBridgeManager.executeCode(
-                runtime.sessionId,
-                buildPythonProfilerCollectCode(runtime.target),
-                isClientExecution(runtime.target)
-            );
-            const result = parsePythonProfilerResult(value);
+            let result: PythonProfilerResult;
+            try {
+                const value = await this.hostBridgeManager.executeCode(
+                    runtime.sessionId,
+                    buildPythonProfilerCollectCode(runtime.target),
+                    isClientExecution(runtime.target)
+                );
+                result = parsePythonProfilerResult(value, runtime.target);
+            } catch (error) {
+                await this.cleanupTargets(runtime.sessionId, runtime.target);
+                throw error;
+            }
             const capturedAt = new Date();
             this.completed.set(key, {
                 target: runtime.target,
@@ -305,7 +315,7 @@ export class PythonProfilerController implements vscode.Disposable {
             return {
                 target,
                 status: runtime ? (runtime.collecting ? 'collecting' : 'running') : 'idle',
-                clock: runtime?.clock ?? completed?.clock ?? 'CPU',
+                clock: runtime?.clock ?? completed?.clock ?? 'WALL',
                 durationSeconds: runtime?.durationSeconds,
                 startedAt: runtime ? new Date(runtime.startedAt).toISOString() : undefined,
                 completed
@@ -439,17 +449,21 @@ export class PythonProfilerController implements vscode.Disposable {
         }
     }
 
+    private async cleanupTargets(sessionId: string, target: PythonProfilerTarget): Promise<void> {
+        await this.hostBridgeManager.executeCode(
+            sessionId,
+            buildPythonProfilerCleanupCode(),
+            isClientExecution(target)
+        ).catch(() => undefined);
+    }
+
     private async performDispose(): Promise<void> {
         this.disposed = true;
         const cleanups = [...this.runtimes.values()].map(runtime => this.runExclusive(
             runtime.key,
             async () => {
                 this.removeRuntime(runtime);
-                await this.hostBridgeManager.executeCode(
-                    runtime.sessionId,
-                    buildPythonProfilerCleanupCode(),
-                    isClientExecution(runtime.target)
-                ).catch(() => undefined);
+                await this.cleanupTargets(runtime.sessionId, runtime.target);
             }
         ));
         await Promise.all(cleanups);
