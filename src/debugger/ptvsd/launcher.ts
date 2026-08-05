@@ -38,7 +38,7 @@ export function getMcdkPath(
             ? mcdkPathConfig
             : path.join(workspaceFolder.uri.fsPath, mcdkPathConfig);
     }
-    return path.join(extensionPath, 'bin', 'mcdk.exe');
+    return path.join(extensionPath, 'bin', 'native', 'windows', 'x64', 'mcdk.exe');
 }
 
 /**

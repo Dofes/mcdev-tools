@@ -254,7 +254,7 @@
                 "mcdev-tools.mcdkPath": {
                     "type": "string",
                     "default": "",
-                    "description": "可选：mcdk.exe 的路径（留空使用插件内置 bin/mcdk.exe 或相对于工作区路径）"
+                    "description": "可选：mcdk.exe 的路径（留空使用插件内置 bin/native/windows/x64/mcdk.exe 或相对于工作区路径）"
                 },
                 "mcdev-tools.enable": {
                     "type": "boolean",

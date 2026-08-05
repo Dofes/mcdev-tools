@@ -204,7 +204,7 @@ async function runMcdk(): Promise<void> {
         ? (path.isAbsolute(mcdkPathConfig)
             ? mcdkPathConfig
             : path.join(workspaceFolder.uri.fsPath, mcdkPathConfig))
-        : path.join(extensionContext.extensionPath, 'bin', 'mcdk.exe');
+        : path.join(extensionContext.extensionPath, 'bin', 'native', 'windows', 'x64', 'mcdk.exe');
 
     if (!fs.existsSync(mcdkPath)) {
         vscode.window.showErrorMessage(`找不到 mcdk.exe: ${mcdkPath}`);
