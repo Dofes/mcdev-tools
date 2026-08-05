@@ -268,6 +268,32 @@ export interface I18nText {
   pythonProfilerRevealReport: string;
   pythonProfilerReportFailed: string;
   pythonProfilerTruncated: string;
+  pythonMemoryTab: string;
+  pythonMemoryTracebackDepth: string;
+  pythonMemoryCollectGarbage: string;
+  pythonMemoryStart: string;
+  pythonMemoryStop: string;
+  pythonMemoryRunning: string;
+  pythonMemoryCollecting: string;
+  pythonMemoryIdle: string;
+  pythonMemoryUnavailable: string;
+  pythonMemoryNetGrowth: string;
+  pythonMemoryRetained: string;
+  pythonMemoryBlockChange: string;
+  pythonMemoryLiveBlocks: string;
+  pythonMemorySaveReport: string;
+  pythonMemoryOpenMarkdown: string;
+  pythonMemoryOpenSvg: string;
+  pythonMemoryRevealReport: string;
+  pythonMemoryReportFailed: string;
+  pythonMemoryAllocationSites: string;
+  pythonMemoryAllocationSite: string;
+  pythonMemoryChange: string;
+  pythonMemoryBlocks: string;
+  pythonMemoryTruncated: string;
+  pythonMemoryTraceback: string;
+  pythonMemoryOpenSource: string;
+  pythonMemorySelectAllocation: string;
   nativeProfilerTab: string;
   nativeProfilerEndpoint: string;
   nativeProfilerDetecting: string;
@@ -571,6 +597,32 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerRevealReport: 'Show report in folder',
     pythonProfilerReportFailed: 'The profile was captured, but report files could not be written',
     pythonProfilerTruncated: 'Largest functions shown',
+    pythonMemoryTab: 'Python Memory',
+    pythonMemoryTracebackDepth: 'Traceback depth',
+    pythonMemoryCollectGarbage: 'Collect unreachable objects before snapshot',
+    pythonMemoryStart: 'Start baseline',
+    pythonMemoryStop: 'Stop and compare',
+    pythonMemoryRunning: 'Tracking Python allocations',
+    pythonMemoryCollecting: 'Collecting memory snapshot',
+    pythonMemoryIdle: 'Start a baseline to inspect retained Python allocations',
+    pythonMemoryUnavailable: 'Python memory profiling is unavailable for this session',
+    pythonMemoryNetGrowth: 'Net growth',
+    pythonMemoryRetained: 'Retained',
+    pythonMemoryBlockChange: 'Block change',
+    pythonMemoryLiveBlocks: 'Live blocks',
+    pythonMemorySaveReport: 'Save reports',
+    pythonMemoryOpenMarkdown: 'Open Markdown report',
+    pythonMemoryOpenSvg: 'Open SVG visualization',
+    pythonMemoryRevealReport: 'Show report in folder',
+    pythonMemoryReportFailed: 'The memory snapshot was captured, but report files could not be written',
+    pythonMemoryAllocationSites: 'Allocation Sites',
+    pythonMemoryAllocationSite: 'Allocation Site',
+    pythonMemoryChange: 'Retained Change',
+    pythonMemoryBlocks: 'Blocks',
+    pythonMemoryTruncated: 'largest changes shown',
+    pythonMemoryTraceback: 'Allocation Traceback',
+    pythonMemoryOpenSource: 'Open source location',
+    pythonMemorySelectAllocation: 'Select an allocation site to inspect its traceback',
     nativeProfilerTab: 'Native Performance',
     nativeProfilerEndpoint: 'Tracy endpoint',
     nativeProfilerDetecting: 'Detecting game Tracy endpoint',
@@ -873,6 +925,32 @@ export const i18n: Record<string, I18nText> = {
     pythonProfilerRevealReport: '在文件夹中显示报告',
     pythonProfilerReportFailed: '采样成功，但报告文件写入失败',
     pythonProfilerTruncated: '仅显示耗时最高的函数',
+    pythonMemoryTab: 'Python 内存',
+    pythonMemoryTracebackDepth: '调用栈深度',
+    pythonMemoryCollectGarbage: '结束时回收不可达对象',
+    pythonMemoryStart: '建立基线',
+    pythonMemoryStop: '停止并对比',
+    pythonMemoryRunning: '正在跟踪 Python 分配',
+    pythonMemoryCollecting: '正在整理内存快照',
+    pythonMemoryIdle: '建立基线以分析持续保留的 Python 分配',
+    pythonMemoryUnavailable: '当前会话无法使用 Python 内存分析',
+    pythonMemoryNetGrowth: '净增长',
+    pythonMemoryRetained: '当前保留',
+    pythonMemoryBlockChange: '块数变化',
+    pythonMemoryLiveBlocks: '当前块数',
+    pythonMemorySaveReport: '保存报告',
+    pythonMemoryOpenMarkdown: '打开 Markdown 报告',
+    pythonMemoryOpenSvg: '打开 SVG 图表',
+    pythonMemoryRevealReport: '在文件夹中显示报告',
+    pythonMemoryReportFailed: '快照已生成，但报告文件写入失败',
+    pythonMemoryAllocationSites: '分配热点',
+    pythonMemoryAllocationSite: '分配位置',
+    pythonMemoryChange: '保留变化',
+    pythonMemoryBlocks: '内存块',
+    pythonMemoryTruncated: '仅显示变化最大的分配点',
+    pythonMemoryTraceback: '分配调用栈',
+    pythonMemoryOpenSource: '打开源码位置',
+    pythonMemorySelectAllocation: '选择分配点以查看调用栈',
     nativeProfilerTab: 'Native 性能',
     nativeProfilerEndpoint: 'Tracy 端点',
     nativeProfilerDetecting: '正在探测游戏 Tracy 端点',

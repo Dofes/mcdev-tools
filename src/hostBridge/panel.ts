@@ -11,6 +11,7 @@ import { LatestOperationQueue } from './latestOperationQueue';
 import { HostBridgeRpcError } from './server';
 import { DisposableLike } from './types';
 import { PythonProfilerController } from './pythonProfilerController';
+import { PythonMemoryProfilerController } from './pythonMemoryProfilerController';
 import { NativeProfilerController } from './nativeProfilerController';
 import {
     buildUiDebuggerChildrenCode,
@@ -50,6 +51,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
     private readonly uiPickerQueue = new LatestOperationQueue();
     private readonly uiPropertyQueue = new LatestOperationQueue();
     private pythonProfilerController?: PythonProfilerController;
+    private pythonMemoryProfilerController?: PythonMemoryProfilerController;
     private nativeProfilerController?: NativeProfilerController;
     private releasePromise: Promise<void> = Promise.resolve();
 
@@ -86,6 +88,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
         this.bridgeSubscription = this.hostBridgeManager.onDidChange(snapshot => {
             this.reconcileUiPickers(snapshot);
             this.pythonProfilerController?.reconcile(snapshot);
+            this.pythonMemoryProfilerController?.reconcile(snapshot);
             this.nativeProfilerController?.reconcile(snapshot);
             void panel.webview.postMessage({ type: 'hostBridgeState', snapshot });
         });
@@ -112,8 +115,10 @@ export class GameDebuggerPanel implements vscode.Disposable {
     private releasePanel(): Promise<void> {
         const pickerCleanup = this.disposeUiPickersAsync();
         const pythonProfilerController = this.pythonProfilerController;
+        const pythonMemoryProfilerController = this.pythonMemoryProfilerController;
         const nativeProfilerController = this.nativeProfilerController;
         this.pythonProfilerController = undefined;
+        this.pythonMemoryProfilerController = undefined;
         this.nativeProfilerController = undefined;
         this.messageSubscription?.dispose();
         this.messageSubscription = undefined;
@@ -130,6 +135,7 @@ export class GameDebuggerPanel implements vscode.Disposable {
         const cleanup = Promise.all([
             pickerCleanup,
             pythonProfilerController?.disposeAsync(),
+            pythonMemoryProfilerController?.disposeAsync(),
             nativeProfilerController?.disposeAsync()
         ]).then(() => undefined);
         this.releasePromise = Promise.allSettled([this.releasePromise, cleanup]).then(results => {
@@ -162,6 +168,13 @@ export class GameDebuggerPanel implements vscode.Disposable {
         }
         if (typeof message?.type === 'string' && message.type.startsWith('pythonProfiler')) {
             await this.pythonProfilerController?.handleMessage(webview, message);
+            return;
+        }
+        if (typeof message?.type === 'string' && message.type.startsWith('pythonMemoryProfiler')) {
+            const controller = this.pythonMemoryProfilerController ??= new PythonMemoryProfilerController(
+                this.hostBridgeManager
+            );
+            await controller.handleMessage(webview, message);
             return;
         }
         if (typeof message?.type === 'string' && message.type.startsWith('nativeProfiler')) {

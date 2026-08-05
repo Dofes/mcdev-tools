@@ -342,7 +342,7 @@
         "native:build": "cmake --build native/tracy-bridge/build/x64-msvc-release",
         "native:test": "ctest --test-dir native/tracy-bridge/build/x64-msvc-release --output-on-failure",
         "native:install": "cmake --install native/tracy-bridge/build/x64-msvc-release",
-        "test:host-bridge": "npm run compile && node --test out/hostBridge/protocol.test.js out/hostBridge/uiDebugger.test.js out/hostBridge/latestOperationQueue.test.js out/hostBridge/pythonProfiler.test.js out/hostBridge/pythonProfilerReport.test.js out/hostBridge/nativeProfilerPortDiscovery.test.js out/hostBridge/nativeProfilerCapture.test.js out/hostBridge/nativeProfilerReport.test.js out/utils/mcdevDirectory.test.js",
+        "test:host-bridge": "npm run compile && node --test out/hostBridge/protocol.test.js out/hostBridge/uiDebugger.test.js out/hostBridge/latestOperationQueue.test.js out/hostBridge/pythonProfiler.test.js out/hostBridge/pythonProfilerReport.test.js out/hostBridge/pythonMemoryProfiler.test.js out/hostBridge/pythonMemoryProfilerReport.test.js out/hostBridge/nativeProfilerPortDiscovery.test.js out/hostBridge/nativeProfilerCapture.test.js out/hostBridge/nativeProfilerReport.test.js out/utils/mcdevDirectory.test.js",
         "lint": "eslint src --ext ts"
     },
     "dependencies": {

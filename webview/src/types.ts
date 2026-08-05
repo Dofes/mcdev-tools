@@ -153,6 +153,49 @@ export interface PythonProfilerTargetState {
   completed?: PythonProfilerCompletedState;
 }
 
+export interface PythonMemoryFrame {
+  file: string;
+  line: number;
+}
+
+export interface PythonMemoryAllocation {
+  id: number;
+  sizeDiff: number;
+  countDiff: number;
+  currentSize: number;
+  currentCount: number;
+  traceback: PythonMemoryFrame[];
+}
+
+export interface PythonMemoryResult {
+  elapsedSeconds: number;
+  tracebackDepth: number;
+  netSizeDiff: number;
+  netCountDiff: number;
+  currentSize: number;
+  currentCount: number;
+  totalAllocations: number;
+  truncated: boolean;
+  allocations: PythonMemoryAllocation[];
+}
+
+export interface PythonMemoryCompletedState {
+  capturedAt: string;
+  result: PythonMemoryResult;
+  report?: {
+    markdownPath: string;
+    svgPath: string;
+  };
+  reportError?: string;
+}
+
+export interface PythonMemoryState {
+  status: 'idle' | 'running' | 'collecting';
+  tracebackDepth: number;
+  startedAt?: string;
+  completed?: PythonMemoryCompletedState;
+}
+
 export interface NativeProfilerEndpoint {
   pid: number;
   port: number;

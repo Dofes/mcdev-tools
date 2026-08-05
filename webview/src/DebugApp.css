@@ -436,6 +436,11 @@ body[data-view="game-debugger"] #root {
   padding: 0;
 }
 
+.debug-tool-page-content--python-memory {
+  max-width: none;
+  padding: 0;
+}
+
 .debug-tool-page-content--native-profiler {
   max-width: none;
   padding: 0;
@@ -1167,6 +1172,532 @@ body[data-view="game-debugger"] #root {
   .python-profiler-splitter {
     display: none;
   }
+}
+
+.python-memory-workspace {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.python-memory-toolbar {
+  min-width: 0;
+  min-height: 62px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 9px 16px 10px;
+  border-bottom: 1px solid var(--panel-border);
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background));
+}
+
+.python-memory-depth {
+  min-width: max-content;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.python-memory-depth > span:first-child {
+  color: var(--vscode-descriptionForeground);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.python-memory-number-field {
+  width: 134px;
+  height: 30px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--vscode-input-border, var(--panel-border));
+  border-radius: 4px;
+  color: var(--vscode-input-foreground);
+  background-color: var(--vscode-input-background);
+}
+
+.python-memory-number-field:focus-within {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.python-memory-number-field input {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0 8px;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  appearance: textfield;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+
+.python-memory-number-field input::-webkit-inner-spin-button,
+.python-memory-number-field input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.python-memory-number-field small {
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border-left: 1px solid var(--vscode-input-border, var(--panel-border));
+  color: var(--vscode-descriptionForeground);
+  background-color: color-mix(in srgb, var(--vscode-input-background) 82%, var(--vscode-editorWidget-background));
+  font-size: 9px;
+}
+
+.python-memory-gc {
+  min-width: max-content;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--vscode-foreground);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.python-memory-gc input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--vscode-focusBorder);
+}
+
+.python-memory-gc:has(input:disabled) {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.python-memory-action {
+  min-width: max-content;
+  margin-left: auto;
+}
+
+.python-memory-start,
+.python-memory-stop {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-background);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.python-memory-stop {
+  border-color: color-mix(in srgb, var(--vscode-errorForeground) 58%, transparent);
+  color: var(--vscode-errorForeground);
+  background-color: color-mix(in srgb, var(--vscode-errorForeground) 10%, var(--vscode-button-secondaryBackground));
+}
+
+.python-memory-start:hover:not(:disabled) { background-color: var(--vscode-button-hoverBackground); }
+.python-memory-stop:hover:not(:disabled) { background-color: color-mix(in srgb, var(--vscode-errorForeground) 17%, var(--vscode-button-secondaryBackground)); }
+.python-memory-start:disabled,
+.python-memory-stop:disabled { cursor: default; opacity: 0.5; }
+
+.python-memory-status {
+  min-height: 42px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 5px 16px;
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--vscode-descriptionForeground);
+  background-color: var(--vscode-editor-background);
+  font-size: 10px;
+}
+
+.python-memory-status > strong {
+  min-width: max-content;
+  color: var(--vscode-foreground);
+  font-weight: 600;
+}
+
+.python-memory-status > time {
+  min-width: 60px;
+  color: var(--vscode-focusBorder);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.python-memory-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background-color: var(--vscode-descriptionForeground);
+}
+
+.python-memory-status.running .python-memory-status-dot {
+  background-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vscode-focusBorder) 20%, transparent);
+  animation: python-profiler-pulse 1.4s ease-in-out infinite;
+}
+
+.python-memory-status.collecting .python-memory-status-dot {
+  background-color: var(--vscode-editorWarning-foreground);
+}
+
+.python-memory-summary {
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.python-memory-summary > span {
+  min-width: 96px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 10px;
+  border-left: 1px solid var(--panel-border);
+}
+
+.python-memory-summary small {
+  color: var(--vscode-descriptionForeground);
+  font-size: 8px;
+}
+
+.python-memory-summary strong {
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.python-memory-summary .positive,
+.python-memory-table .positive { color: color-mix(in srgb, var(--vscode-focusBorder) 86%, var(--vscode-foreground)); }
+.python-memory-summary .negative,
+.python-memory-table .negative { color: var(--vscode-symbolIcon-functionForeground, #c586c0); }
+
+.python-memory-save-report {
+  height: 26px;
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 0 9px;
+  border: 1px solid var(--vscode-button-border, transparent);
+  border-radius: 4px;
+  color: var(--vscode-button-secondaryForeground);
+  background-color: var(--vscode-button-secondaryBackground);
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.python-memory-save-report:hover:not(:disabled) { background-color: var(--vscode-button-secondaryHoverBackground); }
+.python-memory-save-report:disabled { cursor: default; opacity: 0.5; }
+
+.python-memory-report-actions {
+  height: 26px;
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.python-memory-report-actions button {
+  width: 27px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  color: var(--vscode-icon-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.python-memory-report-actions button:hover {
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+
+.python-memory-error {
+  min-height: 34px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--vscode-errorForeground) 35%, var(--panel-border));
+  color: var(--vscode-errorForeground);
+  background-color: color-mix(in srgb, var(--vscode-errorForeground) 7%, var(--vscode-editor-background));
+  font-size: 10px;
+}
+
+.python-memory-results {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(300px, var(--python-memory-list-width, 58%)) 5px minmax(300px, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.python-memory-sites,
+.python-memory-trace {
+  min-width: 0;
+  min-height: 0;
+}
+
+.python-memory-sites {
+  overflow: auto;
+}
+
+.python-memory-trace {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--vscode-sideBar-background);
+}
+
+.python-memory-sites > header,
+.python-memory-trace > header {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  min-width: 620px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--panel-border);
+  background-color: var(--vscode-editor-background);
+}
+
+.python-memory-trace > header { min-width: 0; flex: 0 0 40px; }
+.python-memory-sites h2,
+.python-memory-trace h2 { margin: 0; font-size: 11px; font-weight: 600; }
+.python-memory-sites > header > span { margin-left: auto; color: var(--vscode-descriptionForeground); font-size: 9px; }
+
+.python-memory-table-header,
+.python-memory-table button {
+  min-width: 620px;
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) 150px 70px 86px;
+  align-items: center;
+  column-gap: 9px;
+}
+
+.python-memory-table-header {
+  position: sticky;
+  z-index: 2;
+  top: 40px;
+  height: 30px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--vscode-descriptionForeground);
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background));
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.python-memory-table-header > span:nth-child(n + 2),
+.python-memory-table button > span:nth-child(n + 2) { text-align: right; }
+
+.python-memory-table button {
+  width: 100%;
+  min-height: 50px;
+  padding: 5px 12px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--panel-border) 74%, transparent);
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-family: inherit;
+  font-size: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.python-memory-table button:hover { background-color: var(--vscode-list-hoverBackground); }
+.python-memory-table button.selected,
+.python-memory-table button.selected:hover { color: var(--vscode-list-activeSelectionForeground); background-color: var(--vscode-list-activeSelectionBackground); }
+
+.python-memory-site-name {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.python-memory-site-name strong,
+.python-memory-site-name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.python-memory-site-name strong { font-size: 10px; font-weight: 600; }
+.python-memory-site-name small { color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family, monospace); font-size: 8px; }
+.python-memory-table button.selected .python-memory-site-name small { color: inherit; opacity: 0.76; }
+
+.python-memory-delta {
+  position: relative;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--vscode-editorWidget-background) 60%, transparent);
+}
+
+.python-memory-delta i { position: absolute; inset: 0 0 0 auto; opacity: 0.52; }
+.python-memory-delta i.growth { background-color: #4c8bd9; }
+.python-memory-delta i.release { background-color: #b27adf; }
+.python-memory-delta em { position: relative; z-index: 1; padding: 0 6px; color: var(--vscode-foreground); font-family: var(--vscode-editor-font-family, monospace); font-size: 9px; font-style: normal; }
+.python-memory-table button.selected .python-memory-delta em { color: inherit; }
+
+.python-memory-splitter {
+  position: relative;
+  z-index: 3;
+  width: 5px;
+  min-height: 0;
+  border: 0;
+  border-right: 1px solid var(--panel-border);
+  border-left: 1px solid var(--panel-border);
+  background-color: var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background));
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.python-memory-splitter::after {
+  position: absolute;
+  top: 50%;
+  left: 1px;
+  width: 1px;
+  height: 34px;
+  background-color: var(--vscode-descriptionForeground);
+  content: '';
+  opacity: 0.34;
+  transform: translateY(-50%);
+}
+
+.python-memory-splitter:hover,
+.python-memory-splitter:focus-visible {
+  border-color: var(--vscode-focusBorder);
+  background-color: color-mix(in srgb, var(--vscode-focusBorder) 18%, transparent);
+  outline: none;
+}
+
+.python-memory-trace-content {
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.python-memory-selected {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background-color: var(--vscode-editor-background);
+}
+
+.python-memory-selected > .codicon { color: var(--vscode-focusBorder); }
+.python-memory-selected > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.python-memory-selected strong { font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; }
+.python-memory-selected small { color: var(--vscode-descriptionForeground); font-size: 9px; }
+
+.python-memory-detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 10px 0 14px;
+  background-color: var(--panel-border);
+}
+
+.python-memory-detail-metrics > div { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; background-color: var(--vscode-editor-background); }
+.python-memory-detail-metrics dt { color: var(--vscode-descriptionForeground); font-size: 8px; }
+.python-memory-detail-metrics dd { margin: 0; font-family: var(--vscode-editor-font-family, monospace); font-size: 10px; }
+
+.python-memory-stack { margin: 0; padding: 0; list-style: none; }
+.python-memory-stack li + li { margin-top: 4px; }
+.python-memory-stack button {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.python-memory-stack button:hover { border-color: var(--panel-border); background-color: var(--vscode-list-hoverBackground); }
+.python-memory-frame-index { color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family, monospace); font-size: 9px; text-align: center; }
+.python-memory-stack button > span:nth-child(2) { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.python-memory-stack strong,
+.python-memory-stack small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.python-memory-stack strong { font-size: 10px; }
+.python-memory-stack small { color: var(--vscode-descriptionForeground); font-family: var(--vscode-editor-font-family, monospace); font-size: 8px; }
+.python-memory-stack .codicon { color: var(--vscode-descriptionForeground); font-size: 12px; }
+
+.python-memory-empty,
+.python-memory-detail-empty {
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 24px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  text-align: center;
+}
+
+.python-memory-empty .codicon { color: var(--vscode-focusBorder); font-size: 19px; }
+
+@media (max-width: 820px) {
+  .python-memory-results {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(280px, 3fr) minmax(220px, 2fr);
+    overflow: auto;
+  }
+
+  .python-memory-splitter { display: none; }
+  .python-memory-trace { border-top: 1px solid var(--panel-border); }
 }
 
 .debug-functions-workspace {
