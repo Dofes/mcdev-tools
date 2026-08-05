@@ -162,7 +162,10 @@ export function CodeExecutionTool({ session, t }: CodeExecutionToolProps) {
             <span className="codicon codicon-clear-all" />
           </button>
         </div>
-        <div className="host-bridge-output-body" aria-live="polite">
+        <div
+          className={`host-bridge-output-body ${results.length > 0 ? 'has-results' : ''}`}
+          aria-live="polite"
+        >
           {results.length === 0 ? (
             <div className="host-bridge-output-empty">{t.hostBridgeNoResult}</div>
           ) : (

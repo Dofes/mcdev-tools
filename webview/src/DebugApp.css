@@ -422,6 +422,22 @@ body[data-view="game-debugger"] #root {
   flex: 1 1 auto;
 }
 
+.debug-workbench .host-bridge-output-body.has-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.debug-workbench .host-bridge-output-body.has-results .host-bridge-output-entry {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--panel-border);
+  border-right: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--panel-border);
+  border-radius: 3px;
+  background-color: color-mix(in srgb, var(--vscode-editor-background) 84%, var(--panel-surface));
+}
+
 .debug-workbench .host-bridge-output-empty {
   min-height: 100%;
 }
@@ -2645,25 +2661,12 @@ body[data-view="game-debugger"] #root {
   margin: 0;
   overflow: auto;
   padding: 12px;
-  border-left: 2px solid var(--vscode-descriptionForeground);
   color: var(--vscode-editor-foreground);
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 10px;
   line-height: 1.5;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
-}
-
-.debug-function-result pre.pending {
-  border-left-color: var(--vscode-progressBar-background);
-}
-
-.debug-function-result pre.success {
-  border-left-color: var(--vscode-focusBorder);
-}
-
-.debug-function-result pre.error {
-  border-left-color: var(--vscode-errorForeground);
 }
 
 .debug-function-dialog-backdrop {
