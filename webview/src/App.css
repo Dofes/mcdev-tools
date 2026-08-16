@@ -645,6 +645,123 @@ body.vscode-high-contrast .control-group input[type="number"] {
   box-shadow: 0 0 0 1px var(--vscode-focusBorder);
 }
 
+.log-protocol-field {
+  min-width: 0;
+  margin: 16px 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.log-protocol-field legend {
+  margin-bottom: var(--label-margin-bottom);
+  padding: 0;
+  color: var(--vscode-foreground);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.log-protocol-segments {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: var(--control-height);
+  overflow: visible;
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
+  border-radius: var(--panel-radius);
+  background-color: var(--vscode-dropdown-background);
+}
+
+.log-protocol-option {
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.log-protocol-option + .log-protocol-option {
+  border-left: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
+}
+
+.log-protocol-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.log-protocol-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+  line-height: 1;
+  transition: color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.log-protocol-option:first-child .log-protocol-label {
+  border-radius: calc(var(--panel-radius) - 1px) 0 0 calc(var(--panel-radius) - 1px);
+}
+
+.log-protocol-option:last-child .log-protocol-label {
+  border-radius: 0 calc(var(--panel-radius) - 1px) calc(var(--panel-radius) - 1px) 0;
+}
+
+.log-protocol-option:hover .log-protocol-label {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.log-protocol-option input:checked + .log-protocol-label {
+  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-background);
+  font-weight: 600;
+}
+
+.log-protocol-option input:focus-visible + .log-protocol-label {
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.log-protocol-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 80;
+  width: min(300px, calc(100vw - 32px));
+  padding: 8px 10px;
+  visibility: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--panel-radius);
+  color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+  background-color: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background));
+  box-shadow: var(--panel-shadow);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-3px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
+}
+
+.log-protocol-option:last-child .log-protocol-tooltip {
+  right: 0;
+  left: auto;
+}
+
+.log-protocol-option:hover .log-protocol-tooltip,
+.log-protocol-option:focus-within .log-protocol-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .number-select {
   position: relative;
   width: 100%;

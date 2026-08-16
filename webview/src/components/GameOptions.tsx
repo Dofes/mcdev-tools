@@ -4,6 +4,7 @@ import { useDefaultValues } from '../hooks/useDefaultValues';
 import { vscode } from '../vscode';
 
 interface McdevData {
+  log_protocol?: 0 | 1;
   reset_world?: boolean;
   auto_join_game?: boolean;
   include_debug_mod?: boolean;
@@ -33,6 +34,7 @@ interface Props {
 }
 
 const DEFAULT_VALUES: McdevData = {
+  log_protocol: 0,
   reset_world: false,
   auto_join_game: true,
   include_debug_mod: true,
@@ -68,6 +70,7 @@ export const GameOptions: FC<Props> = ({
     data.auto_hot_reload_particles ?? DEFAULT_VALUES.auto_hot_reload_particles,
   ].filter(Boolean).length;
   const gameDebuggerEnabled = data.mcdev_tools?.game_debugger?.enabled === true;
+  const logProtocol = data.log_protocol === 1 ? 1 : 0;
 
   const setGameDebuggerEnabled = (enabled: boolean) => {
     onDataChange('mcdev_tools', {
@@ -129,6 +132,48 @@ export const GameOptions: FC<Props> = ({
           </div>
 
         </div>
+
+        <fieldset className="log-protocol-field">
+          <legend>{t.logProtocol}</legend>
+          <div className="log-protocol-segments">
+            <label className="log-protocol-option">
+              <input
+                type="radio"
+                name="log_protocol"
+                value="0"
+                checked={logProtocol === 0}
+                onChange={() => onDataChange('log_protocol', 0)}
+                aria-describedby="log-protocol-default-tooltip"
+              />
+              <span className="log-protocol-label">{t.logProtocolDefault}</span>
+              <span
+                id="log-protocol-default-tooltip"
+                className="log-protocol-tooltip"
+                role="tooltip"
+              >
+                {t.logProtocolDefaultTooltip}
+              </span>
+            </label>
+            <label className="log-protocol-option">
+              <input
+                type="radio"
+                name="log_protocol"
+                value="1"
+                checked={logProtocol === 1}
+                onChange={() => onDataChange('log_protocol', 1)}
+                aria-describedby="log-protocol-saf-tooltip"
+              />
+              <span className="log-protocol-label">{t.logProtocolSaf}</span>
+              <span
+                id="log-protocol-saf-tooltip"
+                className="log-protocol-tooltip"
+                role="tooltip"
+              >
+                {t.logProtocolSafTooltip}
+              </span>
+            </label>
+          </div>
+        </fieldset>
 
         <details className="settings-cluster">
           <summary>
