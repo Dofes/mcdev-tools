@@ -102,7 +102,7 @@ export function CodeExecutionTool({ session, t }: CodeExecutionToolProps) {
             <span className="codicon codicon-code" aria-hidden="true" />
             <h2 id="host-bridge-code-title">{t.hostBridgeCode}</h2>
           </div>
-          <div className="host-bridge-segmented" role="group" aria-label={t.hostBridgeTarget}>
+          <div className="debug-segmented code-execution-targets" role="group" aria-label={t.hostBridgeTarget}>
             <button
               type="button"
               className={isClient ? 'active' : ''}

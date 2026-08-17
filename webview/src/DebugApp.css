@@ -447,25 +447,14 @@ body[data-view="game-debugger"] #root {
   white-space: nowrap;
 }
 
-.debug-workbench .host-bridge-segmented {
+.code-execution-targets {
   width: min(210px, 48%);
-  height: 30px;
   flex: 0 1 210px;
   margin: 0;
-  padding: 2px;
-  border-radius: 5px;
-  background-color: color-mix(in srgb, var(--vscode-input-background) 82%, var(--vscode-editor-background));
 }
 
-.debug-workbench .host-bridge-segmented button {
-  border-radius: 3px;
-  font-size: 10px;
-}
-
-.debug-workbench .host-bridge-segmented button.active {
-  color: var(--vscode-button-foreground);
-  background-color: var(--vscode-button-background);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-button-foreground) 15%, transparent), 0 1px 3px rgba(0, 0, 0, 0.18);
+.code-execution-targets button {
+  flex: 1 1 0;
 }
 
 .debug-workbench .host-bridge-editor textarea {
@@ -688,7 +677,7 @@ body[data-view="game-debugger"] #root {
   line-height: 1.2;
 }
 
-.python-profiler-segmented {
+.debug-segmented {
   height: 30px;
   display: inline-flex;
   align-items: stretch;
@@ -699,8 +688,13 @@ body[data-view="game-debugger"] #root {
   background-color: var(--vscode-input-background);
 }
 
-.python-profiler-segmented button {
+.debug-segmented button {
   min-width: 64px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
   padding: 0 10px;
   border: 0;
   border-radius: 3px;
@@ -714,18 +708,24 @@ body[data-view="game-debugger"] #root {
   transition: none;
 }
 
-.python-profiler-segmented button:hover:not(:disabled) {
+.debug-segmented .codicon {
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.debug-segmented button:hover:not(:disabled) {
   color: var(--vscode-foreground);
   background-color: var(--vscode-list-hoverBackground);
 }
 
-.python-profiler-segmented button.active,
-.python-profiler-segmented button.active:hover:not(:disabled) {
+.debug-segmented button.active,
+.debug-segmented button.active:hover:not(:disabled) {
   color: var(--vscode-button-foreground);
   background-color: var(--vscode-button-background);
 }
 
-.python-profiler-segmented button:disabled {
+.debug-segmented button:disabled {
   cursor: default;
   opacity: 0.58;
 }

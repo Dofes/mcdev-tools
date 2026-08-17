@@ -10,6 +10,8 @@ export interface I18nText {
   gameDebuggerToggle: string;
   modDirectories: string;
   addModDirectory: string;
+  showAllModDirectories: string;
+  showFewerModDirectories: string;
   browse: string;
   hotReload: string;
   analyzeMod: string;
@@ -344,6 +346,8 @@ export const i18n: Record<string, I18nText> = {
     gameDebuggerToggle: 'Enable game debugging',
     modDirectories: 'Mod Directories',
     addModDirectory: 'Add Mod Directory',
+    showAllModDirectories: 'Show all',
+    showFewerModDirectories: 'Show fewer',
     browse: 'Browse...',
     hotReload: 'Hot Reload',
     analyzeMod: 'Analyze This Mod',
@@ -677,6 +681,8 @@ export const i18n: Record<string, I18nText> = {
     gameDebuggerToggle: '启用游戏调试能力',
     modDirectories: 'Mod 目录',
     addModDirectory: '添加 Mod 目录',
+    showAllModDirectories: '展开全部',
+    showFewerModDirectories: '收起列表',
     browse: '浏览...',
     hotReload: '热重载',
     analyzeMod: '分析此 Mod',

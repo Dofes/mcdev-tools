@@ -538,7 +538,7 @@ function SegmentedControl({
   disabled?: boolean;
 }) {
   return (
-    <div className="python-profiler-segmented">
+    <div className="debug-segmented">
       {options.map(([option, label]) => (
         <button
           type="button"

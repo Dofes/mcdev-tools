@@ -1800,6 +1800,61 @@ body.vscode-high-contrast .control-group input[type="number"] {
   gap: 7px;
 }
 
+.mod-directories-section.collapsed > .section-header-plain {
+  margin-bottom: 0;
+}
+
+.mod-directory-toggle {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  margin: -3px 0;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: var(--panel-radius);
+  color: inherit;
+  background: transparent;
+  font-family: var(--vscode-font-family);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.mod-directory-toggle:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.mod-directory-toggle:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+.mod-directory-toggle .codicon-chevron-right {
+  transform: rotate(90deg);
+}
+
+.mod-directories-section.collapsed .mod-directory-toggle .codicon-chevron-right {
+  transform: rotate(0deg);
+}
+
+.mod-directory-count {
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 1px solid var(--panel-border);
+  border-radius: 9px;
+  color: var(--panel-muted);
+  background-color: color-mix(in srgb, var(--panel-surface) 68%, transparent);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
 .mod-item {
   position: relative;
   background-color: color-mix(in srgb, var(--panel-surface) 72%, transparent);
@@ -1994,6 +2049,42 @@ button.mod-review-status:disabled {
 
 .mod-add-action {
   margin-top: 8px;
+}
+
+.mod-list-overflow-toggle {
+  width: 100%;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 4px 0;
+  border: 0;
+  color: var(--vscode-textLink-foreground);
+  background: transparent;
+  font-family: var(--vscode-font-family);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0.84;
+}
+
+.mod-list-overflow-toggle::before,
+.mod-list-overflow-toggle::after {
+  height: 1px;
+  flex: 1 1 0;
+  content: '';
+  background-color: var(--panel-border);
+}
+
+.mod-list-overflow-toggle:hover {
+  color: var(--vscode-textLink-activeForeground);
+  opacity: 1;
+}
+
+.mod-list-overflow-toggle:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
 }
 
 .mod-add-action .btn-primary {

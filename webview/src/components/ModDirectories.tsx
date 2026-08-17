@@ -33,6 +33,7 @@ interface ReviewState extends ReviewTarget {
 
 const REVIEW_OUTPUT_DIRECTORY = '.mcdev/reviews';
 const REVIEW_PROJECT_URL = 'https://github.com/GitHub-Zero123/mcdk-assistant';
+const COLLAPSED_MOD_LIMIT = 3;
 
 const createReportName = (path: string, index: number) => {
   const normalizedPath = path.trim().replace(/[\\/]+$/, '');
@@ -49,6 +50,8 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
   const [reviewStates, setReviewStates] = useState<Record<string, ReviewState>>({});
   const [reviewLauncherOpen, setReviewLauncherOpen] = useState(false);
   const [selectedReviewTarget, setSelectedReviewTarget] = useState<string | null>(null);
+  const [listExpanded, setListExpanded] = useState(true);
+  const [showAllModDirs, setShowAllModDirs] = useState(false);
 
   const availableReviewTargets: ReviewTarget[] = modDirs.map((dir, index) => ({
       targetId: `mod:${dir.path}`,
@@ -65,6 +68,10 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
   const selectedTarget = availableReviewTargets.find(
     ({ targetId }) => targetId === selectedReviewTarget,
   );
+  const hasOverflowingModDirs = modDirs.length > COLLAPSED_MOD_LIMIT;
+  const visibleModDirs = hasOverflowingModDirs && !showAllModDirs
+    ? modDirs.slice(0, COLLAPSED_MOD_LIMIT)
+    : modDirs;
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -189,12 +196,22 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
   };
 
   return (
-    <div className="section">
+    <div className={`section mod-directories-section${listExpanded ? '' : ' collapsed'}`}>
       <div className="section-header-plain">
-        <span className="section-title">
-          <span className="codicon codicon-folder-opened"></span>
-          {t.modDirectories}
-        </span>
+        <button
+          type="button"
+          className="mod-directory-toggle"
+          aria-expanded={listExpanded}
+          onClick={() => setListExpanded((current) => !current)}
+        >
+          <span className="section-title">
+            <span className="codicon codicon-chevron-right"></span>
+            {t.modDirectories}
+            {hasOverflowingModDirs && (
+              <span className="mod-directory-count">{modDirs.length}</span>
+            )}
+          </span>
+        </button>
         <button
           type="button"
           className="btn-link-compact review-entry-button"
@@ -207,6 +224,7 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
         </button>
       </div>
 
+      <div className="collapsible-content">
       {reviewLauncherOpen && (
         <div className="review-launcher">
           <div className="review-launcher-header">
@@ -283,7 +301,7 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
             {t.noModDirs}
           </div>
         ) : (
-          modDirs.map((dir, idx) => {
+          visibleModDirs.map((dir, idx) => {
             const normalizedPath = dir.path.trim().replace(/[\\/]+$/, '');
             const folderName = normalizedPath && normalizedPath !== '.'
               ? normalizedPath.split(/[\\/]/).pop() || normalizedPath
@@ -346,6 +364,21 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
           })
         )}
       </div>
+
+      {hasOverflowingModDirs && (
+        <button
+          type="button"
+          className="mod-list-overflow-toggle"
+          aria-expanded={showAllModDirs}
+          onClick={() => setShowAllModDirs((current) => !current)}
+        >
+          <span
+            className={`codicon ${showAllModDirs ? 'codicon-chevron-up' : 'codicon-chevron-down'}`}
+            aria-hidden="true"
+          ></span>
+          {showAllModDirs ? t.showFewerModDirectories : t.showAllModDirectories}
+        </button>
+      )}
 
       {Object.keys(reviewStates).length > 0 && (
         <div className="review-results-panel">
@@ -418,10 +451,14 @@ export const ModDirectories: React.FC<Props> = ({ t, modDirs, setModDirs, setHas
         <button
           type="button"
           className="btn-primary"
-          onClick={() => vscode.postMessage({ type: 'browseFolder', index: -1 })}
+          onClick={() => {
+            setShowAllModDirs(true);
+            vscode.postMessage({ type: 'browseFolder', index: -1 });
+          }}
         >
           <span className="codicon codicon-folder-opened"></span> {t.addModDirectory}
         </button>
+      </div>
       </div>
     </div>
   );
