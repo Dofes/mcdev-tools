@@ -647,38 +647,57 @@ body.vscode-high-contrast .control-group input[type="number"] {
 
 .log-protocol-field {
   min-width: 0;
-  margin: 16px 0 14px;
+  margin: 14px 0;
   padding: 0;
   border: 0;
 }
 
 .log-protocol-field legend {
-  margin-bottom: var(--label-margin-bottom);
+  margin-bottom: 7px;
   padding: 0;
-  color: var(--vscode-foreground);
-  font-size: 12px;
-  font-weight: 600;
+  color: color-mix(in srgb, var(--vscode-foreground) 86%, var(--vscode-descriptionForeground));
+  font-size: 11px;
+  font-weight: 620;
   line-height: 1.35;
 }
 
 .log-protocol-segments {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-height: var(--control-height);
+  gap: 2px;
+  min-height: 38px;
+  padding: 2px;
   overflow: visible;
-  border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
+  border: 1px solid var(--panel-border);
   border-radius: var(--panel-radius);
-  background-color: var(--vscode-dropdown-background);
+  background-color: color-mix(in srgb, var(--panel-surface) 78%, var(--vscode-sideBar-background));
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.14), inset 0 0 0 1px color-mix(in srgb, var(--vscode-foreground) 2%, transparent);
+}
+
+.log-protocol-segments::before {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 3px);
+  border-radius: calc(var(--panel-radius) - 2px);
+  background-color: var(--vscode-button-background);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-button-foreground) 16%, transparent), inset 0 -1px 0 rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.18), 0 3px 8px color-mix(in srgb, var(--vscode-button-background) 10%, transparent);
+  content: '';
+  pointer-events: none;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.log-protocol-segments:has(.log-protocol-option:last-child input:checked)::before {
+  transform: translateX(calc(100% + 2px));
 }
 
 .log-protocol-option {
   position: relative;
+  z-index: 1;
   min-width: 0;
   cursor: pointer;
-}
-
-.log-protocol-option + .log-protocol-option {
-  border-left: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
 }
 
 .log-protocol-option input {
@@ -693,33 +712,29 @@ body.vscode-high-contrast .control-group input[type="number"] {
 }
 
 .log-protocol-label {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   min-height: 32px;
-  padding: 6px 10px;
-  color: var(--vscode-dropdown-foreground);
+  padding: 4px 8px;
+  overflow: hidden;
+  border-radius: calc(var(--panel-radius) - 2px);
+  color: var(--vscode-descriptionForeground);
   font-size: 12px;
   line-height: 1;
-  transition: color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
-}
-
-.log-protocol-option:first-child .log-protocol-label {
-  border-radius: calc(var(--panel-radius) - 1px) 0 0 calc(var(--panel-radius) - 1px);
-}
-
-.log-protocol-option:last-child .log-protocol-label {
-  border-radius: 0 calc(var(--panel-radius) - 1px) calc(var(--panel-radius) - 1px) 0;
+  transition: color 140ms ease, background-color 140ms ease, box-shadow 140ms ease, transform 100ms ease;
 }
 
 .log-protocol-option:hover .log-protocol-label {
-  background-color: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+  background-color: color-mix(in srgb, var(--vscode-list-hoverBackground) 46%, transparent);
 }
 
 .log-protocol-option input:checked + .log-protocol-label {
   color: var(--vscode-button-foreground);
-  background-color: var(--vscode-button-background);
-  font-weight: 600;
+  background-color: transparent;
 }
 
 .log-protocol-option input:focus-visible + .log-protocol-label {
@@ -728,19 +743,50 @@ body.vscode-high-contrast .control-group input[type="number"] {
   box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
 }
 
+.log-protocol-label strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 620;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-protocol-label > .codicon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  color: currentColor;
+  background-color: color-mix(in srgb, var(--vscode-foreground) 5%, transparent);
+  font-size: 11px;
+  opacity: 0.82;
+  transition: color 140ms ease, background-color 140ms ease, transform 140ms ease;
+}
+
+.log-protocol-option input:checked + .log-protocol-label > .codicon {
+  color: currentColor;
+  background-color: color-mix(in srgb, var(--vscode-button-foreground) 14%, transparent);
+  opacity: 1;
+}
+
 .log-protocol-tooltip {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
   z-index: 80;
   width: min(300px, calc(100vw - 32px));
-  padding: 8px 10px;
+  padding: 9px 11px;
   visibility: hidden;
-  border: 1px solid var(--panel-border);
+  border: 1px solid color-mix(in srgb, var(--vscode-foreground) 12%, transparent);
   border-radius: var(--panel-radius);
-  color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
-  background-color: var(--vscode-editorHoverWidget-background, var(--vscode-editor-background));
-  box-shadow: var(--panel-shadow);
+  color: var(--vscode-foreground);
+  background-color: color-mix(in srgb, var(--vscode-editor-background) 96%, var(--vscode-foreground));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 5%, transparent), 0 8px 24px rgba(0, 0, 0, 0.24), 0 2px 6px rgba(0, 0, 0, 0.14);
   font-size: 11px;
   font-weight: 400;
   line-height: 1.5;

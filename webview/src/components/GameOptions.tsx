@@ -145,7 +145,10 @@ export const GameOptions: FC<Props> = ({
                 onChange={() => onDataChange('log_protocol', 0)}
                 aria-describedby="log-protocol-default-tooltip"
               />
-              <span className="log-protocol-label">{t.logProtocolDefault}</span>
+              <span className="log-protocol-label">
+                <span className="codicon codicon-terminal" aria-hidden="true"></span>
+                <strong>{t.logProtocolDefault}</strong>
+              </span>
               <span
                 id="log-protocol-default-tooltip"
                 className="log-protocol-tooltip"
@@ -163,7 +166,10 @@ export const GameOptions: FC<Props> = ({
                 onChange={() => onDataChange('log_protocol', 1)}
                 aria-describedby="log-protocol-saf-tooltip"
               />
-              <span className="log-protocol-label">{t.logProtocolSaf}</span>
+              <span className="log-protocol-label">
+                <span className="codicon codicon-radio-tower" aria-hidden="true"></span>
+                <strong>{t.logProtocolSaf}</strong>
+              </span>
               <span
                 id="log-protocol-saf-tooltip"
                 className="log-protocol-tooltip"
