@@ -96,32 +96,38 @@ export function CodeExecutionTool({ session, t }: CodeExecutionToolProps) {
 
   return (
     <div className="code-execution-grid">
-      <div className="host-bridge-execution-pane">
-        <div className="host-bridge-segmented" role="group" aria-label={t.hostBridgeTarget}>
-          <button
-            type="button"
-            className={isClient ? 'active' : ''}
-            onClick={() => setIsClient(true)}
-            aria-pressed={isClient}
-          >
-            <span className="codicon codicon-device-desktop" />
-            {t.hostBridgeClient}
-          </button>
-          <button
-            type="button"
-            className={!isClient ? 'active' : ''}
-            onClick={() => setIsClient(false)}
-            aria-pressed={!isClient}
-          >
-            <span className="codicon codicon-server" />
-            {t.hostBridgeServer}
-          </button>
-        </div>
+      <section className="code-execution-panel host-bridge-execution-pane">
+        <header className="code-execution-panel-header">
+          <div className="code-execution-panel-heading">
+            <span className="codicon codicon-code" aria-hidden="true" />
+            <h2 id="host-bridge-code-title">{t.hostBridgeCode}</h2>
+          </div>
+          <div className="host-bridge-segmented" role="group" aria-label={t.hostBridgeTarget}>
+            <button
+              type="button"
+              className={isClient ? 'active' : ''}
+              onClick={() => setIsClient(true)}
+              aria-pressed={isClient}
+            >
+              <span className="codicon codicon-device-desktop" />
+              {t.hostBridgeClient}
+            </button>
+            <button
+              type="button"
+              className={!isClient ? 'active' : ''}
+              onClick={() => setIsClient(false)}
+              aria-pressed={!isClient}
+            >
+              <span className="codicon codicon-server" />
+              {t.hostBridgeServer}
+            </button>
+          </div>
+        </header>
 
         <div className="host-bridge-editor">
-          <label htmlFor="host-bridge-code">{t.hostBridgeCode}</label>
           <textarea
             id="host-bridge-code"
+            aria-labelledby="host-bridge-code-title"
             value={code}
             onChange={event => setCode(event.target.value)}
             onKeyDown={event => {
@@ -141,11 +147,15 @@ export function CodeExecutionTool({ session, t }: CodeExecutionToolProps) {
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="host-bridge-output">
-        <div className="host-bridge-output-header">
-          <span>{t.hostBridgeResult}</span>
+      <section className="code-execution-panel host-bridge-output">
+        <header className="host-bridge-output-header">
+          <span className="code-execution-panel-heading">
+            <span className="codicon codicon-output" aria-hidden="true" />
+            <span>{t.hostBridgeResult}</span>
+            {results.length > 0 && <span className="host-bridge-result-count">{results.length}</span>}
+          </span>
           <button
             type="button"
             className="btn-icon host-bridge-icon-button"
@@ -161,13 +171,16 @@ export function CodeExecutionTool({ session, t }: CodeExecutionToolProps) {
           >
             <span className="codicon codicon-clear-all" />
           </button>
-        </div>
+        </header>
         <div
           className={`host-bridge-output-body ${results.length > 0 ? 'has-results' : ''}`}
           aria-live="polite"
         >
           {results.length === 0 ? (
-            <div className="host-bridge-output-empty">{t.hostBridgeNoResult}</div>
+            <div className="host-bridge-output-empty">
+              <span className="codicon codicon-terminal" aria-hidden="true" />
+              <span>{t.hostBridgeNoResult}</span>
+            </div>
           ) : (
             results.map(result => (
               <div
@@ -175,15 +188,28 @@ export function CodeExecutionTool({ session, t }: CodeExecutionToolProps) {
                 key={result.id}
               >
                 <div className="host-bridge-output-meta">
-                  <span>{result.isClient ? t.hostBridgeClient : t.hostBridgeServer}</span>
-                  <time>{new Date(result.createdAt).toLocaleTimeString()}</time>
+                  <span className="host-bridge-output-context">
+                    <span
+                      className={`codicon ${result.pending
+                        ? 'codicon-loading codicon-modifier-spin'
+                        : result.ok
+                          ? 'codicon-pass-filled'
+                          : 'codicon-error'}`}
+                      aria-hidden="true"
+                    />
+                    <span className={`codicon ${result.isClient ? 'codicon-device-desktop' : 'codicon-server'}`} aria-hidden="true" />
+                    <span>{result.isClient ? t.hostBridgeClient : t.hostBridgeServer}</span>
+                  </span>
+                  <time dateTime={new Date(result.createdAt).toISOString()}>
+                    {new Date(result.createdAt).toLocaleTimeString()}
+                  </time>
                 </div>
                 <pre>{result.pending ? t.hostBridgeExecuting : result.output}</pre>
               </div>
             ))
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

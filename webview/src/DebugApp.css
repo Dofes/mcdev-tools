@@ -378,25 +378,105 @@ body[data-view="game-debugger"] #root {
   grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr);
   grid-template-rows: minmax(0, 1fr);
   align-items: stretch;
-  gap: 14px;
+  gap: 12px;
+}
+
+.code-execution-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--panel-radius);
+  background-color: var(--vscode-editor-background, var(--vscode-input-background));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 3%, transparent), 0 8px 22px rgba(0, 0, 0, 0.08);
 }
 
 .host-bridge-execution-pane {
-  min-width: 0;
-  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
+.host-bridge-execution-pane:focus-within {
+  border-color: color-mix(in srgb, var(--vscode-focusBorder) 72%, var(--panel-border));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-foreground) 4%, transparent), 0 0 0 1px color-mix(in srgb, var(--vscode-focusBorder) 32%, transparent), 0 10px 26px rgba(0, 0, 0, 0.1);
+}
+
+.code-execution-panel-header,
+.debug-workbench .host-bridge-output-header {
+  min-height: 46px;
+  flex: 0 0 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px 6px 12px;
+  border-bottom: 1px solid var(--panel-border);
+  background-color: color-mix(in srgb, var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background)) 82%, var(--panel-surface));
+}
+
+.code-execution-panel-heading {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.code-execution-panel-heading > .codicon:first-child {
+  width: 25px;
+  height: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 25px;
+  border: 1px solid color-mix(in srgb, var(--vscode-focusBorder) 24%, var(--panel-border));
+  border-radius: 4px;
+  color: var(--vscode-focusBorder);
+  background-color: color-mix(in srgb, var(--vscode-focusBorder) 8%, transparent);
+  font-size: 13px;
+}
+
+.code-execution-panel-heading h2 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .debug-workbench .host-bridge-segmented {
-  width: min(280px, 100%);
+  width: min(210px, 48%);
+  height: 30px;
+  flex: 0 1 210px;
+  margin: 0;
+  padding: 2px;
+  border-radius: 5px;
+  background-color: color-mix(in srgb, var(--vscode-input-background) 82%, var(--vscode-editor-background));
+}
+
+.debug-workbench .host-bridge-segmented button {
+  border-radius: 3px;
+  font-size: 10px;
+}
+
+.debug-workbench .host-bridge-segmented button.active {
+  color: var(--vscode-button-foreground);
+  background-color: var(--vscode-button-background);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--vscode-button-foreground) 15%, transparent), 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 
 .debug-workbench .host-bridge-editor textarea {
   min-height: 0;
   flex: 1 1 auto;
   max-height: none;
+  padding: 14px 16px;
   resize: none;
+  background-color: color-mix(in srgb, var(--vscode-editor-background) 96%, var(--vscode-textCodeBlock-background, var(--panel-surface)));
+  font-size: max(12px, var(--vscode-editor-font-size, 12px));
+  line-height: 1.65;
 }
 
 .debug-workbench .host-bridge-editor {
@@ -404,40 +484,149 @@ body[data-view="game-debugger"] #root {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+.debug-workbench .host-bridge-editor:focus-within {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.debug-workbench .host-bridge-editor-actions {
+  min-height: 48px;
+  flex: 0 0 48px;
+  padding: 7px 8px 7px 12px;
+  background-color: color-mix(in srgb, var(--vscode-editorGroupHeader-tabsBackground, var(--vscode-editor-background)) 82%, var(--panel-surface));
+}
+
+.debug-workbench .host-bridge-editor-actions .btn-primary {
+  min-width: 92px;
+  min-height: 30px;
+  border-radius: 4px;
 }
 
 .debug-workbench .host-bridge-output {
   min-width: 0;
   min-height: 100%;
-  margin-top: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
+  border: 1px solid var(--panel-border);
+  background-color: var(--vscode-editor-background, var(--vscode-input-background));
+}
+
+.debug-workbench .host-bridge-output-header {
+  height: auto;
+  font-size: 11px;
+}
+
+.host-bridge-result-count {
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: 4px;
+  color: var(--vscode-descriptionForeground);
+  background-color: var(--vscode-badge-background, var(--vscode-input-background));
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .debug-workbench .host-bridge-output-body {
   min-height: 0;
   max-height: none;
   flex: 1 1 auto;
+  background-color: color-mix(in srgb, var(--vscode-editor-background) 96%, var(--vscode-textCodeBlock-background, var(--panel-surface)));
 }
 
 .debug-workbench .host-bridge-output-body.has-results {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px;
+  gap: 0;
+  padding: 0;
 }
 
 .debug-workbench .host-bridge-output-body.has-results .host-bridge-output-entry {
   flex: 0 0 auto;
+  padding: 11px 13px 13px;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 0;
+  background-color: transparent;
+  transition: background-color 100ms ease;
+}
+
+.debug-workbench .host-bridge-output-body.has-results .host-bridge-output-entry:hover {
+  background-color: color-mix(in srgb, var(--vscode-list-hoverBackground) 54%, transparent);
+}
+
+.debug-workbench .host-bridge-output-body.has-results .host-bridge-output-entry + .host-bridge-output-entry {
   border-top: 1px solid var(--panel-border);
-  border-right: 1px solid var(--panel-border);
-  border-bottom: 1px solid var(--panel-border);
-  border-radius: 3px;
-  background-color: color-mix(in srgb, var(--vscode-editor-background) 84%, var(--panel-surface));
 }
 
 .debug-workbench .host-bridge-output-empty {
   min-height: 100%;
+  flex-direction: column;
+  gap: 9px;
+  text-align: center;
+}
+
+.debug-workbench .host-bridge-output-empty > .codicon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--panel-radius);
+  color: var(--vscode-descriptionForeground);
+  background-color: color-mix(in srgb, var(--panel-surface) 62%, transparent);
+  font-size: 16px;
+}
+
+.debug-workbench .host-bridge-output-meta {
+  margin-bottom: 8px;
+}
+
+.host-bridge-output-context {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.host-bridge-output-context > .codicon:first-child {
+  font-size: 11px;
+}
+
+.host-bridge-output-entry.success .host-bridge-output-context > .codicon:first-child {
+  color: var(--vscode-testing-iconPassed, #73c991);
+}
+
+.host-bridge-output-entry.error .host-bridge-output-context > .codicon:first-child {
+  color: var(--vscode-errorForeground, #f48771);
+}
+
+.host-bridge-output-entry.pending .host-bridge-output-context > .codicon:first-child {
+  color: var(--vscode-progressBar-background, var(--vscode-focusBorder));
+}
+
+.host-bridge-output-context > .codicon:nth-child(2) {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+
+.debug-workbench .host-bridge-output-entry pre {
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .debug-tool-page-content--debug-functions {
