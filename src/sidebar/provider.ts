@@ -380,6 +380,7 @@ export class McDevToolsSidebarProvider implements vscode.WebviewViewProvider, vs
                 throw new Error(`目标目录不存在: ${targetPath}`);
             }
             await ensureMcdevDirectory(workspacePath);
+            await fs.promises.mkdir(reportDirectory, { recursive: true });
         } catch (error) {
             sendStatus('error');
             vscode.window.showErrorMessage(`无法启动代码诊断：${String(error)}`);
